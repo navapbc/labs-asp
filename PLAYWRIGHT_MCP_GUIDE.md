@@ -210,4 +210,4 @@ Unlike the weather-focused demo, this integration provides:
 - **Flexible task handling** for any website or web application
 - **No API key requirements** for basic web automation
 
-This makes your Mastra app much more versatile for real-world automation tasks! 
+This makes your Mastra app much more versatile for real-world automation tasks!
