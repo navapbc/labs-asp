@@ -1,152 +1,147 @@
 import { mastra } from '../mastra';
-import { createScreenshotSession, generateScreenshotFilename } from '../utils/screenshot-manager';
+import { actionPlanningStep } from '../mastra/workflows/web-automation-workflow';
+import { select, input } from '@inquirer/prompts';
 
-async function runWebAutomationExamples() {
-  console.log('🚀 Starting Web Automation Examples with Playwright MCP\n');
+async function runWebAutomationWorkflow() {
+  console.log('🚀 Starting Web Automation Workflow');
+  
+  // Get user input for the automation objective
+  const url = await input({
+    message: 'Enter the website URL to automate:',
+    default: 'https://example.com',
+  });
 
-  try {
-    // Get the web automation agent
-    const agent = mastra.getAgent('webAutomationAgent');
-    
-    // Example 1: Simple website screenshot and analysis
-    console.log('📊 Example 1: Taking a screenshot and analyzing a website...\n');
-    
-    const analysisResponse = await agent.stream([
-      {
-        role: 'user',
-        content: `Please visit https://example.com, take a screenshot, and analyze what you see. Describe the layout, content, and overall design of the page.`
+  const objective = await input({
+    message: 'What do you want to accomplish on this website?',
+    default: 'Navigate and explore the website',
+  });
+
+  // Get the workflow and create a run
+  const workflow = mastra.getWorkflow('webAutomationWorkflow');
+  const run = await workflow.createRunAsync();
+
+  console.log(`\n📝 Objective: ${objective}`);
+  console.log(`🌐 URL: ${url}\n`);
+
+  // Start the workflow
+  const result = await run.start({
+    inputData: { url, objective },
+  });
+
+  console.log('\n📊 Initial Result:', result.status);
+
+  // Handle the suspend/resume loop
+  let currentResult = result;
+  let iterationCount = 0;
+  const maxIterations = 5; // Prevent infinite loops
+
+  while (currentResult.status === 'suspended' && iterationCount < maxIterations) {
+    iterationCount++;
+    console.log(`\n🔄 Iteration ${iterationCount} - Workflow suspended, need user input`);
+
+    // Check if this is the action planning step that's suspended
+    const suspendedSteps = currentResult.suspended;
+    if (suspendedSteps && suspendedSteps.length > 0) {
+      const stepId = suspendedSteps[0];
+      
+      if (stepId.includes('action-planning')) {
+        // Get the page analysis from the navigation step
+        const navigationStepResult = currentResult.steps?.['navigation'];
+        if (navigationStepResult?.status === 'success') {
+          const { pageAnalysis, availableActions } = navigationStepResult.output;
+          
+          console.log('\n📋 Page Analysis:');
+          console.log(pageAnalysis);
+          
+          console.log('\n🎯 Available Actions:');
+          availableActions.forEach((action: string, index: number) => {
+            console.log(`${index + 1}. ${action}`);
+          });
+
+          // Get user input for the next action
+          const selectedAction = await select<string>({
+            message: 'Choose your next action:',
+            choices: availableActions.map((action: string) => ({
+              name: action,
+              value: action,
+            })),
+          });
+
+          const actionDetails = await input({
+            message: 'Provide any additional details for this action (e.g., text to search, element to click):',
+            default: '',
+          });
+
+          console.log(`\n🎬 Selected Action: ${selectedAction}`);
+          if (actionDetails) {
+            console.log(`📝 Details: ${actionDetails}`);
+          }
+
+          // Resume the workflow with the user's choice
+          currentResult = await run.resume({
+            step: actionPlanningStep,
+            resumeData: {
+              selectedAction,
+              actionDetails,
+            },
+          });
+
+          console.log(`\n✅ Resumed - Status: ${currentResult.status}`);
+        }
       }
-    ]);
-
-    console.log('Analysis Response:');
-    for await (const chunk of analysisResponse.textStream) {
-      process.stdout.write(chunk);
     }
-    
-    console.log('\n\n' + '='.repeat(50) + '\n');
 
-    // Example 2: Data extraction
-    console.log('🔍 Example 2: Extracting data from a website...\n');
-    
-    const extractionResponse = await agent.stream([
-      {
-        role: 'user',
-        content: `Please visit https://news.ycombinator.com and extract the top 5 article headlines. Take a screenshot first to see the page, then extract the headlines and their scores if visible.`
+    // If completed, show final results
+    if (currentResult.status === 'success') {
+      console.log('\n🎉 Workflow completed successfully!');
+      
+      const completionStep = currentResult.steps?.['completion'];
+      if (completionStep?.status === 'success') {
+        const { isComplete, summary, nextActions } = completionStep.output;
+        
+        console.log('\n📝 Final Summary:');
+        console.log(summary);
+        
+        if (!isComplete && nextActions) {
+          console.log('\n🔄 Suggested next actions:');
+          nextActions.forEach((action: string, index: number) => {
+            console.log(`${index + 1}. ${action}`);
+          });
+          
+          const continueWorkflow = await select({
+            message: 'Would you like to continue with more actions?',
+            choices: [
+              { name: 'Yes, continue automation', value: true },
+              { name: 'No, finish here', value: false },
+            ],
+          });
+
+          if (continueWorkflow) {
+            console.log('\n🔄 To continue, you could start a new workflow run or implement looping logic');
+          }
+        }
       }
-    ]);
-
-    console.log('Extraction Response:');
-    for await (const chunk of extractionResponse.textStream) {
-      process.stdout.write(chunk);
-    }
-    
-    console.log('\n\n' + '='.repeat(50) + '\n');
-
-    // Example 3: Interactive web task
-    console.log('🌐 Example 3: Interactive form filling...\n');
-    
-    const interactiveResponse = await agent.stream([
-      {
-        role: 'user',
-        content: `Go to https://httpbin.org/forms/post and:
-        1. Take a screenshot first to see the form
-        2. Fill in the form with test data (use "TestUser" for name and "test@example.com" for email)
-        3. Take another screenshot to show the filled form
-        4. Submit the form and take a final screenshot of the result
-        Please explain each step as you do it.`
-      }
-    ]);
-
-    console.log('Interactive Response:');
-    for await (const chunk of interactiveResponse.textStream) {
-      process.stdout.write(chunk);
+      break;
     }
 
-  } catch (error) {
-    console.error('❌ Error running web automation examples:', error);
+    // Handle failure
+    if (currentResult.status === 'failed') {
+      console.log('\n❌ Workflow failed');
+      console.error(currentResult.error);
+      break;
+    }
   }
+
+  if (iterationCount >= maxIterations) {
+    console.log('\n⚠️ Maximum iterations reached. Workflow may need manual intervention.');
+  }
+
+  console.log('\n🏁 Web automation session ended');
 }
 
-// Helper functions for common web automation tasks
-export const webAutomationHelpers = {
-  // Take a screenshot of any website with proper file saving
-  takeScreenshot: async (url: string, context?: string) => {
-    const agent = mastra.getAgent('webAutomationAgent');
-    const sessionId = createScreenshotSession();
-    const filename = generateScreenshotFilename(sessionId, context || 'screenshot');
-    
-    return agent.stream([
-      {
-        role: 'user',
-        content: `Please visit ${url} and take a screenshot using EXACTLY this filename: "${filename}". After taking the screenshot, confirm the exact filename where it was saved. Describe what you see on the page.`
-      }
-    ]);
-  },
+// Run the example
+runWebAutomationWorkflow().catch((error) => {
+  console.error('❌ Error running web automation workflow:', error);
+});
 
-  // Extract specific data from a website
-  extractData: async (url: string, dataDescription: string) => {
-    const agent = mastra.getAgent('webAutomationAgent');
-    const sessionId = createScreenshotSession();
-    const screenshotFilename = generateScreenshotFilename(sessionId, 'data-extraction');
-    
-    return agent.stream([
-      {
-        role: 'user',
-        content: `Please visit ${url} and extract ${dataDescription}. First take a screenshot using EXACTLY this filename: "${screenshotFilename}" to understand the page layout, then extract the requested data in a structured format. Confirm the screenshot filename in your response.`
-      }
-    ]);
-  },
-
-  // Analyze a website for specific purposes
-  analyzeWebsite: async (url: string, analysisType: string) => {
-    const agent = mastra.getAgent('webAutomationAgent');
-    return agent.stream([
-      {
-        role: 'user',
-        content: `Please visit ${url} and perform a ${analysisType} analysis. Take a screenshot and provide detailed insights based on what you observe.`
-      }
-    ]);
-  },
-
-  // Fill and submit a form
-  fillForm: async (url: string, formData: Record<string, string>) => {
-    const agent = mastra.getAgent('webAutomationAgent');
-    const sessionId = createScreenshotSession();
-    const initialScreenshot = generateScreenshotFilename(sessionId, 'form-initial');
-    const filledScreenshot = generateScreenshotFilename(sessionId, 'form-filled');
-    const resultScreenshot = generateScreenshotFilename(sessionId, 'form-result');
-    
-    const formDataDescription = Object.entries(formData)
-      .map(([key, value]) => `${key}: "${value}"`)
-      .join(', ');
-    
-    return agent.stream([
-      {
-        role: 'user',
-        content: `Please visit ${url} and complete this form automation task with these exact screenshots:
-        
-        1. Take initial screenshot using EXACTLY this filename: "${initialScreenshot}"
-        2. Fill out the form with this data: ${formDataDescription}
-        3. Take screenshot of filled form using EXACTLY this filename: "${filledScreenshot}"
-        4. Submit the form
-        5. Take final result screenshot using EXACTLY this filename: "${resultScreenshot}"
-        
-        CRITICAL: Use the exact filenames provided above. Do not modify them.
-        Confirm each screenshot filename in your response.`
-      }
-    ]);
-  }
-};
-
-// Run examples if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runWebAutomationExamples()
-    .then(() => {
-      console.log('\n✅ Web automation examples completed!');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('❌ Examples failed:', error);
-      process.exit(1);
-    });
-} 
+export { runWebAutomationWorkflow }; 
