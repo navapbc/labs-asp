@@ -80,10 +80,10 @@ const navigationStep = createStep({
   },
 });
 
-// Step 2: Action planning step that suspends for user input
+// Step 2: Action planning step that can proceed autonomously or suspend for user input
 const actionPlanningStep = createStep({
   id: 'action-planning',
-  description: 'Plan the next action based on page analysis',
+  description: 'Determine next action - proceed automatically for obvious steps or pause for user input',
   inputSchema: z.object({
     url: z.string(),
     objective: z.string(),
@@ -93,7 +93,7 @@ const actionPlanningStep = createStep({
   outputSchema: z.object({
     url: z.string(),
     objective: z.string(),
-    selectedAction: z.string().describe('The action selected by the user'),
+    selectedAction: z.string().describe('The action selected by the agent or user'),
     actionDetails: z.string().describe('Additional details for the action'),
   }),
   suspendSchema: z.object({
@@ -104,25 +104,81 @@ const actionPlanningStep = createStep({
     selectedAction: z.string().describe('The action to perform'),
     actionDetails: z.string().describe('Additional details for the action'),
   }),
-  execute: async ({ inputData, resumeData, suspend }) => {
-    if (!resumeData?.selectedAction) {
-      logger.info(`Suspending workflow to await user action selection. ${inputData?.availableActions?.length || 0} actions available`);
+  execute: async ({ inputData, resumeData, suspend, mastra }) => {
+    if (resumeData?.selectedAction) {
+      logger.info(`Resuming workflow with user-selected action: ${resumeData.selectedAction}`);
+      return {
+        url: inputData?.url || '',
+        objective: inputData?.objective || '',
+        selectedAction: resumeData.selectedAction,
+        actionDetails: resumeData.actionDetails,
+      };
+    }
 
+    // Let the agent decide whether to proceed automatically or pause
+    const agent = mastra?.getAgent('webAutomationAgent');
+    if (!agent) {
+      throw new Error('Web automation agent not found');
+    }
+
+    const prompt = `Based on your page analysis, decide whether to proceed automatically or pause for user input.
+
+    Page Analysis: ${inputData?.pageAnalysis}
+    Available Actions: ${inputData?.availableActions?.join(', ')}
+    Objective: ${inputData?.objective}
+
+    Follow your Autonomous Progression Protocol:
+    - PROCEED AUTOMATICALLY for navigation (Next, Continue, Begin buttons, informational pages)
+    - PAUSE FOR USER INPUT only when you reach forms requiring user data or decisions
+
+    Key question: Does this page require USER DATA or USER DECISIONS, or is it just navigation?
+
+    Respond in this exact format:
+    DECISION: [PROCEED_AUTO or PAUSE_FOR_USER]
+    ACTION: [specific action to take if proceeding]
+    DETAILS: [any additional details]
+    REASON: [brief explanation of your decision]`;
+
+    const response = await agent.stream([
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ]);
+
+    let decisionText = '';
+    for await (const chunk of response.textStream) {
+      decisionText += chunk;
+    }
+
+    // Parse the agent's decision
+    const shouldProceed = decisionText.includes('DECISION: PROCEED_AUTO');
+    
+    if (shouldProceed) {
+      // Extract action and details from the response
+      const actionMatch = decisionText.match(/ACTION: ([^\n]+)/);
+      const detailsMatch = decisionText.match(/DETAILS: ([^\n]+)/);
+      
+      const selectedAction = actionMatch?.[1] || 'Continue with next step';
+      const actionDetails = detailsMatch?.[1] || 'Proceeding with obvious next step';
+      
+      logger.info(`Agent proceeding automatically with action: ${selectedAction}`);
+      
+      return {
+        url: inputData?.url || '',
+        objective: inputData?.objective || '',
+        selectedAction,
+        actionDetails,
+      };
+    } else {
+      logger.info(`Agent pausing for user input. ${inputData?.availableActions?.length || 0} actions available`);
+      
       // Suspend to get user input on what action to take
       return suspend({
         pageAnalysis: inputData?.pageAnalysis || '',
         availableActions: inputData?.availableActions || [],
       });
     }
-
-    logger.info(`Resuming workflow with user-selected action: ${resumeData.selectedAction}`);
-
-    return {
-      url: inputData?.url || '',
-      objective: inputData?.objective || '',
-      selectedAction: resumeData.selectedAction,
-      actionDetails: resumeData.actionDetails,
-    };
   },
 });
 
@@ -161,10 +217,14 @@ const actionExecutionStep = createStep({
 
     Please:
     1. Perform the requested action
-    2. Take a snapshot after the action to show the result
-    3. Analyze if the action was successful
-    4. Determine if we've achieved the objective or if more actions are needed
-    5. Describe the current state of the page
+    2. If you're adding an address field and a suggested address is displayed, always select and use the suggested address
+    3. When working with forms: focus ONLY on required fields and note any disabled fields without attempting to fill them
+    4. Take a snapshot after the action to show the result
+    5. Analyze if the action was successful
+    6. Determine if we've achieved the objective or if more actions are needed
+    7. Describe the current state of the page
+
+    Follow the Address Handling Protocol and Form Field Handling Protocol from your instructions.
 
     Be precise and report exactly what happened.`;
     
