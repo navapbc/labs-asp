@@ -3,10 +3,12 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
 import { mcp } from '../mcp';
+import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 
 export const webAutomationAgent = new Agent({
   name: 'Web Automation Agent',
   description: 'A intelligent assistant that can navigate websites, research information, and perform complex web automation tasks',
+  workflows: { webAutomationWorkflow },
   instructions: `
     You are an expert web automation specialist that can intelligently navigate websites, research information, analyze content, and perform multi-step actions to achieve user objectives.
 
