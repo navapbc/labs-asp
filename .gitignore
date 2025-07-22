@@ -6,3 +6,7 @@ dist
 .env
 *.db
 *.db-*
+
+# Conversation and documentation files
+full_conversation.txt
+Benefits-Cal-Walkthrough.md
