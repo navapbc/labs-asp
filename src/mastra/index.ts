@@ -11,19 +11,28 @@ import { webAutomationAgent } from './agents/web-automation-agent';
 export const mastra = new Mastra({
   workflows: { 
     weatherWorkflow,
-    webAutomationWorkflow,
-    dataExtractionWorkflow,
+    webAutomationWorkflow
   },
   agents: { 
     weatherAgent,
     webAutomationAgent,
   },
   storage: new LibSQLStore({
-    // stores telemetry, evals, ... into memory storage, if it needs to persist, change to file:../mastra.db
-    url: ":memory:",
+    url: "file:../mastra.db",
   }),
   logger: new PinoLogger({
     name: 'Mastra',
-    level: 'info',
+    level: 'debug', // Changed from 'info' to 'debug' to capture more error details
   }),
+
+  telemetry: {
+    serviceName: 'mastra-test-app',
+    enabled: true,
+    sampling: {
+      type: 'always_on',
+    },
+    export: {
+      type: 'console', // Use console for development; switch to 'otlp' for production
+    },
+  },
 });

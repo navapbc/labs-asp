@@ -5,7 +5,7 @@ import { z } from 'zod';
 // Create a logger instance for this workflow
 const logger = new PinoLogger({
   name: 'WebAutomationWorkflow',
-  level: 'info',
+  level: 'debug', // Changed from 'info' to 'debug' for better error visibility
 });
 
 // Step 1: Initial website navigation and analysis
@@ -24,15 +24,19 @@ const navigationStep = createStep({
   }),
   execute: async ({ inputData, mastra }) => {
     if (!inputData) {
-      throw new Error('Input data not found');
+      const error = new Error('Input data not found');
+      logger.error('Navigation step failed: Input data not found', { error });
+      throw error;
     }
 
     const agent = mastra?.getAgent('webAutomationAgent');
     if (!agent) {
-      throw new Error('Web automation agent not found');
+      const error = new Error('Web automation agent not found');
+      logger.error('Navigation step failed: Agent not found', { error });
+      throw error;
     }
 
-    logger.info(`Starting navigation to URL: ${inputData.url} with objective: ${inputData.objective}`);
+    logger.info(`Starting navigation to URL: ${inputData.url} with objective: ${inputData.objective}`, { url: inputData.url, objective: inputData.objective });
 
     const prompt = `Navigate to ${inputData.url} and analyze the page for automation opportunities.
 
@@ -47,36 +51,41 @@ const navigationStep = createStep({
 
     Provide a clear analysis of what you see and what actions are available.`;
     
-    const response = await agent.stream([
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ]);
+    try {
+      const response = await agent.stream([
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ]);
 
-    let analysisText = '';
-    for await (const chunk of response.textStream) {
-      process.stdout.write(chunk);
-      analysisText += chunk;
+      let analysisText = '';
+      for await (const chunk of response.textStream) {
+        process.stdout.write(chunk);
+        analysisText += chunk;
+      }
+
+      // Extract available actions (in a real implementation, this could parse the agent's response)
+      const availableActions = [
+        'Take another snapshot',
+        'Click on a specific element',
+        'Fill out a form',
+        'Search for something',
+        'Navigate to another page',
+      ];
+
+      logger.info(`Navigation completed for ${inputData.url}. Found ${availableActions.length} actions. Analysis length: ${analysisText.length} chars`);
+      
+      return {
+        url: inputData.url,
+        objective: inputData.objective,
+        pageAnalysis: analysisText,
+        availableActions,
+      };
+    } catch (error) {
+      logger.error(`Navigation step failed for ${inputData.url} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
     }
-
-    // Extract available actions (in a real implementation, this could parse the agent's response)
-    const availableActions = [
-      'Take another snapshot',
-      'Click on a specific element',
-      'Fill out a form',
-      'Search for something',
-      'Navigate to another page',
-    ];
-
-    logger.info(`Navigation and analysis completed successfully for ${inputData.url}. Found ${availableActions.length} available actions`);
-    
-    return {
-      url: inputData.url,
-      objective: inputData.objective,
-      pageAnalysis: analysisText,
-      availableActions,
-    };
   },
 });
 
@@ -118,7 +127,9 @@ const actionPlanningStep = createStep({
     // Let the agent decide whether to proceed automatically or pause
     const agent = mastra?.getAgent('webAutomationAgent');
     if (!agent) {
-      throw new Error('Web automation agent not found');
+      const error = new Error('Web automation agent not found');
+      logger.error('Action planning step failed: Agent not found', { error });
+      throw error;
     }
 
     const prompt = `Based on your page analysis, decide whether to proceed automatically or pause for user input.
@@ -139,45 +150,50 @@ const actionPlanningStep = createStep({
     DETAILS: [any additional details]
     REASON: [brief explanation of your decision]`;
 
-    const response = await agent.stream([
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ]);
+    try {
+      const response = await agent.stream([
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ]);
 
-    let decisionText = '';
-    for await (const chunk of response.textStream) {
-      decisionText += chunk;
-    }
+      let decisionText = '';
+      for await (const chunk of response.textStream) {
+        decisionText += chunk;
+      }
 
-    // Parse the agent's decision
-    const shouldProceed = decisionText.includes('DECISION: PROCEED_AUTO');
-    
-    if (shouldProceed) {
-      // Extract action and details from the response
-      const actionMatch = decisionText.match(/ACTION: ([^\n]+)/);
-      const detailsMatch = decisionText.match(/DETAILS: ([^\n]+)/);
+      // Parse the agent's decision
+      const shouldProceed = decisionText.includes('DECISION: PROCEED_AUTO');
       
-      const selectedAction = actionMatch?.[1] || 'Continue with next step';
-      const actionDetails = detailsMatch?.[1] || 'Proceeding with obvious next step';
-      
-      logger.info(`Agent proceeding automatically with action: ${selectedAction}`);
-      
-      return {
-        url: inputData?.url || '',
-        objective: inputData?.objective || '',
-        selectedAction,
-        actionDetails,
-      };
-    } else {
-      logger.info(`Agent pausing for user input. ${inputData?.availableActions?.length || 0} actions available`);
-      
-      // Suspend to get user input on what action to take
-      return suspend({
-        pageAnalysis: inputData?.pageAnalysis || '',
-        availableActions: inputData?.availableActions || [],
-      });
+      if (shouldProceed) {
+        // Extract action and details from the response
+        const actionMatch = decisionText.match(/ACTION: ([^\n]+)/);
+        const detailsMatch = decisionText.match(/DETAILS: ([^\n]+)/);
+        
+        const selectedAction = actionMatch?.[1] || 'Continue with next step';
+        const actionDetails = detailsMatch?.[1] || 'Proceeding with obvious next step';
+        
+        logger.info(`Agent proceeding automatically with action: ${selectedAction} - ${actionDetails}`);
+        
+        return {
+          url: inputData?.url || '',
+          objective: inputData?.objective || '',
+          selectedAction,
+          actionDetails,
+        };
+      } else {
+        logger.info(`Agent pausing for user input. ${inputData?.availableActions?.length || 0} actions available`);
+        
+        // Suspend to get user input on what action to take
+        return suspend({
+          pageAnalysis: inputData?.pageAnalysis || '',
+          availableActions: inputData?.availableActions || [],
+        });
+      }
+    } catch (error) {
+      logger.error(`Action planning step failed - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
     }
   },
 });
@@ -199,12 +215,16 @@ const actionExecutionStep = createStep({
   }),
   execute: async ({ inputData, mastra }) => {
     if (!inputData) {
-      throw new Error('Input data not found');
+      const error = new Error('Input data not found');
+      logger.error('Action execution step failed: Input data not found', { error });
+      throw error;
     }
 
     const agent = mastra?.getAgent('webAutomationAgent');
     if (!agent) {
-      throw new Error('Web automation agent not found');
+      const error = new Error('Web automation agent not found');
+      logger.error('Action execution step failed: Agent not found', { error });
+      throw error;
     }
 
     logger.info(`Executing web action: ${inputData.selectedAction} for objective: ${inputData.objective}`);
@@ -228,30 +248,35 @@ const actionExecutionStep = createStep({
 
     Be precise and report exactly what happened.`;
     
-    const response = await agent.stream([
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ]);
+    try {
+      const response = await agent.stream([
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ]);
 
-    let actionResult = '';
-    for await (const chunk of response.textStream) {
-      process.stdout.write(chunk);
-      actionResult += chunk;
+      let actionResult = '';
+      for await (const chunk of response.textStream) {
+        process.stdout.write(chunk);
+        actionResult += chunk;
+      }
+
+      // In a real implementation, you'd parse the response to determine if more steps are needed
+      const nextStepNeeded = !actionResult.toLowerCase().includes('objective completed') && 
+                             !actionResult.toLowerCase().includes('task finished');
+
+      logger.info(`Action execution completed: ${inputData.selectedAction}. Next step needed: ${nextStepNeeded}. Result length: ${actionResult.length} chars`);
+      
+      return {
+        actionResult,
+        pageState: actionResult,
+        nextStepNeeded,
+      };
+    } catch (error) {
+      logger.error(`Action execution failed for ${inputData.selectedAction} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
     }
-
-    // In a real implementation, you'd parse the response to determine if more steps are needed
-    const nextStepNeeded = !actionResult.toLowerCase().includes('objective completed') && 
-                           !actionResult.toLowerCase().includes('task finished');
-
-    logger.info(`Action execution completed: ${inputData.selectedAction}. Next step needed: ${nextStepNeeded}`);
-    
-    return {
-      actionResult,
-      pageState: actionResult,
-      nextStepNeeded,
-    };
   },
 });
 
@@ -271,13 +296,15 @@ const completionStep = createStep({
   }),
   execute: async ({ inputData }) => {
     if (!inputData) {
-      throw new Error('Input data not found');
+      const error = new Error('Input data not found');
+      logger.error('Completion step failed: Input data not found', { error });
+      throw error;
     }
 
     // Simple completion logic - in a real implementation this could be more sophisticated
     const isComplete = !inputData.nextStepNeeded;
 
-    logger.info(`Workflow completion assessment: ${isComplete ? 'Complete' : 'Incomplete'}. Next step needed: ${inputData.nextStepNeeded}`);
+    logger.info(`Workflow completion assessment: ${isComplete ? 'Complete' : 'Incomplete'}. Next step needed: ${inputData.nextStepNeeded}. Result length: ${inputData.actionResult.length} chars`);
     
     return {
       isComplete,

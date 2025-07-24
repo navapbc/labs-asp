@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { MCPClient } from "@mastra/mcp";
 
-// Configure MCPClient to connect to the Playwright server
 export const mcp = new MCPClient({
   servers: {
     playwright: {
