@@ -34,7 +34,7 @@ const memoryAgent = new Agent({
     You are a helpful assistant with memory. You should remember user preferences such as their preferred language and recall them when asked.
     If the user says something like "My preferred language is Spanish", save that in working memory. If the user asks "What is my preferred language?", recall it from memory.
   `,
-  model: openai('gpt-4o'),
+  model: openai('gpt-4o-mini'),
   memory: memory,
 });
 
