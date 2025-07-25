@@ -1,9 +1,24 @@
-import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
-import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
+import { Memory } from '@mastra/memory';
 import { mcp } from '../mcp';
+import { openai } from '@ai-sdk/openai';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
+
+const memory = new Memory({
+  storage: new LibSQLStore({ url: 'file:../mastra-memory.db' }),
+  options: {
+    workingMemory: { 
+      enabled: true,
+      scope: 'resource',
+      template: `
+        - **Name**
+        - **Description**
+        - **Value**
+      `,
+     },
+  },
+});
 
 export const webAutomationAgent = new Agent({
   name: 'Web Automation Agent',
@@ -114,9 +129,5 @@ export const webAutomationAgent = new Agent({
   `,
   model: openai('gpt-4.1-mini'),
   tools: await mcp.getTools(),
-  memory: new Memory({
-    storage: new LibSQLStore({
-      url: 'file:../mastra.db',
-    }),
-  }),
-}); 
+  memory: memory,
+});

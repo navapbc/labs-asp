@@ -1,12 +1,12 @@
-
+import { LibSQLStore } from '@mastra/libsql';
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
-import { LibSQLStore } from '@mastra/libsql';
-import { weatherWorkflow } from './workflows/weather-workflow';
-import { weatherAgent } from './agents/weather-agent';
-import { webAutomationWorkflow } from './workflows/web-automation-workflow';
 import { dataExtractionWorkflow } from './workflows/data-extraction-workflow';
+import memoryAgent from './agents/memory-agent';
+import { weatherAgent } from './agents/weather-agent';
+import { weatherWorkflow } from './workflows/weather-workflow';
 import { webAutomationAgent } from './agents/web-automation-agent';
+import { webAutomationWorkflow } from './workflows/web-automation-workflow';
 
 export const mastra = new Mastra({
   workflows: { 
@@ -16,6 +16,7 @@ export const mastra = new Mastra({
   agents: { 
     weatherAgent,
     webAutomationAgent,
+    memoryAgent,
   },
   storage: new LibSQLStore({
     url: "file:../mastra.db",
