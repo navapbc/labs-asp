@@ -1,22 +1,46 @@
+import { LibSQLStore, LibSQLVector } from '@mastra/libsql';
+
 import { Agent } from '@mastra/core/agent';
-import { LibSQLStore } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
 import { mcp } from '../mcp';
 import { openai } from '@ai-sdk/openai';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 
+const base = process.env.DB_BASE || "../../";
+// Path is relative to .mastra/output/ when bundled
+const storage = new LibSQLStore({
+  url: `file:${base}memory.db`,
+});
+
+// Initialize vector store for semantic search
+const vectorStore = new LibSQLVector({
+  connectionUrl: `file:${base}memory.db`,
+});
+// Create a memory instance with workingMemory enabled
 const memory = new Memory({
-  storage: new LibSQLStore({ url: 'file:../mastra-memory.db' }),
+  storage: storage,
+  vector: vectorStore,
+  embedder: openai.embedding('text-embedding-3-small'),
   options: {
+    lastMessages: 10,
     workingMemory: { 
       enabled: true,
       scope: 'resource',
       template: `
         - **Name**
         - **Description**
-        - **Value**
+        - **PreferredLanguage**
+        - **Address**
+        - **PhoneNumber**
+        - **Email**
+        - **DateOfBirth**
       `,
      },
+     semanticRecall: {
+        topK: 5,
+        messageRange: 2,
+        scope: "resource"
+     }
   },
 });
 
