@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Participant {
+  id                    String               @id @default(cuid())
+  participantId         String               @unique
+  firstName             String
+  lastName              String
+  dateOfBirth           DateTime
+  homeAddress           String
+  mailingAddress        String?
+  mobileNumber          String
+  canReceiveTexts       Boolean              @default(false)
+  preferredLanguage     String               @default("English")
+  email                 String?
+  hasMediCal            Boolean              @default(false)
+  mediCalCaseNumber     String?
+  mediCalAmount         Decimal?
+  isPregnant            Boolean?
+  isPostPartum          Boolean?
+  isInfantBreastfeeding Boolean?
+  isInfantFormula       Boolean?
+  hasChildren0to5       Boolean?
+  hasDependents         Boolean?
+  monthlyIncome         Decimal?
+  occupation            String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  household             HouseholdDependent[]
+
+  @@map("participants")
+}
+
+model HouseholdDependent {
+  id            String      @id @default(cuid())
+  participantId String
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  relationship  String
+  isInfant      Boolean?
+  isChild0to5   Boolean?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@map("household_dependents")
+}
+

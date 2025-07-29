@@ -7,6 +7,23 @@ dist
 *.db
 *.db-*
 
+# Database files at repository root
+/mastra.db
+/mastra.db-*
+/mastra-memory.db
+/mastra-memory.db-*
+
 # Conversation and documentation files
 full_conversation.txt
 Benefits-Cal-Walkthrough.md
+
+/src/generated/prisma
+
+# FuseBox cache
+.fusebox/
+
+# Mastra database files
+mastra.db
+mastra.db-*
+mastra-memory.db
+mastra-memory.db-*
