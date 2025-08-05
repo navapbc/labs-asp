@@ -1,6 +1,21 @@
 import { createTool } from '@mastra/core/tools';
-import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
+import {
+  createParticipantSchema,
+  createHouseholdDependentSchema,
+  updateParticipantWicInfoSchema,
+  updateDependentWicInfoSchema,
+  updateParticipantDemographicsSchema,
+  searchByNameSchema,
+  searchByLocationSchema,
+  getParticipantByIdSchema,
+  getParticipantWithHouseholdSchema,
+  participantResponseSchema,
+  dependentResponseSchema,
+  participantSearchResponseSchema,
+  participantWithHouseholdResponseSchema,
+  getParticipantByIdResponseSchema,
+} from '../types/participant-types';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -26,13 +41,8 @@ const prisma = new PrismaClient();
 export const getParticipantById = createTool({
   id: 'get-participant-by-id',
   description: 'Get a WIC benefits participant by their unique participant ID. Null values in WIC fields indicate unknown information that needs to be collected.',
-  inputSchema: z.object({
-    participantId: z.string().describe('The unique participant ID (e.g., WIC-SJ-2025-001)'),
-  }),
-  outputSchema: z.object({
-    participant: z.any().nullable(),
-    found: z.boolean(),
-  }),
+  inputSchema: getParticipantByIdSchema,
+  outputSchema: getParticipantByIdResponseSchema,
   execute: async ({ context }) => {
     try {
       const participant = await prisma.participant.findUnique({
@@ -60,13 +70,8 @@ export const getParticipantById = createTool({
 export const searchParticipantsByName = createTool({
   id: 'search-participants-by-name',
   description: 'Search for WIC benefits participants by full name (first and last name) or partial name',
-  inputSchema: z.object({
-    name: z.string().describe('Full name (e.g., "Sarah Johnson") or partial name to search for'),
-  }),
-  outputSchema: z.object({
-    participants: z.array(z.any()),
-    count: z.number(),
-  }),
+  inputSchema: searchByNameSchema,
+  outputSchema: participantSearchResponseSchema,
   execute: async ({ context }) => {
     try {
       const nameInput = context.name.trim();
@@ -131,14 +136,8 @@ export const searchParticipantsByName = createTool({
 export const getParticipantWithHousehold = createTool({
   id: 'get-participant-with-household',
   description: 'Get a participant and all their household dependents',
-  inputSchema: z.object({
-    participantId: z.string().describe('The unique participant ID'),
-  }),
-  outputSchema: z.object({
-    participant: z.any().nullable(),
-    household: z.array(z.any()),
-    totalMembers: z.number(),
-  }),
+  inputSchema: getParticipantWithHouseholdSchema,
+  outputSchema: participantWithHouseholdResponseSchema,
   execute: async ({ context }) => {
     try {
       const participant = await prisma.participant.findUnique({
@@ -178,13 +177,8 @@ export const getParticipantWithHousehold = createTool({
 export const searchParticipantsByLocation = createTool({
   id: 'search-participants-by-location',
   description: 'Search for participants by city or address',
-  inputSchema: z.object({
-    location: z.string().describe('City name or address part to search for (e.g., "Riverside", "Oak Street")'),
-  }),
-  outputSchema: z.object({
-    participants: z.array(z.any()),
-    count: z.number(),
-  }),
+  inputSchema: searchByLocationSchema,
+  outputSchema: participantSearchResponseSchema,
   execute: async ({ context }) => {
     try {
       const participants = await prisma.participant.findMany({
@@ -227,36 +221,43 @@ export const searchParticipantsByLocation = createTool({
 export const createParticipant = createTool({
   id: 'create-participant',
   description: 'Create a new WIC benefits participant. WIC eligibility fields should be left undefined initially so agent can collect during application.',
-  inputSchema: z.object({
-    participantId: z.string().describe('Unique participant ID'),
-    firstName: z.string().describe('First name'),
-    lastName: z.string().describe('Last name'),
-    dateOfBirth: z.string().describe('Date of birth (YYYY-MM-DD format)'),
-    homeAddress: z.string().describe('Home address'),
-    mobileNumber: z.string().describe('Mobile phone number'),
-    email: z.string().optional().describe('Email address'),
-    monthlyIncome: z.number().optional().describe('Monthly income amount'),
-    occupation: z.string().optional().describe('Occupation'),
-  }),
-  outputSchema: z.object({
-    participant: z.any().nullable(),
-    success: z.boolean(),
-    error: z.string().optional(),
-  }),
+  inputSchema: createParticipantSchema,
+  outputSchema: participantResponseSchema,
   execute: async ({ context }) => {
     try {
+      const participantData: any = {
+        participantId: context.participantId,
+        firstName: context.firstName,
+        preferredLanguage: context.preferredLanguage || 'English',
+        hasMediCal: context.benefitsReceiving ? context.benefitsReceiving.toLowerCase().includes('medi-cal') : false,
+        // WIC-specific fields left as null for agent to determine
+        isPregnant: null,
+        isPostPartum: null,
+        isInfantBreastfeeding: null,
+        isInfantFormula: null,
+        hasChildren0to5: null,
+        hasDependents: null,
+      };
+
+      // Only add optional fields if they have values
+      if (context.lastName) participantData.lastName = context.lastName;
+      if (context.dateOfBirth) participantData.dateOfBirth = new Date(context.dateOfBirth);
+      if (context.homeAddress) participantData.homeAddress = context.homeAddress;
+      if (context.mobileNumber) participantData.mobileNumber = context.mobileNumber;
+      if (context.email) participantData.email = context.email;
+      if (context.benefitsReceiving) participantData.benefitsReceiving = context.benefitsReceiving;
+      if (context.onProbation !== undefined) participantData.onProbation = context.onProbation;
+      if (context.isVeteran !== undefined) participantData.isVeteran = context.isVeteran;
+      if (context.relationshipStatus) participantData.relationshipStatus = context.relationshipStatus;
+      if (context.sexAtBirth) participantData.sexAtBirth = context.sexAtBirth;
+      if (context.genderIdentity) participantData.genderIdentity = context.genderIdentity;
+      if (context.ethnicity) participantData.ethnicity = context.ethnicity;
+      if (context.race) participantData.race = context.race;
+      if (context.monthlyIncome) participantData.monthlyIncome = context.monthlyIncome;
+      if (context.occupation) participantData.occupation = context.occupation;
+
       const participant = await prisma.participant.create({
-        data: {
-          participantId: context.participantId,
-          firstName: context.firstName,
-          lastName: context.lastName,
-          dateOfBirth: new Date(context.dateOfBirth),
-          homeAddress: context.homeAddress,
-          mobileNumber: context.mobileNumber,
-          email: context.email || null,
-          monthlyIncome: context.monthlyIncome || null,
-          occupation: context.occupation || null,
-        },
+        data: participantData,
       });
 
       return {
@@ -278,32 +279,30 @@ export const createParticipant = createTool({
 export const createHouseholdDependent = createTool({
   id: 'create-household-dependent',
   description: 'Create a new household dependent for a participant. Age-related WIC fields should be left undefined initially for agent to determine.',
-  inputSchema: z.object({
-    participantId: z.string().describe('The unique participant ID'),
-    firstName: z.string().describe('Dependent first name'),
-    lastName: z.string().describe('Dependent last name'),
-    dateOfBirth: z.string().optional().describe('Date of birth (YYYY-MM-DD format) - can be placeholder if unknown'),
-    relationship: z.string().describe('Relationship to participant (e.g., "child", "spouse")'),
-  }),
-  outputSchema: z.object({
-    dependent: z.any().nullable(),
-    success: z.boolean(),
-    error: z.string().optional(),
-  }),
+  inputSchema: createHouseholdDependentSchema,
+  outputSchema: dependentResponseSchema,
   execute: async ({ context }) => {
     try {
-      // Use placeholder date if not provided or use provided date
-      const birthDate = context.dateOfBirth ? new Date(context.dateOfBirth) : new Date('2000-01-01');
-      
+      const dependentData: any = {
+        participantId: context.participantId,
+        firstName: context.firstName,
+        // Age-related WIC fields left undefined - to be determined by agent
+        isInfant: null,
+        isChild0to5: null,
+      };
+
+      // Only add optional fields if they have values
+      if (context.lastName) dependentData.lastName = context.lastName;
+      if (context.age !== undefined) dependentData.age = context.age;
+      if (context.dateOfBirth) dependentData.dateOfBirth = new Date(context.dateOfBirth);
+      if (context.relationship) dependentData.relationship = context.relationship;
+      if (context.sexAtBirth) dependentData.sexAtBirth = context.sexAtBirth;
+      if (context.genderIdentity) dependentData.genderIdentity = context.genderIdentity;
+      if (context.ethnicity) dependentData.ethnicity = context.ethnicity;
+      if (context.race) dependentData.race = context.race;
+
       const dependent = await prisma.householdDependent.create({
-        data: {
-          participantId: context.participantId,
-          firstName: context.firstName,
-          lastName: context.lastName,
-          dateOfBirth: birthDate,
-          relationship: context.relationship,
-          // Age-related WIC fields left undefined - to be determined by agent
-        },
+        data: dependentData,
       });
 
       return {
@@ -325,20 +324,8 @@ export const createHouseholdDependent = createTool({
 export const updateParticipantWicInfo = createTool({
   id: 'update-participant-wic-info',
   description: 'Update WIC eligibility information for a participant after agent has collected the data',
-  inputSchema: z.object({
-    participantId: z.string().describe('The unique participant ID'),
-    isPregnant: z.boolean().optional().describe('Is the participant pregnant'),
-    isPostPartum: z.boolean().optional().describe('Is the participant postpartum'),
-    isInfantBreastfeeding: z.boolean().optional().describe('Is the participant breastfeeding an infant'),
-    isInfantFormula: z.boolean().optional().describe('Is the participant formula feeding an infant'),
-    hasChildren0to5: z.boolean().optional().describe('Does the participant have children aged 0-5'),
-    hasDependents: z.boolean().optional().describe('Does the participant have any dependents'),
-  }),
-  outputSchema: z.object({
-    participant: z.any().nullable(),
-    success: z.boolean(),
-    error: z.string().optional(),
-  }),
+  inputSchema: updateParticipantWicInfoSchema,
+  outputSchema: participantResponseSchema,
   execute: async ({ context }) => {
     try {
       const updateData: any = {};
@@ -375,22 +362,14 @@ export const updateParticipantWicInfo = createTool({
 export const updateDependentWicInfo = createTool({
   id: 'update-dependent-wic-info',
   description: 'Update WIC eligibility information for a household dependent after agent has collected age/status data',
-  inputSchema: z.object({
-    dependentId: z.string().describe('The unique dependent ID'),
-    dateOfBirth: z.string().optional().describe('Date of birth (YYYY-MM-DD format)'),
-    isInfant: z.boolean().optional().describe('Is the dependent an infant (under 1 year)'),
-    isChild0to5: z.boolean().optional().describe('Is the dependent a child aged 0-5'),
-  }),
-  outputSchema: z.object({
-    dependent: z.any().nullable(),
-    success: z.boolean(),
-    error: z.string().optional(),
-  }),
+  inputSchema: updateDependentWicInfoSchema,
+  outputSchema: dependentResponseSchema,
   execute: async ({ context }) => {
     try {
       const updateData: any = {};
       
       // Only update fields that were provided
+      if (context.age !== undefined) updateData.age = context.age;
       if (context.dateOfBirth !== undefined) updateData.dateOfBirth = new Date(context.dateOfBirth);
       if (context.isInfant !== undefined) updateData.isInfant = context.isInfant;
       if (context.isChild0to5 !== undefined) updateData.isChild0to5 = context.isChild0to5;
@@ -415,6 +394,57 @@ export const updateDependentWicInfo = createTool({
   },
 });
 
+// Update participant demographic information
+export const updateParticipantDemographics = createTool({
+  id: 'update-participant-demographics',
+  description: 'Update demographic information for a participant after agent has collected additional data',
+  inputSchema: updateParticipantDemographicsSchema,
+  outputSchema: participantResponseSchema,
+  execute: async ({ context }) => {
+    try {
+      const updateData: any = {};
+      
+      // Only update fields that were provided
+      if (context.lastName !== undefined) updateData.lastName = context.lastName;
+      if (context.dateOfBirth !== undefined) updateData.dateOfBirth = new Date(context.dateOfBirth);
+      if (context.homeAddress !== undefined) updateData.homeAddress = context.homeAddress;
+      if (context.mobileNumber !== undefined) updateData.mobileNumber = context.mobileNumber;
+      if (context.email !== undefined) updateData.email = context.email;
+      if (context.benefitsReceiving !== undefined) {
+        updateData.benefitsReceiving = context.benefitsReceiving;
+        updateData.hasMediCal = context.benefitsReceiving.toLowerCase().includes('medi-cal');
+      }
+      if (context.onProbation !== undefined) updateData.onProbation = context.onProbation;
+      if (context.isVeteran !== undefined) updateData.isVeteran = context.isVeteran;
+      if (context.relationshipStatus !== undefined) updateData.relationshipStatus = context.relationshipStatus;
+      if (context.sexAtBirth !== undefined) updateData.sexAtBirth = context.sexAtBirth;
+      if (context.genderIdentity !== undefined) updateData.genderIdentity = context.genderIdentity;
+      if (context.ethnicity !== undefined) updateData.ethnicity = context.ethnicity;
+      if (context.race !== undefined) updateData.race = context.race;
+      if (context.preferredLanguage !== undefined) updateData.preferredLanguage = context.preferredLanguage;
+      if (context.monthlyIncome !== undefined) updateData.monthlyIncome = context.monthlyIncome;
+      if (context.occupation !== undefined) updateData.occupation = context.occupation;
+      
+      const participant = await prisma.participant.update({
+        where: { participantId: context.participantId },
+        data: updateData,
+      });
+
+      return {
+        participant,
+        success: true,
+      };
+    } catch (error: any) {
+      console.error('Error updating participant demographics:', error);
+      return {
+        participant: null,
+        success: false,
+        error: error.message || 'Failed to update participant',
+      };
+    }
+  },
+});
+
 // Export all database tools
 export const databaseTools = [
   getParticipantById,
@@ -425,4 +455,5 @@ export const databaseTools = [
   createHouseholdDependent,
   updateParticipantWicInfo,
   updateDependentWicInfo,
+  updateParticipantDemographics,
 ]; 

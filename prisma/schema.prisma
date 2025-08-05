@@ -11,14 +11,22 @@ model Participant {
   id                    String               @id @default(cuid())
   participantId         String               @unique
   firstName             String
-  lastName              String
-  dateOfBirth           DateTime
-  homeAddress           String
+  lastName              String?
+  dateOfBirth           DateTime?
+  homeAddress           String?
   mailingAddress        String?
-  mobileNumber          String
+  mobileNumber          String?
   canReceiveTexts       Boolean              @default(false)
   preferredLanguage     String               @default("English")
   email                 String?
+  benefitsReceiving     String?
+  onProbation           Boolean?
+  isVeteran             Boolean?
+  relationshipStatus    String?
+  sexAtBirth            String?
+  genderIdentity        String?
+  ethnicity             String?
+  race                  String?
   hasMediCal            Boolean              @default(false)
   mediCalCaseNumber     String?
   mediCalAmount         Decimal?
@@ -41,9 +49,14 @@ model HouseholdDependent {
   id            String      @id @default(cuid())
   participantId String
   firstName     String
-  lastName      String
-  dateOfBirth   DateTime
-  relationship  String
+  lastName      String?
+  age           Int?
+  dateOfBirth   DateTime?
+  relationship  String?
+  sexAtBirth    String?
+  genderIdentity String?
+  ethnicity     String?
+  race          String?
   isInfant      Boolean?
   isChild0to5   Boolean?
   createdAt     DateTime    @default(now())
