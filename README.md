@@ -18,20 +18,34 @@ You'll need these installed on your computer:
 
 ## Step-by-Step Setup
 
-### 1. Get the Code
+### 1. Get the Code and Navigate to the Correct Directory
 ```bash
 # Clone the repository
 git clone https://github.com/navapbc/labs-asp-experiments.git
 cd labs-asp-experiments/mastra-test-app
 ```
 
-### 2. Install Dependencies
+> **Important**: Make sure you're in the `mastra-test-app` directory for all the following commands. This is where all the app files are located.
+
+### 2. Opening Terminal in Visual Studio Code
+
+If you're using Visual Studio Code:
+
+1. **Open the project folder**: Go to `File > Open Folder` and select the `mastra-test-app` directory
+2. **Open the terminal**: 
+   - Use the keyboard shortcut: `Ctrl+`` (backtick) on Mac
+   - Or go to `Terminal > New Terminal` in the menu
+   - Or use `View > Terminal`
+
+The terminal should automatically open in the correct `mastra-test-app` directory. You can verify this by running `pwd` (on Mac) to see your current directory path.
+
+### 3. Install Dependencies
 ```bash
 # Install all required packages
 pnpm install
 ```
 
-### 3. Set Up Environment Variables
+### 4. Set Up Environment Variables
 
 Create a `.env` file in the root folder with your API keys:
 
@@ -47,19 +61,19 @@ DATABASE_URL="{your_database_url_here}"
 
 > **Note**: The database is already set up in the cloud, so you just need the connection string!
 
-### 4. Database Connection
+### 5. Database Connection
 
 > **Important**: The database is already set up and populated with test data! As a team member, you only need to connect to it. **Please don't run migration or seeding commands**, these are reserved for admins to avoid accidentally modifying shared data.
 
 The database is ready to use with sample participant data already loaded. You'll be able to see this data once you start the app!
 
-### 5. Start the App
+### 6. Start the App
 ```bash
 # Launch the Mastra playground
 pnpm dev
 ```
 
-**Success!** The app should now be running. You'll see a URL in your terminal (usually `http://localhost:4001`): click it to open the playground!
+**Success!** The app should now be running. You'll see a URL in your terminal (usually `http://localhost:4111`): click it to open the playground!
 
 ## What Can You Do Now?
 
@@ -81,6 +95,24 @@ pnpm db:studio
 This opens a web interface at `http://localhost:5555` where you can browse the shared participant data (read-only).
 
 ## If Something Goes Wrong
+
+### App Frontend Errors or Won't Start
+
+If the app displays errors or becomes unresponsive:
+
+1. **Stop the current process**:
+   - In your terminal, press `Ctrl+C` (Mac) to stop the running process
+   - If that doesn't work, close the entire terminal session:
+     - In VS Code: Click the trash can icon in the terminal panel, or right-click the terminal tab and select "Kill Terminal"
+
+2. **Start fresh**:
+   - Open a new terminal (see "Opening Terminal in Visual Studio Code" above)
+   - Make sure you're in the `mastra-test-app` directory: `cd labs-asp-experiments/mastra-test-app`
+   - Restart the app: `pnpm dev`
+
+3. **If problems persist**:
+   - Try clearing the cache: `pnpm clean` (if available) and run `pnpm install` again
+   - Check that all environment variables are correctly set in your `.env` file
 
 ### Database Connection Issues
 - Make sure you have the correct `DATABASE_URL` in your `.env` file
@@ -121,7 +153,3 @@ pnpm db:migrate
 - **Detailed Database Guide**: See `DATABASE_SETUP.md`
 - **Web Automation Features**: See `PLAYWRIGHT_MCP_GUIDE.md`
 - **Need Help?**: Ask your team lead or create an issue
-
----
-
-**Ready to explore AI automation? Start with `pnpm dev` and have fun!** 
