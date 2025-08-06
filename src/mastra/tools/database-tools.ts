@@ -1,5 +1,5 @@
 import { createTool } from '@mastra/core/tools';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../lib/prisma';
 import {
   createParticipantSchema,
   createHouseholdDependentSchema,
@@ -17,8 +17,7 @@ import {
   getParticipantByIdResponseSchema,
 } from '../types/participant-types';
 
-// Initialize Prisma client
-const prisma = new PrismaClient();
+// Use centralized Prisma client
 
 /**
  * Database Tools for WIC Benefits START System

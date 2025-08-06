@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from './lib/prisma';
 import { config } from 'dotenv';
 
 // Load environment variables
 config();
 
-const prisma = new PrismaClient();
+// Using centralized Prisma client from ./lib/prisma
 
 async function main() {
   console.log('🌱 Starting WIC benefits database seeding...');

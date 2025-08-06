@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from './lib/prisma';
 import { config } from 'dotenv';
 import { createReadStream } from 'fs';
 import { parse } from 'csv-parse';
@@ -7,7 +7,7 @@ import { join } from 'path';
 // Load environment variables
 config();
 
-const prisma = new PrismaClient();
+// Using centralized Prisma client from ./lib/prisma
 
 interface CSVRow {
   participantId: string;
