@@ -10,6 +10,7 @@
     "start": "mastra start",
     "seed": "tsx src/seed.ts",
     "seed:wic": "tsx src/seed-wic.ts",
+    "seed:csv": "tsx src/seed-csv.ts",
     "db:migrate": "npx prisma migrate dev",
     "db:reset": "npx prisma migrate reset",
     "db:studio": "npx prisma studio"
@@ -32,6 +33,7 @@
     "@mastra/mcp": "^0.10.7",
     "@mastra/memory": "^0.11.5",
     "@prisma/client": "^6.12.0",
+    "csv-parse": "^6.1.0",
     "dotenv": "^17.2.1",
     "pg": "^8.16.3",
     "pino-pretty": "^13.0.0",
