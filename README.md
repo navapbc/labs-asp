@@ -33,7 +33,7 @@ If you're using Visual Studio Code:
 
 1. **Open the project folder**: Go to `File > Open Folder` and select the `mastra-test-app` directory
 2. **Open the terminal**: 
-   - Use the keyboard shortcut: `Ctrl+`` (backtick) on Mac
+   - Use the keyboard shortcut: `Ctrl+(backtick)` on Mac
    - Or go to `Terminal > New Terminal` in the menu
    - Or use `View > Terminal`
 
