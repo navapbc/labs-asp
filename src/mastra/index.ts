@@ -1,5 +1,6 @@
 import { LibSQLStore } from '@mastra/libsql';
 import { Mastra } from '@mastra/core/mastra';
+import { MastraJwtAuth } from '@mastra/auth';
 import { PinoLogger } from '@mastra/loggers';
 import { dataExtractionWorkflow } from './workflows/data-extraction-workflow';
 import memoryAgent from './agents/memory-agent';
@@ -7,6 +8,13 @@ import { weatherAgent } from './agents/weather-agent';
 import { weatherWorkflow } from './workflows/weather-workflow';
 import { webAutomationAgent } from './agents/web-automation-agent';
 import { webAutomationWorkflow } from './workflows/web-automation-workflow';
+import { 
+  validatePassword, 
+  generateAuthToken, 
+  verifyAuthToken, 
+  extractTokenFromHeader, 
+  createLoginPage 
+} from '../auth-utils';
 
 export const mastra = new Mastra({
   workflows: { 
@@ -44,5 +52,117 @@ export const mastra = new Mastra({
       swaggerUI: true,     // Enable Swagger UI in production
       openAPIDocs: true,   // Enable OpenAPI docs in production
     },
+    experimental_auth: new MastraJwtAuth({
+      secret: process.env.MASTRA_JWT_SECRET!
+    }),
+    middleware: [
+      // Login route - handles password authentication
+      {
+        handler: async (c, next) => {
+          const url = new URL(c.req.url);
+          
+          // Handle login page GET request
+          if (url.pathname === '/auth/login' && c.req.method === 'GET') {
+            return new Response(createLoginPage(), {
+              headers: { 'Content-Type': 'text/html' }
+            });
+          }
+          
+          // Handle login form POST request
+          if (url.pathname === '/auth/login' && c.req.method === 'POST') {
+            try {
+              const formData = await c.req.formData();
+              const password = formData.get('password') as string;
+              
+              if (validatePassword(password)) {
+                const token = generateAuthToken();
+                
+                // Set cookie and redirect to playground
+                return new Response(null, {
+                  status: 302,
+                  headers: {
+                    'Location': '/agents/webAutomationAgent/chat/',
+                    'Set-Cookie': `mastra_token=${token}; Path=/; HttpOnly; Max-Age=86400; SameSite=Strict`
+                  }
+                });
+              } else {
+                return new Response(createLoginPage('Invalid password. Please try again.'), {
+                  headers: { 'Content-Type': 'text/html' }
+                });
+              }
+            } catch (error) {
+              return new Response(createLoginPage('An error occurred. Please try again.'), {
+                headers: { 'Content-Type': 'text/html' }
+              });
+            }
+          }
+          
+          await next();
+        },
+        path: '/auth/*',
+      },
+      // Protection middleware for playground routes
+      {
+        handler: async (c, next) => {
+          const url = new URL(c.req.url);
+          
+          // Skip auth for API routes (they use JWT auth)
+          if (url.pathname.startsWith('/api/')) {
+            await next();
+            return;
+          }
+          
+          // Skip auth for login routes
+          if (url.pathname.startsWith('/auth/')) {
+            await next();
+            return;
+          }
+          
+          // Check for authentication token in cookie or header
+          let token: string | null = null;
+          
+          // First try cookie
+          const cookies = c.req.header('Cookie');
+          if (cookies) {
+            const tokenMatch = cookies.match(/mastra_token=([^;]+)/);
+            if (tokenMatch) {
+              token = tokenMatch[1];
+            }
+          }
+          
+          // Fallback to Authorization header
+          if (!token) {
+            token = extractTokenFromHeader(c.req.header('Authorization'));
+          }
+          
+          // Verify token
+          if (!token || !verifyAuthToken(token)) {
+            return new Response(null, {
+              status: 302,
+              headers: { 'Location': '/auth/login' }
+            });
+          }
+          
+          await next();
+        },
+        path: '/agents/*',
+      },
+      // Root redirect middleware
+      {
+        handler: async (c, next) => {
+          const url = new URL(c.req.url);
+          
+          if (url.pathname === '/') {
+            return new Response(null, {
+              status: 302,
+              headers: { 'Location': '/auth/login' }
+            });
+          }
+          
+          await next();
+        },
+        path: '/',
+      }
+    ],
   },
 });
