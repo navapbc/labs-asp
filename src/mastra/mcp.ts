@@ -15,11 +15,10 @@ export const exaMCP = new MCPClient({
   servers: {
     exa: {
       command: "npx",
-      args: [
-        "-y",
-        "mcp-remote",
-        `https://mcp.exa.ai/mcp?exaApiKey=${process.env.EXA_API_KEY}`
-      ],
+      args: ["-y", "exa-mcp-server"],
+      env: {
+        EXA_API_KEY: process.env.EXA_API_KEY!
+      },
     },
   },
 });
@@ -33,11 +32,10 @@ export const mcp = new MCPClient({
     },
     exa: {
       command: "npx",
-      args: [
-        "-y",
-        "mcp-remote",
-        `https://mcp.exa.ai/mcp?exaApiKey=${process.env.EXA_API_KEY}`
-      ],
+      args: ["-y", "exa-mcp-server"],
+      env: {
+        EXA_API_KEY: process.env.EXA_API_KEY!
+      },
     },
   },
 }); 
