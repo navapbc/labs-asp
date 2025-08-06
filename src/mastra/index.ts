@@ -36,4 +36,13 @@ export const mastra = new Mastra({
       type: 'console', // Use console for development; switch to 'otlp' for production
     },
   },
+
+  server: {
+    host: '0.0.0.0', // Allow external connections
+    port: 4111,
+    build: {
+      swaggerUI: true,     // Enable Swagger UI in production
+      openAPIDocs: true,   // Enable OpenAPI docs in production
+    },
+  },
 });
