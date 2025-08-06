@@ -52,9 +52,10 @@ export const mastra = new Mastra({
       swaggerUI: true,     // Enable Swagger UI in production
       openAPIDocs: true,   // Enable OpenAPI docs in production
     },
-    experimental_auth: new MastraJwtAuth({
-      secret: process.env.MASTRA_JWT_SECRET!
-    }),
+    // Disabled JWT auth since we're using session-based auth for the entire playground
+    // experimental_auth: new MastraJwtAuth({
+    //   secret: process.env.MASTRA_JWT_SECRET!
+    // }),
     middleware: [
       // Login route - handles password authentication
       {
@@ -101,16 +102,10 @@ export const mastra = new Mastra({
         },
         path: '/auth/*',
       },
-      // Protection middleware for playground routes
+      // Protection middleware for playground and API routes
       {
         handler: async (c, next) => {
           const url = new URL(c.req.url);
-          
-          // Skip auth for API routes (they use JWT auth)
-          if (url.pathname.startsWith('/api/')) {
-            await next();
-            return;
-          }
           
           // Skip auth for login routes
           if (url.pathname.startsWith('/auth/')) {
@@ -145,7 +140,7 @@ export const mastra = new Mastra({
           
           await next();
         },
-        path: '/agents/*',
+        path: '/*', // Protect all routes except auth
       },
       // Root redirect middleware
       {
