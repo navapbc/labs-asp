@@ -1,8 +1,6 @@
 import { LibSQLStore } from '@mastra/libsql';
 import { Mastra } from '@mastra/core/mastra';
-import { MastraJwtAuth } from '@mastra/auth';
 import { PinoLogger } from '@mastra/loggers';
-import { dataExtractionWorkflow } from './workflows/data-extraction-workflow';
 import memoryAgent from './agents/memory-agent';
 import { weatherAgent } from './agents/weather-agent';
 import { weatherWorkflow } from './workflows/weather-workflow';
@@ -31,7 +29,7 @@ export const mastra = new Mastra({
   }),
   logger: new PinoLogger({
     name: 'Mastra',
-    level: 'debug', // Changed from 'info' to 'debug' to capture more error details
+    level: 'info', // Changed from 'info' to 'debug' to capture more error details
   }),
 
   telemetry: {
@@ -107,6 +105,14 @@ export const mastra = new Mastra({
         handler: async (c, next) => {
           const url = new URL(c.req.url);
           
+          // Allow Playground system requests to pass (telemetry/memory/etc.)
+          // The Playground adds this header on its internal API calls
+          const isDevPlayground = c.req.header('x-mastra-dev-playground') === 'true';
+          if (isDevPlayground) {
+            await next();
+            return;
+          }
+
           // Skip auth for login routes
           if (url.pathname.startsWith('/auth/')) {
             await next();

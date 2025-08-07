@@ -5,18 +5,17 @@ import { Memory } from '@mastra/memory';
 import { playwrightMCP, exaMCP } from '../mcp';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 import { databaseTools } from '../tools/database-tools';
 
 const base = process.env.DB_BASE || "../";
 // Path is relative to .mastra/output/ when bundled
 const storage = new LibSQLStore({
-  url: `file:${base}mastra.db`,
+  url: "file:../mastra.db",
 });
 
 // Initialize vector store for semantic search
 const vectorStore = new LibSQLVector({
-  connectionUrl: `file:${base}mastra.db`,
+  connectionUrl: "file:../mastra.db",
 });
 // Create a memory instance with workingMemory enabled
 const memory = new Memory({
@@ -128,7 +127,8 @@ export const webAutomationAgent = new Agent({
 
     Take action immediately. Don't ask for permission to proceed with your core function.
   `,
-  // model: openai('gpt-4.1-mini'),
+  // model: openai('gpt-5-2025-08-07'),
+  // // model: openai('gpt-4.1-mini'),
   model: anthropic('claude-sonnet-4-20250514'),
   tools: { 
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
@@ -145,10 +145,30 @@ export const webAutomationAgent = new Agent({
     maxSteps: 50, // Increased from default 5
     maxRetries: 3,
     temperature: 0.1, // Lower temperature for more focused responses
+    telemetry: {
+      isEnabled: true,
+      functionId: 'webAutomationAgent.stream',
+      recordInputs: true,
+      recordOutputs: true,
+      metadata: {
+        agentId: 'webAutomationAgent',
+        agentName: 'Web Automation Agent',
+      },
+    },
   },
   defaultGenerateOptions: {
     maxSteps: 50, // Increased from default 5
     maxRetries: 3,
     temperature: 0.1,
+    telemetry: {
+      isEnabled: true,
+      functionId: 'webAutomationAgent.generate',
+      recordInputs: true,
+      recordOutputs: true,
+      metadata: {
+        agentId: 'webAutomationAgent',
+        agentName: 'Web Automation Agent',
+      },
+    },
   },
 });
