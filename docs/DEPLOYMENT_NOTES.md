@@ -68,11 +68,41 @@ DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
 MASTRA_JWT_SECRET=replace_with_a_strong_random_secret
 MASTRA_APP_PASSWORD=replace_with_a_login_password
 
+# Playwright artifacts - automatically configured based on environment
+# Local development: uses /tmp/playwright-artifacts
+# Production: uses GCS_MOUNT_PATH (set in step 6)
+
 NODE_ENV=production
 EOF
 ```
 
-### 6) Build and (optionally) apply migrations
+### 6) Set up GCS Bucket for Artifacts
+```bash
+# Create GCS bucket for artifacts (if not already created)
+gsutil mb gs://benefits-automation-artifacts || echo "Bucket already exists"
+
+# Install gcsfuse to mount bucket as filesystem
+export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
+echo "deb https://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+sudo apt-get update
+sudo apt-get install -y gcsfuse
+
+# Create mount point and mount bucket
+sudo mkdir -p /mnt/playwright-artifacts
+sudo gcsfuse benefits-automation-artifacts /mnt/playwright-artifacts
+
+# Set ownership for your user
+sudo chown -R $USER:$USER /mnt/playwright-artifacts
+
+# Add to .env for production environment
+echo "GCS_MOUNT_PATH=/mnt/playwright-artifacts" >> .env
+
+# Set up automatic mounting on boot (optional but recommended)
+echo "benefits-automation-artifacts /mnt/playwright-artifacts gcsfuse rw,user" | sudo tee -a /etc/fstab
+```
+
+### 7) Build and (optionally) apply migrations
 ```bash
 # Build the app and prepare Prisma client in the output
 pnpm build
@@ -81,7 +111,7 @@ pnpm build
 npx prisma migrate deploy
 ```
 
-### 7) Start the application
+### 8) Start the application
 ```bash
 pnpm start
 ```
@@ -107,6 +137,13 @@ pm2 startup && pm2 save
 - Playwright MCP is launched via `npx @playwright/mcp@latest --isolated`; no separate Playwright install is required.
 - Default host/port are set in code to `0.0.0.0:4111` (see `src/mastra/index.ts`).
 - Auth-protected UI is served at `/auth/login` and the Web Automation Agent playground at `/agents/webAutomationAgent/chat/` after login.
+
+### Artifact Storage
+- **Local Development**: Artifacts saved to `./artifacts/` in your project directory (user-friendly)
+- **Production (GCE)**: Artifacts saved directly to GCS bucket via mounted filesystem
+- **Automatic Detection**: Code automatically detects environment and uses appropriate storage
+- **Real-time**: Files appear in GCS immediately when created (no upload delays)
+- **Cross-Platform**: Same codebase works locally and on VM without changes
 
 ### Troubleshooting
 - Prisma client errors: ensure you ran `pnpm build`. If needed, run `npx prisma generate` once, then `pnpm build` again.

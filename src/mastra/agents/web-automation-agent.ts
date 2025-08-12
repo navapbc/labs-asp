@@ -95,6 +95,17 @@ export const webAutomationAgent = new Agent({
     - Do not fill optional fields unless specified
     - Submit only when all required fields are complete
 
+    **Screenshot Protocol:**
+    - Take a screenshot after completing all fields on a page 
+    - Use fullPage: true to capture the complete viewport including off-screen content
+    - Do NOT take screenshots for individual form interactions
+    
+    Example screenshot tool call:
+    browser_take_screenshot({
+      fullPage: true,
+      filename: "..."
+    })
+
     **Autonomous Progression:**
     PROCEED AUTOMATICALLY for:
     - Navigation buttons (Next, Continue, Get Started, Proceed, Begin)
@@ -130,8 +141,8 @@ export const webAutomationAgent = new Agent({
   `,
   // model: openai('gpt-5-2025-08-07'),
   // // model: openai('gpt-4.1-mini'),
-  // model: anthropic('claude-sonnet-4-20250514'),
-  model: google('gemini-2.5-pro'),
+  model: anthropic('claude-sonnet-4-20250514'),
+  // model: google('gemini-2.5-pro'),
   tools: { 
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
     ...(await playwrightMCP.getTools()),

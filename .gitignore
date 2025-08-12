@@ -27,3 +27,6 @@ mastra.db
 mastra.db-*
 mastra-memory.db
 mastra-memory.db-*
+
+# Playwright artifacts (local development)
+artifacts/

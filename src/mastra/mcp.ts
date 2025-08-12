@@ -2,15 +2,34 @@ import 'dotenv/config';
 import { MCPClient } from "@mastra/mcp";
 
 // Create separate clients for different tool sets
-// Build Playwright args with optional proxy support
+// Build Playwright args with environment-aware GCS storage
 const buildPlaywrightArgs = () => {
+  // Determine output directory based on environment
+  let outputDir;
+  
+  if (process.env.NODE_ENV === 'production' || process.env.GCS_MOUNT_PATH) {
+    // Production: Use mounted GCS bucket (Linux with gcsfuse)
+    outputDir = process.env.GCS_MOUNT_PATH || '/mnt/playwright-artifacts';
+  } else {
+    // Development: Use absolute path to project artifacts directory
+    const projectRoot = process.cwd().includes('.mastra/output') 
+      ? process.cwd().replace('/.mastra/output', '') 
+      : process.cwd();
+    outputDir = process.env.PLAYWRIGHT_OUTPUT_DIR || `${projectRoot}/artifacts`;
+  }
+  
+  console.log(`Playwright artifacts will be saved to: ${outputDir}`);
+  
   const args = [
     "@playwright/mcp@latest", 
     "--isolated",
     "--browser=chromium",
     "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "--viewport-size=1920,1080",
-    "--no-sandbox"
+    "--no-sandbox",
+    `--output-dir=${outputDir}`,
+    "--save-session",
+    "--save-trace"
   ];
   
   // Add proxy if configured
