@@ -101,13 +101,6 @@ echo "http://$EXTERNAL_IP:4111/auth/login"
 - Default host/port are set in code to `0.0.0.0:4111` (see `src/mastra/index.ts`).
 - Auth-protected UI is served at `/auth/login` and the Web Automation Agent playground at `/agents/webAutomationAgent/chat/` after login.
 
-### Artifact Storage
-- **Local Development**: Artifacts saved to `./artifacts/` in your project directory (user-friendly)
-- **Production (GCE)**: Artifacts saved directly to GCS bucket via mounted filesystem
-- **Automatic Detection**: Code automatically detects environment and uses appropriate storage
-- **Real-time**: Files appear in GCS immediately when created (no upload delays)
-- **Cross-Platform**: Same codebase works locally and on VM without changes
-
 ### Troubleshooting
 - Prisma client errors: ensure you ran `pnpm build`. If needed, run `npx prisma generate` once, then `pnpm build` again.
 - Firewall: verify with `gcloud compute firewall-rules list --filter="name~allow-mastra-app"`.
