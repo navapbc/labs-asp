@@ -4,11 +4,9 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { playwrightMCP, exaMCP } from '../mcp';
 import { openai } from '@ai-sdk/openai';
-import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
 import { databaseTools } from '../tools/database-tools';
 
-const base = process.env.DB_BASE || "../";
 // Path is relative to .mastra/output/ when bundled
 const storage = new LibSQLStore({
   url: "file:../mastra.db",
@@ -27,7 +25,7 @@ const memory = new Memory({
     lastMessages: 10,
     workingMemory: { 
       enabled: true,
-      scope: 'resource',
+      scope: 'thread',
       template: `
         - **Name**
         - **Description**
@@ -99,11 +97,11 @@ export const webAutomationAgent = new Agent({
     - Take a screenshot after completing all fields on a page 
     - Use fullPage: true to capture the complete viewport including off-screen content
     - Do NOT take screenshots for individual form interactions
+    - NEVER specify a filename parameter - let the system auto-generate timestamps
     
     Example screenshot tool call:
     browser_take_screenshot({
-      fullPage: true,
-      filename: "..."
+      fullPage: true
     })
 
     **Autonomous Progression:**
@@ -141,8 +139,8 @@ export const webAutomationAgent = new Agent({
   `,
   // model: openai('gpt-5-2025-08-07'),
   // // model: openai('gpt-4.1-mini'),
-  model: anthropic('claude-sonnet-4-20250514'),
-  // model: google('gemini-2.5-pro'),
+  // model: anthropic('claude-sonnet-4-20250514'),
+  model: google('gemini-2.5-pro'),
   tools: { 
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
     ...(await playwrightMCP.getTools()),

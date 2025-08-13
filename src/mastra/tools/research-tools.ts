@@ -1,9 +1,9 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { mcp } from '../mcp';
+import { exaMCP } from '../mcp';
 
 // Get EXA tools from MCP
-const exaTools = await mcp.getTools();
+const exaTools = await exaMCP.getTools();
 
 // Service/Program Research Tool - for finding government services, programs, applications
 export const serviceResearchTool = createTool({

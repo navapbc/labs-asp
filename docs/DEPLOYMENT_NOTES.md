@@ -6,7 +6,7 @@ This guide provides an exact, copy‑pasteable sequence to deploy `mastra-test-a
 - Google Cloud project with billing enabled
 - `gcloud` CLI installed and authenticated
 - API keys: OpenAI, Anthropic, Exa
-- PostgreSQL connection URL (Neon or other)
+- PostgreSQL connection URL (currently Neon)
 
 ---
 
@@ -68,38 +68,8 @@ DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
 MASTRA_JWT_SECRET=replace_with_a_strong_random_secret
 MASTRA_APP_PASSWORD=replace_with_a_login_password
 
-# Playwright artifacts - automatically configured based on environment
-# Local development: uses /tmp/playwright-artifacts
-# Production: uses GCS_MOUNT_PATH (set in step 6)
-
 NODE_ENV=production
 EOF
-```
-
-### 6) Set up GCS Bucket for Artifacts
-```bash
-# Create GCS bucket for artifacts (if not already created)
-gsutil mb gs://benefits-automation-artifacts || echo "Bucket already exists"
-
-# Install gcsfuse to mount bucket as filesystem
-export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
-echo "deb https://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-sudo apt-get update
-sudo apt-get install -y gcsfuse
-
-# Create mount point and mount bucket
-sudo mkdir -p /mnt/playwright-artifacts
-sudo gcsfuse benefits-automation-artifacts /mnt/playwright-artifacts
-
-# Set ownership for your user
-sudo chown -R $USER:$USER /mnt/playwright-artifacts
-
-# Add to .env for production environment
-echo "GCS_MOUNT_PATH=/mnt/playwright-artifacts" >> .env
-
-# Set up automatic mounting on boot (optional but recommended)
-echo "benefits-automation-artifacts /mnt/playwright-artifacts gcsfuse rw,user" | sudo tee -a /etc/fstab
 ```
 
 ### 7) Build and (optionally) apply migrations
@@ -113,7 +83,7 @@ npx prisma migrate deploy
 
 ### 8) Start the application
 ```bash
-pnpm start
+pnpm dev
 ```
 
 The server listens on `0.0.0.0:4111`. In another terminal:
@@ -122,13 +92,6 @@ EXTERNAL_IP=$(gcloud compute instances describe mastra-app \
   --zone=us-west1-a \
   --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 echo "http://$EXTERNAL_IP:4111/auth/login"
-```
-
-Optional: keep it running with PM2
-```bash
-sudo npm install -g pm2
-pm2 start "pnpm start" --name mastra-app
-pm2 startup && pm2 save
 ```
 
 ---
@@ -148,4 +111,4 @@ pm2 startup && pm2 save
 ### Troubleshooting
 - Prisma client errors: ensure you ran `pnpm build`. If needed, run `npx prisma generate` once, then `pnpm build` again.
 - Firewall: verify with `gcloud compute firewall-rules list --filter="name~allow-mastra-app"`.
-- Logs: if using PM2, run `pm2 logs mastra-app`; otherwise, observe terminal output from `pnpm start`.
+- Logs: if using PM2, run `pm2 logs mastra-app`; otherwise, observe terminal output from `pnpm dev`.
