@@ -1,11 +1,12 @@
 import { LibSQLStore, LibSQLVector } from '@mastra/libsql';
+import { exaMCP, playwrightMCP } from '../mcp';
 
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { playwrightMCP, exaMCP } from '../mcp';
-import { openai } from '@ai-sdk/openai';
-import { google } from '@ai-sdk/google';
+import { anthropic } from '@ai-sdk/anthropic';
 import { databaseTools } from '../tools/database-tools';
+import { google } from '@ai-sdk/google';
+import { openai } from '@ai-sdk/openai';
 
 // Path is relative to .mastra/output/ when bundled
 const storage = new LibSQLStore({
@@ -68,6 +69,7 @@ export const webAutomationAgent = new Agent({
     **When given database participant information:**
     - Immediately use the data to populate web forms
     - Navigate to the appropriate website (research if URL unknown)
+    - If the participant has a preferred language, change the website language to match it
     - Fill all available fields with the participant data
     - Proceed through the application process autonomously
 
@@ -79,6 +81,8 @@ export const webAutomationAgent = new Agent({
 
     **Web Navigation:**
     - Navigate to websites and analyze page structure
+    - If participant has a preferred language, immediately look for and change the website language
+    - Common language selectors: language dropdowns, flag icons, "EN" buttons, or language preference settings
     - Identify and interact with elements (buttons, forms, links, dropdowns)
 
     When performing actions:
