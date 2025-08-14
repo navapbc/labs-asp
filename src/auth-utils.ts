@@ -3,24 +3,13 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.MASTRA_JWT_SECRET!;
 const APP_PASSWORD = process.env.MASTRA_APP_PASSWORD!;
 
-if (!JWT_SECRET) {
-  throw new Error('MASTRA_JWT_SECRET environment variable is required');
-}
 
-if (!APP_PASSWORD) {
-  throw new Error('MASTRA_APP_PASSWORD environment variable is required');
-}
-
-/**
- * Validates the provided password against the configured app password
- */
+//Validates the provided password against the configured app password
 export function validatePassword(password: string): boolean {
   return password === APP_PASSWORD;
 }
 
-/**
- * Generates a JWT token for authenticated sessions
- */
+//Generates a JWT token for authenticated sessions
 export function generateAuthToken(): string {
   return jwt.sign(
     { 
@@ -35,9 +24,7 @@ export function generateAuthToken(): string {
   );
 }
 
-/**
- * Verifies a JWT token
- */
+//Verifies a JWT token
 export function verifyAuthToken(token: string): boolean {
   try {
     jwt.verify(token, JWT_SECRET);
@@ -47,9 +34,7 @@ export function verifyAuthToken(token: string): boolean {
   }
 }
 
-/**
- * Extracts token from Authorization header
- */
+//Extracts token from Authorization header
 export function extractTokenFromHeader(authHeader: string | undefined): string | null {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -57,9 +42,7 @@ export function extractTokenFromHeader(authHeader: string | undefined): string |
   return authHeader.substring(7); // Remove 'Bearer ' prefix
 }
 
-/**
- * Creates a simple HTML login page
- */
+//Creates a simple HTML login page
 export function createLoginPage(errorMessage?: string): string {
   return `
 <!DOCTYPE html>

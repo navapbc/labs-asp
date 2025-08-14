@@ -1,4 +1,4 @@
-import { LibSQLStore, LibSQLVector } from '@mastra/libsql';
+import { postgresStore, pgVector } from '../storage';
 import { exaMCP, playwrightMCP } from '../mcp';
 
 import { Agent } from '@mastra/core/agent';
@@ -8,16 +8,9 @@ import { databaseTools } from '../tools/database-tools';
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
 
-// Path is relative to .mastra/output/ when bundled
-const storage = new LibSQLStore({
-  url: "file:../mastra.db",
-});
+const storage = postgresStore;
 
-// Initialize vector store for semantic search
-const vectorStore = new LibSQLVector({
-  connectionUrl: "file:../mastra.db",
-});
-// Create a memory instance with workingMemory enabled
+const vectorStore = pgVector;
 const memory = new Memory({
   storage: storage,
   vector: vectorStore,
@@ -155,11 +148,10 @@ export const webAutomationAgent = new Agent({
     )
   },
   memory: memory,
-  // Set default options to handle step limits better
   defaultStreamOptions: {
-    maxSteps: 50, // Increased from default 5
+    maxSteps: 50,
     maxRetries: 3,
-    temperature: 0.1, // Lower temperature for more focused responses
+    temperature: 0.1,
     telemetry: {
       isEnabled: true,
       functionId: 'webAutomationAgent.stream',
@@ -172,7 +164,7 @@ export const webAutomationAgent = new Agent({
     },
   },
   defaultGenerateOptions: {
-    maxSteps: 50, // Increased from default 5
+    maxSteps: 50,
     maxRetries: 3,
     temperature: 0.1,
     telemetry: {
