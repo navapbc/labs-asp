@@ -1,5 +1,9 @@
-import { postgresStore, pgVector } from '../storage';
+import {
+  createAnswerRelevancyScorer,
+  createToxicityScorer
+} from "@mastra/evals/scorers/llm";
 import { exaMCP, playwrightMCP } from '../mcp';
+import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
@@ -150,6 +154,16 @@ export const webAutomationAgent = new Agent({
     )
   },
   memory: memory,
+  scorers: {
+    relevancy: {
+      scorer: createAnswerRelevancyScorer({ model: openai("gemini-2.5-pro") }),
+      sampling: { type: "ratio", rate: 0.5 }
+    },
+    safety: {
+      scorer: createToxicityScorer({ model: openai("gemini-2.5-pro") }),
+      sampling: { type: "ratio", rate: 1 }
+    }
+  },
   defaultStreamOptions: {
     maxSteps: 50,
     maxRetries: 3,
