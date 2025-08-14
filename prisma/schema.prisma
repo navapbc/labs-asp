@@ -66,3 +66,24 @@ model HouseholdDependent {
   @@map("household_dependents")
 }
 
+model PlaywrightArtifact {
+  id        String   @id @default(cuid())
+  sessionId String
+  fileName  String
+  fileType  String   // 'screenshot' | 'trace' | 'session' | 'other'
+  mimeType  String
+  size      Int
+  content   Bytes
+  metadata  Json     @default("{}")
+  traceId   String?
+  threadId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([fileType])
+  @@index([traceId])
+  @@index([createdAt])
+  @@map("mastra_artifacts")
+}
+

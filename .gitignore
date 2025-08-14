@@ -27,3 +27,6 @@ mastra.db
 mastra.db-*
 mastra-memory.db
 mastra-memory.db-*
+
+# Google Vertex AI
+vertex-ai-credentials.json
