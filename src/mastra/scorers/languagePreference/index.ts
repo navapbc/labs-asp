@@ -42,33 +42,7 @@ export function createLanguagePreferenceScorer({
 })
 }
 
-function getLanguageName(langCode: string): string {
-  const languageMap: Record<string, string> = {
-    'en': 'english',
-    'es': 'spanish',
-    'fr': 'french',
-    'de': 'german',
-    'it': 'italian',
-    'pt': 'portuguese',
-    'nl': 'dutch',
-    'sv': 'swedish',
-    'no': 'norwegian',
-    'da': 'danish',
-    'pl': 'polish',
-    'ru': 'russian',
-    'ja': 'japanese',
-    'ko': 'korean',
-    'zh': 'chinese',
-    'ar': 'arabic',
-    'hi': 'hindi',
-    'th': 'thai',
-    'vi': 'vietnamese',
-    'tr': 'turkish'
-  };
-  
-  return languageMap[langCode] || langCode;
-}
-
+// work in progress
 function getComplianceReason(level: string, language?: string): string {
   switch (level) {
     case 'excellent':

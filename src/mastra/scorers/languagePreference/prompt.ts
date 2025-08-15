@@ -12,6 +12,7 @@ Check for:
 - User stating they like to speak in a different language
 - User stating they like to use a different language
 - User stating English is not their first language
+- User states that they have a client who speaks a different language
 
 Example for English:
 "I speak English."
