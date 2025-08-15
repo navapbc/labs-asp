@@ -37,7 +37,6 @@
     "@mastra/pg": "^0.13.3",
     "@prisma/client": "^6.12.0",
     "@types/jsonwebtoken": "^9.0.10",
-    "anthropic-vertex-ai": "1.0.2",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.2.1",
     "exa-mcp-server": "^2.0.3",

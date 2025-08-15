@@ -7,13 +7,6 @@ import { databaseTools } from '../tools/database-tools';
 import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
-import { createAnthropicVertex } from 'anthropic-vertex-ai';
-
-// Configure Anthropic Vertex AI
-const anthropicVertex = createAnthropicVertex({
-  region: process.env.GOOGLE_VERTEX_REGION,
-  projectId: process.env.GOOGLE_VERTEX_PROJECT_ID,
-});
 
 const storage = postgresStore;
 
@@ -143,8 +136,7 @@ export const webAutomationAgent = new Agent({
   `,
   // model: openai('gpt-5-2025-08-07'),
   // model: openai('gpt-4.1-mini'),
-  // model: anthropic('claude-sonnet-4-20250514'),
-  model: anthropicVertex('claude-sonnet-4-20250514'),
+  model: anthropic('claude-sonnet-4-20250514'),
   // model: google('gemini-2.5-pro'),
 
   tools: { 
