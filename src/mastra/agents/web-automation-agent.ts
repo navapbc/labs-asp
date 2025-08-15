@@ -81,7 +81,7 @@ export const webAutomationAgent = new Agent({
     **Web Navigation:**
     - Navigate to websites and analyze page structure
     - If participant has a preferred language, immediately look for and change the website language
-    - Common language selectors: language dropdowns, flag icons, "EN" buttons, or language preference settings
+    - Common language selectors: "Select Language" dropdowns, flag icons, buttons that say "EN" or "SP", or language preference settings
     - Identify and interact with elements (buttons, forms, links, dropdowns)
 
     When performing actions:
