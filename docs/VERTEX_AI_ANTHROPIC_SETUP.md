@@ -140,8 +140,67 @@ Replace `YOUR-PROJECT-ID` with your actual Google Cloud project ID.
 
 **Quota errors**: Request quota increases in the [Cloud Console](https://console.cloud.google.com/iam-admin/quotas).
 
+## Step 8: Enable BigQuery Logging (Optional)
+
+To log requests and responses to BigQuery for monitoring and analysis:
+
+### Create BigQuery Dataset and Table
+
+```bash
+# Create dataset
+bq mk --location=US YOUR-PROJECT-ID:anthropic_logging
+
+# The table will be auto-created when logging starts
+```
+
+### Enable Logging via REST API
+
+Create a request configuration file:
+
+```json
+{
+  "publisherModelConfig": {
+     "loggingConfig": {
+       "enabled": true,
+       "samplingRate": 1.0,
+       "bigqueryDestination": {
+         "outputUri": "bq://YOUR-PROJECT-ID.anthropic_logging.request_response_logging"
+       },
+       "enableOtelLogging": true
+     }
+   }
+}
+```
+
+Enable logging for Claude Sonnet 4:
+
+```bash
+# Save the JSON above to logging-config-request.json, then run:
+curl -X POST \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json; charset=utf-8" \
+  -d @logging-config-request.json \
+  "https://us-east5-aiplatform.googleapis.com/v1beta1/projects/YOUR-PROJECT-ID/locations/us-east5/publishers/anthropic/models/claude-sonnet-4:setPublisherModelConfig"
+```
+
+### Verify Logging Configuration
+
+```bash
+curl -X GET \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  "https://us-east5-aiplatform.googleapis.com/v1beta1/projects/YOUR-PROJECT-ID/locations/us-east5/publishers/anthropic/models/claude-sonnet-4:fetchPublisherModelConfig"
+```
+
+### Notes
+
+- Logs may take a few minutes to appear in BigQuery
+- Sampling rate of 1.0 logs 100% of requests
+- The table schema includes fields like `full_request`, `full_response`, `logging_time`, etc.
+- No code changes needed - your existing `vertexAnthropic('claude-sonnet-4')` calls will automatically be logged
+
 ## Helpful Resources
 
 - [Vertex AI Documentation](https://cloud.google.com/vertex-ai/docs)
 - [Anthropic Claude Code Vertex AI Guide](https://docs.anthropic.com/en/docs/claude-code/google-vertex-ai)
 - [AI SDK Google Vertex Documentation](https://sdk.vercel.ai/providers/ai-sdk-providers/google-vertex)
+- [Vertex AI Request-Response Logging](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/request-response-logging)
