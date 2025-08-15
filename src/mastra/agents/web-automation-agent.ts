@@ -8,6 +8,7 @@ import { pgVector, postgresStore } from '../storage';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { anthropic } from '@ai-sdk/anthropic';
+import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
 import { createToolHallucinationScorer } from '../scorers/toolHallucination';
 import { databaseTools } from '../tools/database-tools';
 import { google } from '@ai-sdk/google';
@@ -164,6 +165,12 @@ export const webAutomationAgent = new Agent({
     },
     hallucination: {
       scorer: createToolHallucinationScorer({
+        model: google("gemini-2.5-pro"),
+      }),
+      sampling: { rate: 1, type: "ratio" },
+    },
+    languagePreference: {
+      scorer: createLanguagePreferenceScorer({
         model: google("gemini-2.5-pro"),
       }),
       sampling: { rate: 1, type: "ratio" },
