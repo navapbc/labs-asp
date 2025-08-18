@@ -9,7 +9,6 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { anthropic } from '@ai-sdk/anthropic';
 import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
-import { createToolHallucinationScorer } from '../scorers/toolHallucination';
 import { databaseTools } from '../tools/database-tools';
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
@@ -164,12 +163,6 @@ export const webAutomationAgent = new Agent({
     safety: {
       scorer: createToxicityScorer({ model: google("gemini-2.5-pro") }),
       sampling: { type: "ratio", rate: 1 }
-    },
-    hallucination: {
-      scorer: createToolHallucinationScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
     },
     languagePreference: {
       scorer: createLanguagePreferenceScorer({
