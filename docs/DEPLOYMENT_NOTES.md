@@ -6,7 +6,7 @@ This guide provides an exact, copy‑pasteable sequence to deploy `mastra-test-a
 - Google Cloud project with billing enabled
 - `gcloud` CLI installed and authenticated
 - API keys: OpenAI, Anthropic, Exa
-- PostgreSQL connection URL (currently Neon)
+- GCP Cloud SQL PostgreSQL database (see [GCP_POSTGRESQL_SETUP.md](./GCP_POSTGRESQL_SETUP.md))
 
 ---
 
@@ -55,14 +55,32 @@ cd labs-asp-experiments/mastra-test-app
 pnpm install
 ```
 
-### 5) Configure environment
+### 5) Authorize VM IP for database access
+```bash
+# Get the VM's external IP
+EXTERNAL_IP=$(gcloud compute instances describe mastra-app \
+  --zone=us-west1-a \
+  --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+
+echo "VM External IP: $EXTERNAL_IP"
+
+# Add VM IP to Cloud SQL authorized networks (replace existing IPs as needed)
+gcloud sql instances patch app-dev --authorized-networks=$EXTERNAL_IP
+```
+
+### 6) Configure environment
 Create `.env` in the project root with required variables:
 ```bash
 cat > .env << 'EOF'
 OPENAI_API_KEY=your_openai_key
 ANTHROPIC_API_KEY=your_anthropic_key
 EXA_API_KEY=your_exa_key
-DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
+
+# GCP Cloud SQL PostgreSQL (update with your actual values)
+DATABASE_URL="postgresql://app_user:your_password@your_db_ip/app_db?sslmode=disable"
+
+# CORS Configuration (replace YOUR_VM_IP with actual external IP)
+CORS_ORIGINS="http://localhost:4111,http://0.0.0.0:4111,http://YOUR_VM_IP:4111,*"
 
 # Required for auth middleware
 MASTRA_JWT_SECRET=replace_with_a_strong_random_secret
@@ -72,18 +90,45 @@ NODE_ENV=production
 EOF
 ```
 
-### 7) Build and (optionally) apply migrations
+**Note:** For production, consider using `sslmode=require` with proper SSL certificates instead of `sslmode=disable`.
+
+### 7) Build and apply migrations
 ```bash
 # Build the app and prepare Prisma client in the output
 pnpm build
 
-# If your database is new or migrations need to be applied
+# Apply database migrations
 npx prisma migrate deploy
+
+# Generate Prisma client
+npx prisma generate
 ```
 
 ### 8) Start the application
+
+#### Option A: Development/Testing (foreground)
 ```bash
 pnpm dev
+```
+
+#### Option B: Production/Persistent (with PM2)
+```bash
+# Install PM2 globally
+sudo npm install -g pm2
+
+# Start the app with PM2
+pm2 start "pnpm dev" --name app-playground
+
+# Useful PM2 commands:
+pm2 list                    # View all processes
+pm2 logs app-playground     # View logs
+pm2 restart app-playground  # Restart the app
+pm2 stop app-playground     # Stop the app
+pm2 delete app-playground   # Remove from PM2
+
+# Auto-restart PM2 processes on system reboot
+pm2 startup
+pm2 save
 ```
 
 The server listens on `0.0.0.0:4111`. In another terminal:
@@ -102,6 +147,13 @@ echo "http://$EXTERNAL_IP:4111/auth/login"
 - Auth-protected UI is served at `/auth/login` and the Web Automation Agent playground at `/agents/webAutomationAgent/chat/` after login.
 
 ### Troubleshooting
-- Prisma client errors: ensure you ran `pnpm build`. If needed, run `npx prisma generate` once, then `pnpm build` again.
-- Firewall: verify with `gcloud compute firewall-rules list --filter="name~allow-mastra-app"`.
-- Logs: if using PM2, run `pm2 logs mastra-app`; otherwise, observe terminal output from `pnpm dev`.
+- **Prisma client errors:** ensure you ran `pnpm build`. If needed, run `npx prisma generate` once, then `pnpm build` again.
+- **Firewall issues:** verify with `gcloud compute firewall-rules list --filter="name~allow-mastra-app"`.
+- **Database connection:** check that VM IP is authorized in Cloud SQL and `.env` has correct DATABASE_URL.
+- **Logs:** 
+  - PM2: `pm2 logs app-playground`
+  - Foreground: observe terminal output from `pnpm dev`
+- **PM2 process management:**
+  - Check status: `pm2 status`
+  - Restart if needed: `pm2 restart app-playground`
+  - Clear logs: `pm2 flush`
