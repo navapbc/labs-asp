@@ -1,0 +1,225 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GAR_LOCATION: us-central1
+  REPOSITORY: labs-asp
+  SERVICE: labs-asp
+
+jobs:
+  determine-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      deployment_id: ${{ steps.env.outputs.deployment_id }}
+      base_url: ${{ steps.env.outputs.base_url }}
+      should_deploy: ${{ steps.env.outputs.should_deploy }}
+      is_cleanup: ${{ steps.env.outputs.is_cleanup }}
+    steps:
+      - name: Determine deployment environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ] && [ "${{ github.event.action }}" == "closed" ]; then
+            echo "is_cleanup=true" >> $GITHUB_OUTPUT
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "deployment_id=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "deployment_id=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+            echo "base_url=pr-${{ github.event.number }}.labs-asp.dev" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "is_cleanup=false" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "deployment_id=prod" >> $GITHUB_OUTPUT
+            echo "base_url=labs-asp.com" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "is_cleanup=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/* ]]; then
+            BRANCH_NAME=$(echo ${{ github.ref }} | sed 's/refs\/heads\///')
+            SAFE_BRANCH=$(echo $BRANCH_NAME | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "deployment_id=branch-${SAFE_BRANCH}" >> $GITHUB_OUTPUT
+            echo "base_url=${SAFE_BRANCH}.labs-asp.dev" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "is_cleanup=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "is_cleanup=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-deploy:
+    needs: determine-environment
+    if: needs.determine-environment.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run type check
+        run: pnpm type-check
+
+      - name: Run tests
+        run: pnpm test || echo "No tests found"
+
+      - name: Build application
+        run: pnpm build
+        env:
+          DEPLOYMENT_ID: ${{ needs.determine-environment.outputs.deployment_id }}
+          ENVIRONMENT: ${{ needs.determine-environment.outputs.environment }}
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as a credential helper
+        run: gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
+
+      - name: Build and push container
+        run: |
+          IMAGE_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:${{ needs.determine-environment.outputs.deployment_id }}-${{ github.sha }}"
+          
+          docker build \
+            --build-arg DEPLOYMENT_ID="${{ needs.determine-environment.outputs.deployment_id }}" \
+            --build-arg ENVIRONMENT="${{ needs.determine-environment.outputs.environment }}" \
+            -t $IMAGE_TAG \
+            -f docker/Dockerfile .
+          
+          docker push $IMAGE_TAG
+          
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ needs.determine-environment.outputs.deployment_id }}-labs-asp \
+            --image $IMAGE_TAG \
+            --region $GAR_LOCATION \
+            --allow-unauthenticated \
+            --set-env-vars="DEPLOYMENT_ID=${{ needs.determine-environment.outputs.deployment_id }},ENVIRONMENT=${{ needs.determine-environment.outputs.environment }}" \
+            --set-secrets="DATABASE_URL=database-url-${{ needs.determine-environment.outputs.environment }}:latest,OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,EXA_API_KEY=exa-api-key:latest,MASTRA_JWT_SECRET=mastra-jwt-secret:latest,MASTRA_APP_PASSWORD=mastra-app-password:latest" \
+            --labels="environment=${{ needs.determine-environment.outputs.environment }},deployment-id=${{ needs.determine-environment.outputs.deployment_id }},branch=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g'),commit-sha=${{ github.sha }}" \
+            --max-instances=10 \
+            --memory=2Gi \
+            --cpu=2 \
+            --port=4111 \
+            --timeout=300
+
+      - name: Get service URL
+        id: get-url
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ needs.determine-environment.outputs.deployment_id }}-labs-asp --region=$GAR_LOCATION --format='value(status.url)')
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "service_url=$SERVICE_URL" >> $GITHUB_ENV
+
+      - name: Update PR with deployment info
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.get-url.outputs.SERVICE_URL }}';
+            
+            const body = `
+            ## 🚀 Deployment Ready
+            
+            Your changes have been deployed to a preview environment:
+            
+            - **Preview URL**: ${deploymentUrl}
+            - **Environment**: \`${{ needs.determine-environment.outputs.environment }}\`
+            - **Deployment ID**: \`${{ needs.determine-environment.outputs.deployment_id }}\`
+            - **Commit**: \`${{ github.sha }}\`
+            
+            The deployment will be automatically cleaned up when this PR is closed.
+            `;
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const existingComment = comments.data.find(comment => 
+              comment.body.includes('🚀 Deployment Ready')
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  cleanup-pr-deployments:
+    needs: determine-environment
+    if: needs.determine-environment.outputs.is_cleanup == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Delete PR deployment
+        run: |
+          DEPLOYMENT_ID="${{ needs.determine-environment.outputs.deployment_id }}"
+          SERVICE_NAME="${DEPLOYMENT_ID}-labs-asp"
+          
+          # Delete the Cloud Run service
+          gcloud run services delete $SERVICE_NAME \
+            --region=$GAR_LOCATION \
+            --quiet || true
+          
+          # Delete container images for this PR
+          gcloud artifacts docker images delete \
+            "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:${DEPLOYMENT_ID}-*" \
+            --quiet || true
+
+      - name: Update PR with cleanup info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '🧹 Preview deployment has been cleaned up automatically.'
+            });

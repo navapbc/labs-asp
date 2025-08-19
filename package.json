@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "type-check": "tsc --noEmit",
     "dev": "mastra dev",
     "dev:pretty": "mastra dev --inspect | npx pino-pretty",
     "build": "mastra build",
@@ -13,8 +14,12 @@
     "seed:wic": "tsx src/seed-wic.ts",
     "seed:csv": "tsx src/seed-csv.ts",
     "db:migrate": "npx prisma migrate dev",
+    "db:migrate:deploy": "npx prisma migrate deploy",
     "db:reset": "npx prisma migrate reset",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "docker:build": "docker build -f docker/Dockerfile -t labs-asp .",
+    "docker:dev": "docker-compose -f docker/docker-compose.yml up --build",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down"
   },
   "keywords": [],
   "author": "",

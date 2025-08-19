@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # Docker MCP Gateway - Persistent browser processes
+  mcp-gateway:
+    image: docker/mcp-gateway:latest
+    command:
+      - --transport=sse
+      - --servers=playwright-official
+      - --tools=navigate,screenshot,click,type,wait_for_selector,get_page_content,fill_form,extract_data
+    ports:
+      - "8811:8811"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - playwright_data:/tmp/playwright
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8811/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Main application
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        DEPLOYMENT_ID: local
+        ENVIRONMENT: development
+    ports:
+      - "4111:4111"
+    environment:
+      - NODE_ENV=development
+      - DEPLOYMENT_ID=local
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://app_user:app_password@db:5432/app_db
+      - MCP_GATEWAY_URL=http://mcp-gateway:8811/sse
+      - CORS_ORIGINS=http://localhost:4111,http://0.0.0.0:4111
+    env_file:
+      - ../.env.local
+    depends_on:
+      db:
+        condition: service_healthy
+      mcp-gateway:
+        condition: service_healthy
+    volumes:
+      - ../src:/app/src:ro
+      - ../prisma:/app/prisma:ro
+    command: pnpm dev
+
+  # Database
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_password
+      POSTGRES_DB: app_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d app_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Redis for caching/sessions
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Browser monitoring dashboard
+  browser-monitor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - MCP_GATEWAY_URL=http://mcp-gateway:8811/sse
+    depends_on:
+      mcp-gateway:
+        condition: service_healthy
+    volumes:
+      - ../src:/app/src:ro
+    command: ["node", "scripts/browser-monitor.js"]
+    profiles: ["monitoring"]
+
+volumes:
+  postgres_data:
+  redis_data:
+  playwright_data:

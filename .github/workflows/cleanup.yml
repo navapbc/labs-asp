@@ -1,0 +1,80 @@
+name: Cleanup Old Deployments
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Daily at 2 AM UTC
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GAR_LOCATION: us-central1
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Cleanup old preview deployments
+        run: |
+          # Get all preview deployments older than 7 days
+          CUTOFF_DATE=$(date -d '7 days ago' --iso-8601)
+          
+          echo "Cleaning up Cloud Run services older than $CUTOFF_DATE"
+          
+          gcloud run services list \
+            --filter="metadata.labels.environment=preview AND metadata.creationTimestamp<'${CUTOFF_DATE}'" \
+            --format="value(metadata.name)" \
+            --region=$GAR_LOCATION | while read SERVICE_NAME; do
+            
+            if [ ! -z "$SERVICE_NAME" ]; then
+              echo "Deleting old preview deployment: $SERVICE_NAME"
+              
+              # Delete the service
+              gcloud run services delete $SERVICE_NAME \
+                --region=$GAR_LOCATION \
+                --quiet || echo "Failed to delete service $SERVICE_NAME"
+            fi
+          done
+
+      - name: Cleanup old container images
+        run: |
+          # Delete container images older than 30 days for preview deployments
+          echo "Cleaning up container images older than 30 days"
+          
+          gcloud artifacts docker images list \
+            $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/labs-asp/labs-asp \
+            --filter="createTime<'-P30D'" \
+            --format="value(name)" | while read IMAGE_NAME; do
+            
+            if [ ! -z "$IMAGE_NAME" ]; then
+              echo "Deleting old image: $IMAGE_NAME"
+              gcloud artifacts docker images delete "$IMAGE_NAME" --quiet || echo "Failed to delete image $IMAGE_NAME"
+            fi
+          done
+
+      - name: Cleanup untagged images
+        run: |
+          # Delete untagged images to save storage space
+          echo "Cleaning up untagged container images"
+          
+          gcloud artifacts docker images list \
+            $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/labs-asp/labs-asp \
+            --filter="tags:*" \
+            --format="value(name)" | while read IMAGE_NAME; do
+            
+            if [ ! -z "$IMAGE_NAME" ]; then
+              # Check if image has no tags
+              TAGS=$(gcloud artifacts docker tags list --filter="name~$IMAGE_NAME" --format="value(tag)")
+              if [ -z "$TAGS" ]; then
+                echo "Deleting untagged image: $IMAGE_NAME"
+                gcloud artifacts docker images delete "$IMAGE_NAME" --quiet || echo "Failed to delete untagged image $IMAGE_NAME"
+              fi
+            fi
+          done

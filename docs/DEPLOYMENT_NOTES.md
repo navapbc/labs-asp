@@ -116,19 +116,19 @@ pnpm dev
 # Install PM2 globally
 sudo npm install -g pm2
 
-# Start the app with PM2
-pm2 start "pnpm dev" --name app-playground
+# Start the app with PM2 as root (system-wide, accessible to all users)
+sudo pm2 start "pnpm dev" --name app-playground --user $(whoami)
 
-# Useful PM2 commands:
-pm2 list                    # View all processes
-pm2 logs app-playground     # View logs
-pm2 restart app-playground  # Restart the app
-pm2 stop app-playground     # Stop the app
-pm2 delete app-playground   # Remove from PM2
+# Useful PM2 commands (use sudo for system-wide processes):
+sudo pm2 list                    # View all processes
+sudo pm2 logs app-playground     # View logs
+sudo pm2 restart app-playground  # Restart the app
+sudo pm2 stop app-playground     # Stop the app
+sudo pm2 delete app-playground   # Remove from PM2
 
-# Auto-restart PM2 processes on system reboot
-pm2 startup
-pm2 save
+# Auto-restart PM2 processes on system reboot (run as root)
+sudo pm2 startup
+sudo pm2 save
 ```
 
 The server listens on `0.0.0.0:4111`. In another terminal:

@@ -1,155 +1,300 @@
-# Mastra Test App Quick Setup Guide
+# Labs ASP - AI Agent Platform
 
-Welcome! This guide will help you get the Mastra test app running on your computer in just a few steps. The database is already set up in the cloud, so you'll just be connecting to it!
+A production-ready Mastra-based AI agent platform with browser-in-browser visualization and cloud-native deployment.
 
-## What You'll Have After Setup
+## ✨ Features
 
-- **AI Agents**: Smart assistants that can help with web automation
-- **Web Automation**: AI that can visit websites and extract information
-- **Database**: A cloud database with sample participant data for testing
-- **Playground**: A web interface to interact with all the AI features
+- 🤖 **Multi-Agent System**: Web automation, data extraction, and research agents
+- 🖥️ **Browser-in-Browser**: Real-time visualization of agent actions (VNC, WebRTC, Screenshots)
+- ☁️ **Cloud-Native**: Hybrid Cloud Run + GCE architecture for optimal performance
+- 🔒 **Secure**: Private networking, secret management, and encrypted connections
+- 📊 **Scalable**: Auto-scaling web app with persistent browser pools
+- 🚀 **CI/CD Ready**: GitHub Actions with preview environments
 
-## Prerequisites
+## 🏗️ Architecture
 
-You'll need these installed on your computer:
-
-- **Node.js** (version 20 or higher): [Download here](https://nodejs.org/)
-- **pnpm**: Install by running: `npm install -g pnpm`
-
-## Step-by-Step Setup
-
-### 1. Get the Code and Navigate to the Correct Directory
-```bash
-# Clone the repository
-git clone https://github.com/navapbc/labs-asp-experiments.git
-cd labs-asp-experiments/mastra-test-app
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Cloud Run     │    │  GCE Browser     │    │  Cloud SQL      │
+│   (Web App)     │ -> │  Pool (MCP)      │ -> │  (Database)     │
+│                 │    │                  │    │                 │
+│ • Serverless    │    │ • Persistent     │    │ • Private       │
+│ • Auto-scaling  │    │ • VNC/WebRTC     │    │ • Encrypted     │
+│ • Preview URLs  │    │ • Playwright     │    │ • Backed up     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-> **Important**: Make sure you're in the `mastra-test-app` directory for all the following commands. This is where all the app files are located.
+## 🚀 Quick Start
 
-### 2. Opening Terminal in Visual Studio Code
+### Prerequisites
 
-If you're using Visual Studio Code:
+- Google Cloud Project with billing enabled
+- [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) v1.5+
+- [Docker](https://docs.docker.com/get-docker/) installed
 
-1. **Open the project folder**: Go to `File > Open Folder` and select the `mastra-test-app` directory
-2. **Open the terminal**: 
-   - Use the keyboard shortcut: `Ctrl+(backtick)` on Mac
-   - Or go to `Terminal > New Terminal` in the menu
-   - Or use `View > Terminal`
+### 1. Deploy Infrastructure
 
-The terminal should automatically open in the correct `mastra-test-app` directory. You can verify this by running `pwd` (on Mac) to see your current directory path.
-
-### 3. Install Dependencies
 ```bash
-# Install all required packages
+# Clone and setup
+git clone <your-repo-url>
+cd labs-asp
+
+# Set your GCP project
+gcloud config set project YOUR_PROJECT_ID
+
+# Deploy everything (takes 10-15 minutes)
+./scripts/deploy-infrastructure.sh
+```
+
+This will:
+- ✅ Enable required GCP APIs
+- ✅ Deploy VPC, Cloud SQL, and networking
+- ✅ Create browser pool with load balancer
+- ✅ Set up Artifact Registry and secrets
+- ✅ Build and push your container
+
+### 2. Deploy Application
+
+```bash
+# Deploy the app to Cloud Run
+./scripts/deploy-app.sh
+```
+
+### 3. Access Your Platform
+
+- **Main App**: `https://your-cloud-run-url.run.app`
+- **Login**: `https://your-cloud-run-url.run.app/auth/login`
+- **Browser Dashboard**: `https://your-cloud-run-url.run.app/browser-dashboard`
+
+## 🖥️ Browser-in-Browser
+
+The platform provides multiple ways to view and interact with your AI agents:
+
+### VNC Viewer
+```typescript
+// Traditional remote desktop - works everywhere
+const vncViewer = new BrowserViewer(container, {
+  mode: 'vnc',
+  enableInteraction: true
+});
+```
+
+### WebRTC Stream
+```typescript
+// Real-time video streaming - lowest latency
+const webrtcViewer = new BrowserViewer(container, {
+  mode: 'webrtc',
+  quality: 'high'
+});
+```
+
+### Screenshot Feed
+```typescript
+// HTTP polling - lightweight monitoring
+const screenshotViewer = new BrowserViewer(container, {
+  mode: 'screenshots',
+  quality: 'medium'
+});
+```
+
+### DOM Mirror
+```typescript
+// Synchronized DOM - interactive debugging
+const domViewer = new BrowserViewer(container, {
+  mode: 'dom-mirror',
+  enableInteraction: true
+});
+```
+
+## 🧪 Local Development
+
+### Docker Compose Setup
+
+```bash
+# Start local development environment
+pnpm docker:dev
+
+# This starts:
+# - Main app (localhost:4111)
+# - MCP Gateway (localhost:8811)
+# - PostgreSQL database
+# - Redis (optional)
+```
+
+### Manual Setup
+
+```bash
+# Install dependencies
 pnpm install
-```
 
-### 4. Set Up Environment Variables
+# Set up environment
+cp env.example .env
+# Edit .env with your API keys
 
-Create a `.env` file in the root folder with your API keys:
+# Start database (if not using Docker)
+# Update DATABASE_URL in .env
 
-```env
-# Required API Keys (ask your team lead for these)
-OPENAI_API_KEY=your_openai_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
-EXA_API_KEY=your_exa_key_here
+# Run migrations
+pnpm db:migrate:deploy
 
-# Database connection (ask your team lead for the DATABASE_URL)
-DATABASE_URL="{your_database_url_here}"
-```
-
-> **Note**: The database is already set up in the cloud, so you just need the connection string!
-
-### 5. Database Connection
-
-> **Important**: The database is already set up and populated with test data! As a team member, you only need to connect to it. **Please don't run migration or seeding commands**, these are reserved for admins to avoid accidentally modifying shared data.
-
-The database is ready to use with sample participant data already loaded. You'll be able to see this data once you start the app!
-
-### 6. Start the App
-```bash
-# Launch the Mastra playground
+# Start development server
 pnpm dev
 ```
 
-**Success!** The app should now be running. You'll see a URL in your terminal (usually `http://localhost:4111`): click it to open the playground!
+## 🔧 Configuration
 
-## What Can You Do Now?
-
-### Try the AI Agents
-- **Weather Agent**: Ask about weather in any city
-- **Web Automation Agent**: Have it visit websites and take screenshots
-- **Memory Agent**: Store and retrieve information
-
-### Sample Prompts to Try
-- "What's the weather like in San Francisco?"
-- "Visit google.com and take a screenshot"
-- "Remember that our team meeting is every Tuesday at 2 PM"
-
-### View Your Database
-```bash
-# Open database browser
-pnpm db:studio
-```
-This opens a web interface at `http://localhost:5555` where you can browse the shared participant data (read-only).
-
-## If Something Goes Wrong
-
-### App Frontend Errors or Won't Start
-
-If the app displays errors or becomes unresponsive:
-
-1. **Stop the current process**:
-   - In your terminal, press `Ctrl+C` (Mac) to stop the running process
-   - If that doesn't work, close the entire terminal session:
-     - In VS Code: Click the trash can icon in the terminal panel, or right-click the terminal tab and select "Kill Terminal"
-
-2. **Start fresh**:
-   - Open a new terminal (see "Opening Terminal in Visual Studio Code" above)
-   - Make sure you're in the `mastra-test-app` directory: `cd labs-asp-experiments/mastra-test-app`
-   - Restart the app: `pnpm dev`
-
-3. **If problems persist**:
-   - Try clearing the cache: `pnpm clean` (if available) and run `pnpm install` again
-   - Check that all environment variables are correctly set in your `.env` file
-
-### Database Connection Issues
-- Make sure you have the correct `DATABASE_URL` in your `.env` file
-- Contact your team lead if you're getting database connection errors
-
-### Missing API Keys
-- Contact your team lead for the required API keys
-- Make sure they're properly copied into your `.env` file
-
-### Need Fresh Data?
-Contact your team lead if you need the database refreshed regular team members shouldn't modify the shared database.
-
-## Quick Reference Commands
+### Environment Variables
 
 ```bash
-# Start the app
-pnpm dev
+# API Keys (required)
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+EXA_API_KEY=your_exa_key
 
-# View database (read-only)
-pnpm db:studio
+# Database
+DATABASE_URL=postgresql://user:pass@host:5432/db
+
+# Authentication
+MASTRA_JWT_SECRET=your_jwt_secret
+MASTRA_APP_PASSWORD=your_app_password
+
+# Browser Pool (production)
+MCP_GATEWAY_URL=http://browser-pool-lb:8811/sse
 ```
 
-### Admin-Only Commands
-> **Note**: These commands are for admins only and will modify shared data:
+### Browser Pool Configuration
+
+The browser pool supports various viewing modes:
+
+```yaml
+# docker-compose.yml (local)
+services:
+  mcp-gateway:
+    image: docker/mcp-gateway:latest
+    ports:
+      - "8811:8811"  # MCP Gateway
+      - "6080:6080"  # noVNC web interface
+      - "8080:8080"  # WebRTC signaling
+```
+
+## 🚢 Deployment
+
+### Infrastructure as Code
+
+All infrastructure is managed with Terraform:
+
 ```bash
-# Add sample data (admin only)
-pnpm seed:wic
+# Plan deployment
+./scripts/deploy-infrastructure.sh plan
 
-# Reset everything (admin only)
-pnpm db:reset
+# Apply changes
+./scripts/deploy-infrastructure.sh apply
 
-# Create migrations (admin only)
-pnpm db:migrate
+# Destroy (careful!)
+./scripts/deploy-infrastructure.sh destroy
 ```
 
-## Learn More
+### CI/CD Pipeline
 
-- **Detailed Database Guide**: See `DATABASE_SETUP.md`
-- **Web Automation Features**: See `PLAYWRIGHT_MCP_GUIDE.md`
-- **Need Help?**: Ask your team lead or create an issue
+GitHub Actions automatically:
+- ✅ Builds and tests on every push
+- ✅ Creates preview environments for PRs
+- ✅ Deploys to production on main branch
+- ✅ Cleans up old deployments
+
+### Preview Environments
+
+Every pull request gets its own environment:
+- Unique URL: `https://pr-123-labs-asp.run.app`
+- Isolated database schema
+- Full browser pool access
+- Automatic cleanup on PR close
+
+## 📊 Monitoring
+
+### Health Checks
+
+```bash
+# Main app health
+curl https://your-app-url/health
+
+# Browser pool health
+curl http://browser-pool-ip:3000/health
+
+# MCP Gateway health
+curl http://browser-pool-ip:8811/health
+```
+
+### Logs
+
+```bash
+# Cloud Run logs
+gcloud run services logs read labs-asp-main --region=us-central1
+
+# Browser pool logs
+gcloud compute ssh browser-pool-instance --zone=us-central1-a
+sudo docker-compose -f /opt/browser-pool/docker-compose.yml logs
+```
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+labs-asp/
+├── src/                    # Application source
+│   ├── mastra/            # Mastra agents and workflows
+│   ├── browser-viewer/    # Browser-in-browser components
+│   └── utils/             # Utilities
+├── terraform/             # Infrastructure as code
+│   ├── environments/      # Environment-specific configs
+│   └── modules/           # Reusable Terraform modules
+├── docker/                # Docker configurations
+├── scripts/               # Deployment and utility scripts
+└── docs/                  # Documentation
+```
+
+### Adding New Agents
+
+```typescript
+// src/mastra/agents/my-agent.ts
+export const myAgent = new Agent({
+  name: 'myAgent',
+  instructions: 'Your agent instructions...',
+  model: openai('gpt-4'),
+  tools: await mcpClient.getTools(),
+});
+```
+
+### Browser Automation
+
+```typescript
+// Use the web automation agent
+const response = await webAutomationAgent.stream([{
+  role: 'user',
+  content: 'Visit example.com and take a screenshot'
+}]);
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
+
+## 🆘 Support
+
+- 📖 [Documentation](./docs/)
+- 🐛 [Issues](https://github.com/your-org/labs-asp/issues)
+- 💬 [Discussions](https://github.com/your-org/labs-asp/discussions)
+
+---
+
+**Built with ❤️ using [Mastra](https://mastra.ai), Google Cloud, and modern web technologies.**

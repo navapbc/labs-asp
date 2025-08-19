@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser-in-Browser Demo - Labs ASP</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .demo-header {
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .demo-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        
+        .demo-tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .demo-tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            background: white;
+        }
+        
+        .demo-tab:hover {
+            background: #f3f4f6;
+        }
+        
+        .demo-content {
+            height: 600px;
+            position: relative;
+        }
+        
+        .viewer-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .demo-controls {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .control-button {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .control-button:hover {
+            background: #f3f4f6;
+        }
+        
+        .control-button.primary {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        
+        .control-button.primary:hover {
+            background: #1d4ed8;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-connected { background: #10b981; }
+        .status-connecting { background: #f59e0b; }
+        .status-disconnected { background: #ef4444; }
+        
+        .info-panel {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .info-panel h3 {
+            margin: 0 0 12px 0;
+            color: #1e40af;
+        }
+        
+        .info-panel ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .info-panel li {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>Browser-in-Browser Viewer Demo</h1>
+            <p>Multiple ways to view and interact with remote browser instances</p>
+        </div>
+        
+        <div class="info-panel">
+            <h3>🚀 How Browser-in-Browser Works</h3>
+            <p>Your Mastra agents run in a remote browser pool (GCE instances) while you monitor and debug them in real-time from your web dashboard:</p>
+            <ul>
+                <li><strong>VNC Mode:</strong> Traditional remote desktop - works everywhere, good for debugging</li>
+                <li><strong>WebRTC Mode:</strong> Real-time video streaming - lowest latency, best performance</li>
+                <li><strong>Screenshots Mode:</strong> HTTP image polling - lightweight, good for monitoring</li>
+                <li><strong>DOM Mirror Mode:</strong> Synchronized DOM - interactive, bandwidth efficient</li>
+            </ul>
+        </div>
+        
+        <div class="demo-tabs">
+            <button class="demo-tab active" onclick="switchTab('vnc')">VNC Viewer</button>
+            <button class="demo-tab" onclick="switchTab('webrtc')">WebRTC Stream</button>
+            <button class="demo-tab" onclick="switchTab('screenshots')">Screenshot Feed</button>
+            <button class="demo-tab" onclick="switchTab('dom-mirror')">DOM Mirror</button>
+        </div>
+        
+        <div class="demo-content">
+            <div id="vnc-viewer" class="viewer-container">
+                <div style="text-align: center;">
+                    <h3>VNC Viewer</h3>
+                    <p>Click "Connect VNC" to start viewing the remote browser</p>
+                    <p style="font-size: 12px; opacity: 0.7;">Most compatible option - works in any browser</p>
+                </div>
+            </div>
+            
+            <div id="webrtc-viewer" class="viewer-container" style="display: none;">
+                <div style="text-align: center;">
+                    <h3>WebRTC Stream</h3>
+                    <p>Real-time video streaming from the remote browser</p>
+                    <p style="font-size: 12px; opacity: 0.7;">Lowest latency - best for real-time monitoring</p>
+                </div>
+            </div>
+            
+            <div id="screenshots-viewer" class="viewer-container" style="display: none;">
+                <div style="text-align: center;">
+                    <h3>Screenshot Feed</h3>
+                    <p>Automatic screenshot updates from the browser</p>
+                    <p style="font-size: 12px; opacity: 0.7;">Lightweight - good for basic monitoring</p>
+                </div>
+            </div>
+            
+            <div id="dom-mirror-viewer" class="viewer-container" style="display: none;">
+                <div style="text-align: center;">
+                    <h3>DOM Mirror</h3>
+                    <p>Synchronized DOM representation of the remote page</p>
+                    <p style="font-size: 12px; opacity: 0.7;">Interactive - can inspect elements</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-controls">
+            <div class="control-group">
+                <div class="status-indicator">
+                    <div class="status-dot status-disconnected"></div>
+                    <span id="connection-status">Disconnected</span>
+                </div>
+                <select class="control-button">
+                    <option>Browser Instance 1</option>
+                    <option>Browser Instance 2</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <button class="control-button" onclick="takeScreenshot()">📸 Screenshot</button>
+                <button class="control-button" onclick="toggleInteraction()">🖱️ Enable Clicks</button>
+                <button class="control-button primary" id="connect-btn" onclick="toggleConnection()">Connect VNC</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'vnc';
+        let isConnected = false;
+        let currentViewer = null;
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all viewers
+            document.querySelectorAll('.viewer-container').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show selected viewer
+            document.getElementById(tabName + '-viewer').style.display = 'flex';
+            
+            // Update tab buttons
+            document.querySelectorAll('.demo-tab').forEach(el => {
+                el.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            currentTab = tabName;
+            
+            // Update connect button text
+            const connectBtn = document.getElementById('connect-btn');
+            connectBtn.textContent = `Connect ${tabName.toUpperCase()}`;
+            
+            // Disconnect current viewer if switching
+            if (isConnected) {
+                disconnect();
+            }
+        }
+        
+        // Connection management
+        function toggleConnection() {
+            if (isConnected) {
+                disconnect();
+            } else {
+                connect();
+            }
+        }
+        
+        function connect() {
+            const statusEl = document.getElementById('connection-status');
+            const connectBtn = document.getElementById('connect-btn');
+            const statusDot = document.querySelector('.status-dot');
+            
+            // Update UI to connecting state
+            statusEl.textContent = 'Connecting...';
+            statusDot.className = 'status-dot status-connecting';
+            connectBtn.textContent = 'Connecting...';
+            connectBtn.disabled = true;
+            
+            // Simulate connection based on current tab
+            setTimeout(() => {
+                const viewerContainer = document.getElementById(currentTab + '-viewer');
+                
+                switch(currentTab) {
+                    case 'vnc':
+                        viewerContainer.innerHTML = `
+                            <iframe 
+                                src="http://localhost:6080/vnc.html?autoconnect=true" 
+                                style="width: 100%; height: 100%; border: none;"
+                                title="VNC Viewer">
+                            </iframe>
+                        `;
+                        break;
+                        
+                    case 'webrtc':
+                        viewerContainer.innerHTML = `
+                            <video 
+                                id="webrtc-video"
+                                style="width: 100%; height: 100%; object-fit: contain;"
+                                autoplay 
+                                controls>
+                                Your browser doesn't support WebRTC
+                            </video>
+                        `;
+                        // In real implementation, this would start WebRTC connection
+                        break;
+                        
+                    case 'screenshots':
+                        viewerContainer.innerHTML = `
+                            <img 
+                                id="screenshot-img"
+                                style="width: 100%; height: 100%; object-fit: contain;"
+                                src="data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#f0f0f0"/><text x="400" y="300" text-anchor="middle" font-family="Arial" font-size="24" fill="#666">Live Screenshot Feed</text></svg>')}"
+                                alt="Browser Screenshot">
+                        `;
+                        // Start screenshot polling
+                        startScreenshotPolling();
+                        break;
+                        
+                    case 'dom-mirror':
+                        viewerContainer.innerHTML = `
+                            <iframe 
+                                id="dom-mirror-frame"
+                                style="width: 100%; height: 100%; border: none; background: white;"
+                                srcdoc="<html><body style='font-family: Arial; padding: 20px; text-align: center;'><h2>DOM Mirror Active</h2><p>This would show the synchronized DOM from the remote browser</p><div style='border: 1px solid #ccc; padding: 20px; margin: 20px; border-radius: 8px;'><h3>Example Remote Page</h3><button onclick='alert(\"Clicked!\")'>Interactive Button</button></div></body></html>"
+                                title="DOM Mirror">
+                            </iframe>
+                        `;
+                        break;
+                }
+                
+                // Update UI to connected state
+                isConnected = true;
+                statusEl.textContent = 'Connected';
+                statusDot.className = 'status-dot status-connected';
+                connectBtn.textContent = 'Disconnect';
+                connectBtn.disabled = false;
+                
+            }, 1500); // Simulate connection delay
+        }
+        
+        function disconnect() {
+            const statusEl = document.getElementById('connection-status');
+            const connectBtn = document.getElementById('connect-btn');
+            const statusDot = document.querySelector('.status-dot');
+            
+            // Clear viewer content
+            const viewerContainer = document.getElementById(currentTab + '-viewer');
+            viewerContainer.innerHTML = `
+                <div style="text-align: center;">
+                    <h3>${currentTab.toUpperCase()} Viewer</h3>
+                    <p>Click "Connect ${currentTab.toUpperCase()}" to start viewing the remote browser</p>
+                </div>
+            `;
+            
+            // Update UI to disconnected state
+            isConnected = false;
+            statusEl.textContent = 'Disconnected';
+            statusDot.className = 'status-dot status-disconnected';
+            connectBtn.textContent = `Connect ${currentTab.toUpperCase()}`;
+            connectBtn.disabled = false;
+            
+            // Stop any polling
+            if (window.screenshotInterval) {
+                clearInterval(window.screenshotInterval);
+            }
+        }
+        
+        // Screenshot polling for demo
+        function startScreenshotPolling() {
+            let counter = 0;
+            window.screenshotInterval = setInterval(() => {
+                const img = document.getElementById('screenshot-img');
+                if (img) {
+                    // Simulate changing screenshots
+                    const timestamp = new Date().toLocaleTimeString();
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
+                        <rect width="800" height="600" fill="#f8f9fa"/>
+                        <rect x="50" y="50" width="700" height="500" fill="white" stroke="#dee2e6"/>
+                        <text x="400" y="100" text-anchor="middle" font-family="Arial" font-size="20" fill="#495057">Live Browser Screenshot</text>
+                        <text x="400" y="150" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">Updated: ${timestamp}</text>
+                        <rect x="100" y="200" width="600" height="300" fill="#e9ecef" stroke="#adb5bd"/>
+                        <text x="400" y="360" text-anchor="middle" font-family="Arial" font-size="16" fill="#495057">Simulated Browser Content</text>
+                    </svg>`;
+                    img.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+                }
+                counter++;
+            }, 2000); // Update every 2 seconds
+        }
+        
+        // Control functions
+        function takeScreenshot() {
+            alert('Screenshot taken! In a real implementation, this would capture the current browser state.');
+        }
+        
+        function toggleInteraction() {
+            const btn = event.target;
+            if (btn.textContent.includes('Enable')) {
+                btn.textContent = '🖱️ Disable Clicks';
+                alert('Interaction enabled! You can now click in the browser viewer to control the remote browser.');
+            } else {
+                btn.textContent = '🖱️ Enable Clicks';
+                alert('Interaction disabled.');
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Browser-in-Browser Demo loaded');
+            console.log('This demo shows how you can view and interact with remote browser instances');
+            console.log('In production, this connects to your GCE browser pool via WebSocket/WebRTC');
+        });
+    </script>
+</body>
+</html>
