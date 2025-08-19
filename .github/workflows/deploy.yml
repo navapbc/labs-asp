@@ -7,7 +7,7 @@ on:
     types: [opened, synchronize, reopened, closed]
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
   GAR_LOCATION: us-central1
   REPOSITORY: labs-asp
   SERVICE: labs-asp
