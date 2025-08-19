@@ -35,7 +35,7 @@ export const mastra = new Mastra({
     host: '0.0.0.0', // Allow external connections
     port: 4111,
     cors: {
-      origin: ['http://localhost:4111', 'http://0.0.0.0:4111', '*'],
+      origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:4111', '*'],
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization', 'x-mastra-dev-playground'],
       credentials: true,
