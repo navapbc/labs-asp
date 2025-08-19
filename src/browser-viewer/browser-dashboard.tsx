@@ -22,7 +22,7 @@ interface ViewerTab {
 export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({ 
   endpoint, 
   className = '' 
-}) => {
+}: BrowserDashboardProps) => {
   const [instances, setInstances] = useState<BrowserInstance[]>([]);
   const [viewerTabs, setViewerTabs] = useState<ViewerTab[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
     try {
       setIsLoading(true);
       const newInstance = await instanceManager.current.createInstance();
-      setInstances(prev => [...prev, newInstance]);
+      setInstances((prev: BrowserInstance[]) => [...prev, newInstance]);
       
       // Automatically open a viewer for the new instance
       openViewer(newInstance.id, 'screenshots');
@@ -67,12 +67,12 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
   const deleteInstance = async (instanceId: string) => {
     try {
       await instanceManager.current.deleteInstance(instanceId);
-      setInstances(prev => prev.filter(i => i.id !== instanceId));
+      setInstances((prev: BrowserInstance[]) => prev.filter((i: BrowserInstance) => i.id !== instanceId));
       
       // Close any open viewers for this instance
-      setViewerTabs(prev => {
-        const filtered = prev.filter(tab => tab.instanceId !== instanceId);
-        if (activeTab && !filtered.find(t => t.id === activeTab)) {
+      setViewerTabs((prev: ViewerTab[]) => {
+        const filtered = prev.filter((tab: ViewerTab) => tab.instanceId !== instanceId);
+        if (activeTab && !filtered.find((t: ViewerTab) => t.id === activeTab)) {
           setActiveTab(filtered.length > 0 ? filtered[0].id : null);
         }
         return filtered;
@@ -91,7 +91,7 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
       return;
     }
 
-    const instance = instances.find(i => i.id === instanceId);
+    const instance = instances.find((i: BrowserInstance) => i.id === instanceId);
     if (!instance) return;
 
     const newTab: ViewerTab = {
@@ -102,18 +102,18 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
       mode
     };
 
-    setViewerTabs(prev => [...prev, newTab]);
+    setViewerTabs((prev: ViewerTab[]) => [...prev, newTab]);
     setActiveTab(tabId);
   };
 
   const closeViewer = (tabId: string) => {
-    const tab = viewerTabs.find(t => t.id === tabId);
+    const tab = viewerTabs.find((t: ViewerTab) => t.id === tabId);
     if (tab?.viewer) {
       tab.viewer.disconnect();
     }
 
-    setViewerTabs(prev => {
-      const filtered = prev.filter(t => t.id !== tabId);
+    setViewerTabs((prev: ViewerTab[]) => {
+      const filtered = prev.filter((t: ViewerTab) => t.id !== tabId);
       if (activeTab === tabId) {
         setActiveTab(filtered.length > 0 ? filtered[0].id : null);
       }
@@ -125,7 +125,7 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
   useEffect(() => {
     if (!activeTab || !viewerContainerRef.current) return;
 
-    const tab = viewerTabs.find(t => t.id === activeTab);
+    const tab = viewerTabs.find((t: ViewerTab) => t.id === activeTab);
     if (!tab || tab.viewer) return;
 
     // Clear container
@@ -141,13 +141,14 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
     });
 
     // Listen for connection state changes
-    viewerContainerRef.current.addEventListener('connectionStateChange', (event: any) => {
-      setConnectionStatus(event.detail.state);
+    viewerContainerRef.current.addEventListener('connectionStateChange', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      setConnectionStatus(customEvent.detail.state);
     });
 
     // Update tab with viewer instance
-    setViewerTabs(prev => 
-      prev.map(t => t.id === activeTab ? { ...t, viewer } : t)
+    setViewerTabs((prev: ViewerTab[]) => 
+      prev.map((t: ViewerTab) => t.id === activeTab ? { ...t, viewer } : t)
     );
   }, [activeTab, viewerTabs]);
 
@@ -196,7 +197,7 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
             <p className="text-gray-500 text-sm">No instances running</p>
           ) : (
             <div className="space-y-2">
-              {instances.map(instance => (
+              {instances.map((instance: BrowserInstance) => (
                 <div key={instance.id} className="border rounded p-3 bg-white">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-mono text-sm">{instance.id.slice(0, 8)}</span>
@@ -212,7 +213,7 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
                   )}
 
                   <div className="flex flex-wrap gap-1 mb-2">
-                    {(['screenshots', 'vnc', 'webrtc', 'dom-mirror'] as const).map(mode => (
+                    {(['screenshots', 'vnc', 'webrtc', 'dom-mirror'] as const).map((mode: ViewerTab['mode']) => (
                       <button
                         key={mode}
                         onClick={() => openViewer(instance.id, mode)}
@@ -240,7 +241,7 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
           {/* Viewer Tabs */}
           {viewerTabs.length > 0 && (
             <div className="flex border-b">
-              {viewerTabs.map(tab => (
+              {viewerTabs.map((tab: ViewerTab) => (
                 <div
                   key={tab.id}
                   className={`px-4 py-2 cursor-pointer border-r flex items-center space-x-2 ${
@@ -250,7 +251,7 @@ export const BrowserDashboard: React.FC<BrowserDashboardProps> = ({
                 >
                   <span className="text-sm">{tab.title}</span>
                   <button
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       closeViewer(tab.id);
                     }}

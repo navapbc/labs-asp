@@ -47,17 +47,23 @@
     "csv-parse": "^6.1.0",
     "dotenv": "^17.2.1",
     "exa-mcp-server": "^2.0.3",
+    "express": "^4.19.2",
     "google-auth-library": "^10.2.1",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
     "pino-pretty": "^13.0.0",
     "prisma": "^6.12.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "tsx": "^4.20.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^24.1.0",
     "@types/pg": "^8.15.4",
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25",
     "mastra": "^0.10.20",
     "typescript": "^5.8.3"
   },
