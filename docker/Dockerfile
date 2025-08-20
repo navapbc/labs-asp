@@ -27,9 +27,8 @@ ENV DEPLOYMENT_ID=$DEPLOYMENT_ID
 ENV ENVIRONMENT=$ENVIRONMENT
 ENV NODE_ENV=production
 
-# Enable pnpm and generate Prisma client before building
+# Enable pnpm and build the application (which now includes Prisma post-build)
 RUN corepack enable pnpm
-RUN npx prisma generate
 RUN pnpm build
 
 # Production image, copy all the files and run the app
@@ -49,8 +48,10 @@ COPY --from=builder --chown=mastra:nodejs /app/.mastra/output ./.mastra/output
 COPY --from=builder --chown=mastra:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 
-# Copy node_modules (which should now include generated Prisma client)
+# Copy node_modules 
 COPY --from=builder --chown=mastra:nodejs /app/node_modules ./node_modules
+
+# The Prisma client should now be generated inside .mastra/output/ by the build:prisma script
 
 # Ensure mastra user owns the entire /app directory
 RUN chown -R mastra:nodejs /app
