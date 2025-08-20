@@ -13,7 +13,7 @@ COPY package.json pnpm-lock.yaml* ./
 COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile
 
-# Rebuild the source code only when needed
+# Development stage - just copy source files
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -25,10 +25,6 @@ ARG ENVIRONMENT
 
 ENV DEPLOYMENT_ID=$DEPLOYMENT_ID
 ENV ENVIRONMENT=$ENVIRONMENT
-ENV NODE_ENV=production
-
-# Enable pnpm and build the application
-RUN corepack enable pnpm && pnpm build
 
 # Production image, copy all the files and run the app
 FROM base AS runner
@@ -42,13 +38,10 @@ RUN adduser --system --uid 1001 mastra
 # Install pnpm in the runner stage
 RUN corepack enable pnpm
 
-# Copy the built application
-COPY --from=builder --chown=mastra:nodejs /app/dist ./dist
+# Copy the application files for development
 COPY --from=builder --chown=mastra:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=mastra:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
-
-# Copy source files needed for runtime (if any)
 COPY --from=builder --chown=mastra:nodejs /app/src ./src
 
 USER mastra
@@ -68,4 +61,4 @@ ENV ENVIRONMENT=$ENVIRONMENT
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:4111/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
-CMD ["pnpm", "start"]
+CMD ["pnpm", "dev"]
