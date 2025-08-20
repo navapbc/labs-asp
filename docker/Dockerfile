@@ -10,6 +10,7 @@ RUN corepack enable pnpm
 
 # Install dependencies
 COPY package.json pnpm-lock.yaml* ./
+COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
