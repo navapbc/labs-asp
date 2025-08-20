@@ -49,6 +49,9 @@ COPY --from=builder --chown=mastra:nodejs /app/.mastra/output ./.mastra/output
 COPY --from=builder --chown=mastra:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 
+# Generate Prisma client in the output directory
+RUN cd .mastra/output && npx prisma generate --schema=../../prisma/schema.prisma
+
 # Ensure mastra user owns the entire /app directory
 RUN chown -R mastra:nodejs /app
 
