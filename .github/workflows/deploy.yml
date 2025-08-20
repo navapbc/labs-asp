@@ -90,14 +90,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Get database URL from Secret Manager
-        id: get-db-url
-        run: |
-          DB_URL=$(gcloud secrets versions access latest --secret="database-url-${{ needs.determine-environment.outputs.environment }}")
-          echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
-
       - name: Run database migrations
         run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ needs.determine-environment.outputs.environment == 'production' && secrets.DATABASE_URL_PRODUCTION || secrets.DATABASE_URL_PREVIEW }}
 
       - name: Deploy to Cloud Run from source
         run: |
