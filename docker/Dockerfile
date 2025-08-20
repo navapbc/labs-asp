@@ -29,7 +29,6 @@ ENV NODE_ENV=production
 
 # Enable pnpm and build the application
 RUN corepack enable pnpm
-RUN npx prisma generate
 RUN pnpm build
 
 # Production image, copy all the files and run the app
@@ -49,8 +48,7 @@ COPY --from=builder --chown=mastra:nodejs /app/.mastra/output ./.mastra/output
 COPY --from=builder --chown=mastra:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 
-# Generate Prisma client in the output directory
-RUN cd .mastra/output && pnpm add @prisma/client && npx prisma generate --schema=../../prisma/schema.prisma
+# Skip Prisma generation for now - database will be handled separately
 
 # Ensure mastra user owns the entire /app directory
 RUN chown -R mastra:nodejs /app
