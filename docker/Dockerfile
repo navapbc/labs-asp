@@ -48,16 +48,20 @@ COPY --from=builder --chown=mastra:nodejs /app/.mastra/output ./.mastra/output
 COPY --from=builder --chown=mastra:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 
-# Skip Prisma generation for now - database will be handled separately
+# Copy node_modules and generate Prisma client
+COPY --from=builder --chown=mastra:nodejs /app/node_modules ./node_modules
+
+# Generate Prisma client for production
+RUN npx prisma generate
 
 # Ensure mastra user owns the entire /app directory
 RUN chown -R mastra:nodejs /app
 
 USER mastra
 
-EXPOSE 4111
+EXPOSE 8080
 
-ENV PORT=4111
+ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 
 # Add deployment info as environment variables
@@ -66,8 +70,8 @@ ARG ENVIRONMENT
 ENV DEPLOYMENT_ID=$DEPLOYMENT_ID
 ENV ENVIRONMENT=$ENVIRONMENT
 
-# Health check
+# Health check - use PORT environment variable
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:4111/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 CMD ["node", "--import=./.mastra/output/instrumentation.mjs", ".mastra/output/index.mjs"]

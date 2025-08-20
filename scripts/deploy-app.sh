@@ -38,9 +38,9 @@ get_project_info() {
 build_and_push() {
     print_info "Building application container..."
     
-    # Build the container
-    docker build -f docker/Dockerfile -t labs-asp .
-    print_status "Container built"
+    # Build the container for Cloud Run (linux/amd64)
+    docker build --platform linux/amd64 -f docker/Dockerfile -t labs-asp .
+    print_status "Container built for linux/amd64 platform"
     
     # Get Artifact Registry URL
     cd terraform/environments/development
@@ -78,6 +78,7 @@ deploy_to_cloud_run() {
         --image $REPO_URL/labs-asp:latest \
         --region us-central1 \
         --allow-unauthenticated \
+        --port=8080 \
         --set-env-vars="ENVIRONMENT=development" \
         --project=$PROJECT_ID
     

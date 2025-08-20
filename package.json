@@ -17,7 +17,7 @@
     "db:migrate:deploy": "npx prisma migrate deploy",
     "db:reset": "npx prisma migrate reset",
     "db:studio": "npx prisma studio",
-    "docker:build": "docker build -f docker/Dockerfile -t labs-asp .",
+    "docker:build": "docker build --platform linux/amd64 -f docker/Dockerfile -t labs-asp .",
     "docker:dev": "docker-compose -f docker/docker-compose.yml up --build",
     "docker:down": "docker-compose -f docker/docker-compose.yml down"
   },
