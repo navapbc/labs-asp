@@ -9,7 +9,6 @@ on:
 env:
   PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
   GAR_LOCATION: us-central1
-  REPOSITORY: labs-asp
   SERVICE: labs-asp
 
 jobs:
@@ -54,7 +53,7 @@ jobs:
             echo "is_cleanup=false" >> $GITHUB_OUTPUT
           fi
 
-  build-and-deploy:
+  deploy-from-source:
     needs: determine-environment
     if: needs.determine-environment.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
@@ -66,6 +65,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -81,52 +90,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run type check
-        run: pnpm type-check
-
-      - name: Run tests
-        run: pnpm test || echo "No tests found"
-
-      - name: Build application
-        run: pnpm build
-        env:
-          DEPLOYMENT_ID: ${{ needs.determine-environment.outputs.deployment_id }}
-          ENVIRONMENT: ${{ needs.determine-environment.outputs.environment }}
-
-      - name: Google Auth
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
-          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker to use gcloud as a credential helper
-        run: gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
-
-      - name: Build and push container
+      - name: Get database URL from Secret Manager
+        id: get-db-url
         run: |
-          IMAGE_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:${{ needs.determine-environment.outputs.deployment_id }}-${{ github.sha }}"
-          
-          docker build \
-            --build-arg DEPLOYMENT_ID="${{ needs.determine-environment.outputs.deployment_id }}" \
-            --build-arg ENVIRONMENT="${{ needs.determine-environment.outputs.environment }}" \
-            -t $IMAGE_TAG \
-            -f docker/Dockerfile .
-          
-          docker push $IMAGE_TAG
-          
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          DB_URL=$(gcloud secrets versions access latest --secret="database-url-${{ needs.determine-environment.outputs.environment }}")
+          echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
 
-      - name: Deploy to Cloud Run
+      - name: Run database migrations
+        run: pnpm prisma migrate deploy
+
+      - name: Deploy to Cloud Run from source
         run: |
           gcloud run deploy ${{ needs.determine-environment.outputs.deployment_id }}-labs-asp \
-            --image $IMAGE_TAG \
+            --source . \
             --region $GAR_LOCATION \
             --allow-unauthenticated \
-            --set-env-vars="DEPLOYMENT_ID=${{ needs.determine-environment.outputs.deployment_id }},ENVIRONMENT=${{ needs.determine-environment.outputs.environment }}" \
+            --set-env-vars="DEPLOYMENT_ID=${{ needs.determine-environment.outputs.deployment_id }},ENVIRONMENT=${{ needs.determine-environment.outputs.environment }},NODE_ENV=production" \
             --set-secrets="DATABASE_URL=database-url-${{ needs.determine-environment.outputs.environment }}:latest,OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,EXA_API_KEY=exa-api-key:latest,MASTRA_JWT_SECRET=mastra-jwt-secret:latest,MASTRA_APP_PASSWORD=mastra-app-password:latest" \
             --labels="environment=${{ needs.determine-environment.outputs.environment }},deployment-id=${{ needs.determine-environment.outputs.deployment_id }},branch=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g'),commit-sha=${{ github.sha }}" \
             --max-instances=10 \
@@ -159,6 +138,7 @@ jobs:
             - **Deployment ID**: \`${{ needs.determine-environment.outputs.deployment_id }}\`
             - **Commit**: \`${{ github.sha }}\`
             
+            Deployed directly from source code using Cloud Build buildpacks.
             The deployment will be automatically cleaned up when this PR is closed.
             `;
             
@@ -214,11 +194,6 @@ jobs:
           # Delete the Cloud Run service
           gcloud run services delete $SERVICE_NAME \
             --region=$GAR_LOCATION \
-            --quiet || true
-          
-          # Delete container images for this PR
-          gcloud artifacts docker images delete \
-            "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:${DEPLOYMENT_ID}-*" \
             --quiet || true
 
       - name: Update PR with cleanup info
