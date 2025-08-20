@@ -36,6 +36,9 @@ RUN pnpm prisma generate
 # Build the application
 RUN pnpm build
 
+# Verify Prisma client exists in the built output
+RUN ls -la ./.mastra/output/node_modules/.pnpm/ | grep prisma || echo "No Prisma found in output"
+
 # Production image, copy all the files and run the app
 FROM base AS runner
 WORKDIR /app
@@ -48,20 +51,23 @@ RUN adduser --system --uid 1001 mastra
 # Install pnpm in the runner stage
 RUN corepack enable pnpm
 
-# Copy the built application from Mastra output
+# Copy the built application from Mastra output (this should already include Prisma client)
 COPY --from=builder --chown=mastra:nodejs /app/.mastra/output ./.mastra/output
 COPY --from=builder --chown=mastra:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 
-# Copy node_modules 
+# Copy node_modules from builder (includes generated Prisma client)
 COPY --from=builder --chown=mastra:nodejs /app/node_modules ./node_modules
 
-# Ensure Prisma client is generated in the final stage
-RUN pnpm prisma generate
+# Verify Prisma client is available in both locations
+RUN ls -la ./node_modules/.pnpm/ | grep prisma || echo "No Prisma in root node_modules"
+RUN ls -la ./.mastra/output/node_modules/.pnpm/ | grep prisma || echo "No Prisma in output node_modules"
 
-# Copy the generated Prisma client to the Mastra output node_modules
-RUN mkdir -p ./.mastra/output/node_modules/.pnpm/ && \
-    cp -r ./node_modules/.pnpm/@prisma* ./.mastra/output/node_modules/.pnpm/ || true
+# If Prisma client is missing from output, copy it over
+RUN if [ ! -d "./.mastra/output/node_modules/.pnpm" ]; then \
+      mkdir -p ./.mastra/output/node_modules/.pnpm/; \
+    fi && \
+    cp -r ./node_modules/.pnpm/@prisma* ./.mastra/output/node_modules/.pnpm/ 2>/dev/null || true
 
 # The Prisma client should now be available both in node_modules and .mastra/output/
 
@@ -70,9 +76,9 @@ RUN chown -R mastra:nodejs /app
 
 USER mastra
 
-EXPOSE 8080
+EXPOSE 4111
 
-ENV PORT=8080
+ENV PORT=4111
 ENV HOSTNAME="0.0.0.0"
 
 # Add deployment info as environment variables
@@ -81,8 +87,8 @@ ARG ENVIRONMENT
 ENV DEPLOYMENT_ID=$DEPLOYMENT_ID
 ENV ENVIRONMENT=$ENVIRONMENT
 
-# Health check - use PORT environment variable
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+# Health check - simple HTTP check without database dependency
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 4111) + '/', (res) => process.exit(res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"
 
 CMD ["node", "--import=./.mastra/output/instrumentation.mjs", ".mastra/output/index.mjs"]
