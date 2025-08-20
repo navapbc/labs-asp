@@ -36,8 +36,8 @@ RUN pnpm prisma generate
 # Build the application
 RUN pnpm build
 
-# Verify Prisma client exists in the built output
-RUN ls -la ./.mastra/output/node_modules/.pnpm/ | grep prisma || echo "No Prisma found in output"
+# Regenerate Prisma client after build (in case Mastra build doesn't include it)
+RUN pnpm prisma generate
 
 # Production image, copy all the files and run the app
 FROM base AS runner
@@ -59,17 +59,8 @@ COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 # Copy node_modules from builder (includes generated Prisma client)
 COPY --from=builder --chown=mastra:nodejs /app/node_modules ./node_modules
 
-# Verify Prisma client is available in both locations
-RUN ls -la ./node_modules/.pnpm/ | grep prisma || echo "No Prisma in root node_modules"
-RUN ls -la ./.mastra/output/node_modules/.pnpm/ | grep prisma || echo "No Prisma in output node_modules"
-
-# If Prisma client is missing from output, copy it over
-RUN if [ ! -d "./.mastra/output/node_modules/.pnpm" ]; then \
-      mkdir -p ./.mastra/output/node_modules/.pnpm/; \
-    fi && \
-    cp -r ./node_modules/.pnpm/@prisma* ./.mastra/output/node_modules/.pnpm/ 2>/dev/null || true
-
-# The Prisma client should now be available both in node_modules and .mastra/output/
+# Regenerate Prisma client in the runner stage to ensure it's available
+RUN pnpm prisma generate
 
 # Ensure mastra user owns the entire /app directory
 RUN chown -R mastra:nodejs /app

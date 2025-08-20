@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma';
+import prisma from '../lib/prisma';
 import type { PlaywrightArtifact } from './types/artifact-types';
 
 export class ArtifactStorage {
