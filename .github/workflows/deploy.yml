@@ -88,7 +88,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm approve-builds @prisma/client @prisma/engines prisma
+          pnpm prisma generate
 
       - name: Get database URL from Secret Manager
         id: get-db-url
