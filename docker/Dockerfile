@@ -56,14 +56,12 @@ COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 # Copy node_modules 
 COPY --from=builder --chown=mastra:nodejs /app/node_modules ./node_modules
 
-# Copy prisma schema to Mastra output directory as well (needed for runtime generation)
-COPY --from=builder --chown=mastra:nodejs /app/prisma ./.mastra/output/prisma
-
 # Ensure Prisma client is generated in the final stage
 RUN pnpm prisma generate
 
-# Generate Prisma client for the Mastra output directory using the correct schema path
-RUN pnpm prisma generate --schema=./.mastra/output/prisma/schema.prisma
+# Copy the generated Prisma client to the Mastra output node_modules
+RUN mkdir -p ./.mastra/output/node_modules/.pnpm/ && \
+    cp -r ./node_modules/.pnpm/@prisma* ./.mastra/output/node_modules/.pnpm/ || true
 
 # The Prisma client should now be available both in node_modules and .mastra/output/
 
