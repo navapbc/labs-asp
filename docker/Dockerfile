@@ -44,6 +44,9 @@ COPY --from=builder --chown=mastra:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=mastra:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=mastra:nodejs /app/src ./src
 
+# Ensure mastra user owns the entire /app directory
+RUN chown -R mastra:nodejs /app
+
 USER mastra
 
 EXPOSE 4111
