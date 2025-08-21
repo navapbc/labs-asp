@@ -8,7 +8,6 @@ dist
 *.db-*
 .vscode
 .next
-artifacts
 
 # Database files at repository root
 /mastra.db
