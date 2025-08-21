@@ -94,7 +94,7 @@ export const deleteSessionArtifactsResponseSchema = z.object({
   deletedCount: z.number(),
 });
 
-// Type definitions from Prisma model
+// Type definitions for database model
 export type PlaywrightArtifact = {
   id: string;
   sessionId: string;
@@ -102,7 +102,7 @@ export type PlaywrightArtifact = {
   fileType: string;
   mimeType: string;
   size: number;
-  content: Uint8Array; // Prisma uses Uint8Array for Bytes fields
+  content: Uint8Array; // PostgreSQL BYTEA fields as Uint8Array
   metadata: any;
   traceId: string | null;
   threadId: string | null;

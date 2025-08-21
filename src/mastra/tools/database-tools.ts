@@ -1,5 +1,5 @@
 import { createTool } from '@mastra/core/tools';
-import prisma from '../../lib/prisma';
+import { query } from '../../lib/db';
 import {
   createParticipantSchema,
   createHouseholdDependentSchema,
@@ -17,7 +17,53 @@ import {
   getParticipantByIdResponseSchema,
 } from '../types/participant-types';
 
-// Use centralized Prisma client
+// Helper function to convert snake_case database fields to camelCase
+const transformParticipant = (row: any) => ({
+  ...row,
+  participantId: row.participant_id,
+  firstName: row.first_name,
+  lastName: row.last_name,
+  dateOfBirth: row.date_of_birth,
+  homeAddress: row.home_address,
+  mailingAddress: row.mailing_address,
+  mobileNumber: row.mobile_number,
+  canReceiveTexts: row.can_receive_texts,
+  preferredLanguage: row.preferred_language,
+  benefitsReceiving: row.benefits_receiving,
+  onProbation: row.on_probation,
+  isVeteran: row.is_veteran,
+  relationshipStatus: row.relationship_status,
+  sexAtBirth: row.sex_at_birth,
+  genderIdentity: row.gender_identity,
+  hasMediCal: row.has_medi_cal,
+  mediCalCaseNumber: row.medi_cal_case_number,
+  mediCalAmount: row.medi_cal_amount,
+  isPregnant: row.is_pregnant,
+  isPostPartum: row.is_post_partum,
+  isInfantBreastfeeding: row.is_infant_breastfeeding,
+  isInfantFormula: row.is_infant_formula,
+  hasChildren0to5: row.has_children0to5,
+  hasDependents: row.has_dependents,
+  monthlyIncome: row.monthly_income,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+const transformDependent = (row: any) => ({
+  ...row,
+  participantId: row.participant_id,
+  firstName: row.first_name,
+  lastName: row.last_name,
+  dateOfBirth: row.date_of_birth,
+  sexAtBirth: row.sex_at_birth,
+  genderIdentity: row.gender_identity,
+  isInfant: row.is_infant,
+  isChild0to5: row.is_child0to5,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+// Use centralized PostgreSQL client
 
 /**
  * Database Tools for WIC Benefits START System
@@ -44,12 +90,41 @@ export const getParticipantById = createTool({
   outputSchema: getParticipantByIdResponseSchema,
   execute: async ({ context }) => {
     try {
-      const participant = await prisma.participant.findUnique({
-        where: { participantId: context.participantId },
-        include: {
-          household: true,
-        },
-      });
+      const participantQuery = `
+        SELECT p.*, 
+               COALESCE(
+                 json_agg(
+                   json_build_object(
+                     'id', h.id,
+                     'participantId', h.participant_id,
+                     'firstName', h.first_name,
+                     'lastName', h.last_name,
+                     'age', h.age,
+                     'dateOfBirth', h.date_of_birth,
+                     'relationship', h.relationship,
+                     'sexAtBirth', h.sex_at_birth,
+                     'genderIdentity', h.gender_identity,
+                     'ethnicity', h.ethnicity,
+                     'race', h.race,
+                     'isInfant', h.is_infant,
+                     'isChild0to5', h.is_child0to5,
+                     'createdAt', h.created_at,
+                     'updatedAt', h.updated_at
+                   ) ORDER BY h.date_of_birth ASC
+                 ) FILTER (WHERE h.id IS NOT NULL), 
+                 '[]'::json
+               ) as household
+        FROM participants p
+        LEFT JOIN household_dependents h ON p.id = h.participant_id
+        WHERE p.participant_id = $1
+        GROUP BY p.id
+      `;
+      
+      const result = await query(participantQuery, [context.participantId]);
+      const participant = result.rows.length > 0 ? {
+        ...transformParticipant(result.rows[0]),
+        household: result.rows[0].household
+      } : null;
 
       return {
         participant,
@@ -76,46 +151,45 @@ export const searchParticipantsByName = createTool({
       const nameInput = context.name.trim();
       const nameParts = nameInput.split(/\s+/);
       
-      let whereClause;
+
+
+      let searchQuery;
+      let params;
       
       if (nameParts.length >= 2) {
         // Full name provided - search for first AND last name match
         const firstName = nameParts[0];
-        const lastName = nameParts.slice(1).join(' '); // Handle cases like "Van Der Berg"
+        const lastName = nameParts.slice(1).join(' ');
         
-        whereClause = {
-          AND: [
-            { firstName: { equals: firstName, mode: 'insensitive' as const } },
-            { lastName: { equals: lastName, mode: 'insensitive' as const } },
-          ],
-        };
+        searchQuery = `
+          SELECT participant_id, first_name, last_name, home_address, monthly_income, email, mobile_number, created_at
+          FROM participants
+          WHERE LOWER(first_name) = LOWER($1) AND LOWER(last_name) = LOWER($2)
+          ORDER BY last_name ASC, first_name ASC
+        `;
+        params = [firstName, lastName];
       } else {
         // Single name provided - search in either first OR last name
-        whereClause = {
-          OR: [
-            { firstName: { contains: nameInput, mode: 'insensitive' as const } },
-            { lastName: { contains: nameInput, mode: 'insensitive' as const } },
-          ],
-        };
+        searchQuery = `
+          SELECT participant_id, first_name, last_name, home_address, monthly_income, email, mobile_number, created_at
+          FROM participants
+          WHERE LOWER(first_name) LIKE LOWER($1) OR LOWER(last_name) LIKE LOWER($1)
+          ORDER BY last_name ASC, first_name ASC
+        `;
+        params = [`%${nameInput}%`];
       }
-
-      const participants = await prisma.participant.findMany({
-        where: whereClause,
-        select: {
-          participantId: true,
-          firstName: true,
-          lastName: true,
-          homeAddress: true,
-          monthlyIncome: true,
-          email: true,
-          mobileNumber: true,
-          createdAt: true,
-        },
-        orderBy: [
-          { lastName: 'asc' },
-          { firstName: 'asc' },
-        ],
-      });
+      
+      const result = await query(searchQuery, params);
+      const participants = result.rows.map(row => ({
+        participantId: row.participant_id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        homeAddress: row.home_address,
+        monthlyIncome: row.monthly_income,
+        email: row.email,
+        mobileNumber: row.mobile_number,
+        createdAt: row.created_at,
+      }));
 
       return {
         participants,
@@ -139,14 +213,41 @@ export const getParticipantWithHousehold = createTool({
   outputSchema: participantWithHouseholdResponseSchema,
   execute: async ({ context }) => {
     try {
-      const participant = await prisma.participant.findUnique({
-        where: { participantId: context.participantId },
-        include: {
-          household: {
-            orderBy: { dateOfBirth: 'asc' },
-          },
-        },
-      });
+      const participantQuery = `
+        SELECT p.*, 
+               COALESCE(
+                 json_agg(
+                   json_build_object(
+                     'id', h.id,
+                     'participantId', h.participant_id,
+                     'firstName', h.first_name,
+                     'lastName', h.last_name,
+                     'age', h.age,
+                     'dateOfBirth', h.date_of_birth,
+                     'relationship', h.relationship,
+                     'sexAtBirth', h.sex_at_birth,
+                     'genderIdentity', h.gender_identity,
+                     'ethnicity', h.ethnicity,
+                     'race', h.race,
+                     'isInfant', h.is_infant,
+                     'isChild0to5', h.is_child0to5,
+                     'createdAt', h.created_at,
+                     'updatedAt', h.updated_at
+                   ) ORDER BY h.date_of_birth ASC
+                 ) FILTER (WHERE h.id IS NOT NULL), 
+                 '[]'::json
+               ) as household
+        FROM participants p
+        LEFT JOIN household_dependents h ON p.id = h.participant_id
+        WHERE p.participant_id = $1
+        GROUP BY p.id
+      `;
+      
+      const result = await query(participantQuery, [context.participantId]);
+      const participant = result.rows.length > 0 ? {
+        ...transformParticipant(result.rows[0]),
+        household: result.rows[0].household
+      } : null;
 
       if (!participant) {
         return {
@@ -180,27 +281,23 @@ export const searchParticipantsByLocation = createTool({
   outputSchema: participantSearchResponseSchema,
   execute: async ({ context }) => {
     try {
-      const participants = await prisma.participant.findMany({
-        where: {
-          homeAddress: {
-            contains: context.location,
-            mode: 'insensitive',
-          },
-        },
-        select: {
-          participantId: true,
-          firstName: true,
-          lastName: true,
-          homeAddress: true,
-          monthlyIncome: true,
-          email: true,
-          mobileNumber: true,
-        },
-        orderBy: [
-          { lastName: 'asc' },
-          { firstName: 'asc' },
-        ],
-      });
+      const locationQuery = `
+        SELECT participant_id, first_name, last_name, home_address, monthly_income, email, mobile_number
+        FROM participants
+        WHERE LOWER(home_address) LIKE LOWER($1)
+        ORDER BY last_name ASC, first_name ASC
+      `;
+      
+      const result = await query(locationQuery, [`%${context.location}%`]);
+      const participants = result.rows.map(row => ({
+        participantId: row.participant_id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        homeAddress: row.home_address,
+        monthlyIncome: row.monthly_income,
+        email: row.email,
+        mobileNumber: row.mobile_number,
+      }));
 
       return {
         participants,
@@ -254,10 +351,55 @@ export const createParticipant = createTool({
       if (context.race) participantData.race = context.race;
       if (context.monthlyIncome) participantData.monthlyIncome = context.monthlyIncome;
       if (context.occupation) participantData.occupation = context.occupation;
+      if (context.datasourcetype) participantData.datasourcetype = context.datasourcetype;
 
-      const participant = await prisma.participant.create({
-        data: participantData,
-      });
+      const insertQuery = `
+        INSERT INTO participants (
+          participant_id, first_name, last_name, date_of_birth, home_address, mailing_address,
+          mobile_number, can_receive_texts, preferred_language, email, benefits_receiving,
+          on_probation, is_veteran, relationship_status, sex_at_birth, gender_identity,
+          ethnicity, race, has_medi_cal, medi_cal_case_number, medi_cal_amount,
+          is_pregnant, is_post_partum, is_infant_breastfeeding, is_infant_formula,
+          has_children0to5, has_dependents, monthly_income, occupation, datasourcetype
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30
+        ) RETURNING *
+      `;
+      
+      const result = await query(insertQuery, [
+        participantData.participantId,
+        participantData.firstName,
+        participantData.lastName || null,
+        participantData.dateOfBirth || null,
+        participantData.homeAddress || null,
+        participantData.mailingAddress || null,
+        participantData.mobileNumber || null,
+        participantData.canReceiveTexts || false,
+        participantData.preferredLanguage || 'English',
+        participantData.email || null,
+        participantData.benefitsReceiving || null,
+        participantData.onProbation || null,
+        participantData.isVeteran || null,
+        participantData.relationshipStatus || null,
+        participantData.sexAtBirth || null,
+        participantData.genderIdentity || null,
+        participantData.ethnicity || null,
+        participantData.race || null,
+        participantData.hasMediCal || false,
+        participantData.mediCalCaseNumber || null,
+        participantData.mediCalAmount || null,
+        participantData.isPregnant || null,
+        participantData.isPostPartum || null,
+        participantData.isInfantBreastfeeding || null,
+        participantData.isInfantFormula || null,
+        participantData.hasChildren0to5 || null,
+        participantData.hasDependents || null,
+        participantData.monthlyIncome || null,
+        participantData.occupation || null,
+        participantData.datasourcetype || 'START',
+      ]);
+      
+      const participant = transformParticipant(result.rows[0]);
 
       return {
         participant,
@@ -300,9 +442,30 @@ export const createHouseholdDependent = createTool({
       if (context.ethnicity) dependentData.ethnicity = context.ethnicity;
       if (context.race) dependentData.race = context.race;
 
-      const dependent = await prisma.householdDependent.create({
-        data: dependentData,
-      });
+      const insertQuery = `
+        INSERT INTO household_dependents (
+          participant_id, first_name, last_name, age, date_of_birth, relationship,
+          sex_at_birth, gender_identity, ethnicity, race, is_infant, is_child0to5
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `;
+      
+      const result = await query(insertQuery, [
+        dependentData.participantId,
+        dependentData.firstName,
+        dependentData.lastName || null,
+        dependentData.age || null,
+        dependentData.dateOfBirth || null,
+        dependentData.relationship || null,
+        dependentData.sexAtBirth || null,
+        dependentData.genderIdentity || null,
+        dependentData.ethnicity || null,
+        dependentData.race || null,
+        dependentData.isInfant || null,
+        dependentData.isChild0to5 || null,
+      ]);
+      
+      const dependent = transformDependent(result.rows[0]);
 
       return {
         dependent,
@@ -337,10 +500,19 @@ export const updateParticipantWicInfo = createTool({
       if (context.hasChildren0to5 !== undefined) updateData.hasChildren0to5 = context.hasChildren0to5;
       if (context.hasDependents !== undefined) updateData.hasDependents = context.hasDependents;
       
-      const participant = await prisma.participant.update({
-        where: { participantId: context.participantId },
-        data: updateData,
-      });
+      const updateFields = Object.keys(updateData).map((key, index) => {
+        const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        return `${dbKey} = $${index + 2}`;
+      }).join(', ');
+      
+      const updateQuery = `
+        UPDATE participants SET ${updateFields}
+        WHERE participant_id = $1
+        RETURNING *
+      `;
+      
+      const result = await query(updateQuery, [context.participantId, ...Object.values(updateData)]);
+      const participant = result.rows.length > 0 ? transformParticipant(result.rows[0]) : null;
 
       return {
         participant,
@@ -373,10 +545,19 @@ export const updateDependentWicInfo = createTool({
       if (context.isInfant !== undefined) updateData.isInfant = context.isInfant;
       if (context.isChild0to5 !== undefined) updateData.isChild0to5 = context.isChild0to5;
       
-      const dependent = await prisma.householdDependent.update({
-        where: { id: context.dependentId },
-        data: updateData,
-      });
+      const updateFields = Object.keys(updateData).map((key, index) => {
+        const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        return `${dbKey} = $${index + 2}`;
+      }).join(', ');
+      
+      const updateQuery = `
+        UPDATE household_dependents SET ${updateFields}
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      const result = await query(updateQuery, [context.dependentId, ...Object.values(updateData)]);
+      const dependent = result.rows.length > 0 ? transformDependent(result.rows[0]) : null;
 
       return {
         dependent,
@@ -424,10 +605,19 @@ export const updateParticipantDemographics = createTool({
       if (context.monthlyIncome !== undefined) updateData.monthlyIncome = context.monthlyIncome;
       if (context.occupation !== undefined) updateData.occupation = context.occupation;
       
-      const participant = await prisma.participant.update({
-        where: { participantId: context.participantId },
-        data: updateData,
-      });
+      const updateFields = Object.keys(updateData).map((key, index) => {
+        const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        return `${dbKey} = $${index + 2}`;
+      }).join(', ');
+      
+      const updateQuery = `
+        UPDATE participants SET ${updateFields}
+        WHERE participant_id = $1
+        RETURNING *
+      `;
+      
+      const result = await query(updateQuery, [context.participantId, ...Object.values(updateData)]);
+      const participant = result.rows.length > 0 ? transformParticipant(result.rows[0]) : null;
 
       return {
         participant,
