@@ -1,6 +1,7 @@
 import { query, getDbClient } from '../lib/db';
 import type { PlaywrightArtifact } from './types/artifact-types';
 import { Pool } from 'pg';
+import { randomUUID } from 'crypto';
 
 export class ArtifactStorage {
   constructor(private pool?: Pool) {}
@@ -8,7 +9,7 @@ export class ArtifactStorage {
   async ensureTable(): Promise<void> {
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS mastra_artifacts (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         session_id TEXT NOT NULL,
         file_name TEXT NOT NULL,
         file_type TEXT NOT NULL,
@@ -32,14 +33,16 @@ export class ArtifactStorage {
   }
 
   async storeArtifact(artifact: Omit<PlaywrightArtifact, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+    const id = randomUUID();
     const insertQuery = `
       INSERT INTO mastra_artifacts (
-        session_id, file_name, file_type, mime_type, size, content, metadata, trace_id, thread_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        id, session_id, file_name, file_type, mime_type, size, content, metadata, trace_id, thread_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
     `;
     
     const result = await query(insertQuery, [
+      id,
       artifact.sessionId,
       artifact.fileName,
       artifact.fileType,
