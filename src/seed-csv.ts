@@ -1,4 +1,4 @@
-import prisma from './lib/prisma';
+import { query, pgPool } from './lib/db';
 import { config } from 'dotenv';
 import { createReadStream } from 'fs';
 import { parse } from 'csv-parse';
@@ -7,7 +7,7 @@ import { join } from 'path';
 // Load environment variables
 config();
 
-// Using centralized Prisma client from ./lib/prisma
+// Using centralized PostgreSQL client from ./lib/db
 
 interface CSVRow {
   participantId: string;
@@ -175,11 +175,52 @@ async function seedFromCSV(csvFilePath: string) {
               // Try to create participant, handle duplicates gracefully
               let participant;
               try {
-                participant = await prisma.participant.create({
-                  data: participantData,
-                });
+                const insertQuery = `
+                  INSERT INTO participants (
+                    participant_id, first_name, last_name, date_of_birth, home_address, mailing_address,
+                    mobile_number, can_receive_texts, preferred_language, email, benefits_receiving,
+                    on_probation, is_veteran, relationship_status, sex_at_birth, gender_identity,
+                    ethnicity, race, has_medi_cal, is_pregnant, is_post_partum,
+                    is_infant_breastfeeding, is_infant_formula, has_children0to5, has_dependents,
+                    monthly_income, occupation, datasourcetype
+                  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+                  RETURNING *
+                `;
+                
+                const result = await query(insertQuery, [
+                  participantData.participantId,
+                  participantData.firstName,
+                  participantData.lastName || null,
+                  participantData.dateOfBirth || null,
+                  participantData.homeAddress || null,
+                  participantData.mailingAddress || null,
+                  participantData.mobileNumber || null,
+                  participantData.canReceiveTexts || false,
+                  participantData.preferredLanguage || 'English',
+                  participantData.email || null,
+                  participantData.benefitsReceiving || null,
+                  participantData.onProbation || null,
+                  participantData.isVeteran || null,
+                  participantData.relationshipStatus || null,
+                  participantData.sexAtBirth || null,
+                  participantData.genderIdentity || null,
+                  participantData.ethnicity || null,
+                  participantData.race || null,
+                  participantData.hasMediCal || false,
+                  participantData.isPregnant || null,
+                  participantData.isPostPartum || null,
+                  participantData.isInfantBreastfeeding || null,
+                  participantData.isInfantFormula || null,
+                  participantData.hasChildren0to5 || null,
+                  participantData.hasDependents || null,
+                  participantData.monthlyIncome || null,
+                  participantData.occupation || null,
+                  'START', // CSV data is from START system
+                ]);
+                
+                participant = result.rows[0];
               } catch (error: any) {
-                if (error.code === 'P2002' && error.meta?.target?.includes('participantId')) {
+                if (error.code === '23505' && error.constraint?.includes('participant_id')) {
                   console.warn(`⚠️  Participant ${participantId} already exists, skipping...`);
                   errorCount++;
                   continue;
@@ -188,7 +229,7 @@ async function seedFromCSV(csvFilePath: string) {
                 }
               }
               
-              console.log(`✅ Created participant: ${participant.firstName} ${participant.lastName || ''} (ID: ${participant.participantId})`);
+              console.log(`✅ Created participant: ${participant.first_name} ${participant.last_name || ''} (ID: ${participant.participant_id})`);
               
               // Handle household member if provided - preserve raw data
               const householdMemberName = toStringOrNull(row.householdMemberName);
@@ -218,11 +259,31 @@ async function seedFromCSV(csvFilePath: string) {
                 if (ethnicity) dependentData.ethnicity = ethnicity;
                 if (race) dependentData.race = race;
 
-                const dependent = await prisma.householdDependent.create({
-                  data: dependentData,
-                });
+                const insertDependentQuery = `
+                  INSERT INTO household_dependents (
+                    participant_id, first_name, last_name, age, relationship, sex_at_birth,
+                    gender_identity, ethnicity, race, is_infant, is_child0to5, datasourcetype
+                  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                  RETURNING *
+                `;
                 
-                console.log(`   👥 Added household member: ${dependent.firstName} ${dependent.lastName || ''} (age ${dependentData.age || 'unknown'})`);
+                const dependentResult = await query(insertDependentQuery, [
+                  dependentData.participantId,
+                  dependentData.firstName,
+                  dependentData.lastName || null,
+                  dependentData.age || null,
+                  dependentData.relationship || null,
+                  dependentData.sexAtBirth || null,
+                  dependentData.genderIdentity || null,
+                  dependentData.ethnicity || null,
+                  dependentData.race || null,
+                  dependentData.isInfant || null,
+                  dependentData.isChild0to5 || null,
+                  'START', // CSV data is from START system
+                ]);
+                
+                const dependent = dependentResult.rows[0];
+                console.log(`   👥 Added household member: ${dependent.first_name} ${dependent.last_name || ''} (age ${dependentData.age || 'unknown'})`);
               }
               
               successCount++;
@@ -239,8 +300,11 @@ async function seedFromCSV(csvFilePath: string) {
           console.log(`📊 Summary:`);
           console.log(`   • ${successCount} participants created successfully`);
           console.log(`   • ${errorCount} records failed or skipped`);
-          console.log(`   • ${await prisma.participant.count()} total participants in database`);
-          console.log(`   • ${await prisma.householdDependent.count()} total household dependents in database`);
+          
+          const participantCountResult = await query('SELECT COUNT(*) FROM participants');
+          const dependentCountResult = await query('SELECT COUNT(*) FROM household_dependents');
+          console.log(`   • ${participantCountResult.rows[0].count} total participants in database`);
+          console.log(`   • ${dependentCountResult.rows[0].count} total household dependents in database`);
           
           resolve();
           
@@ -262,8 +326,8 @@ async function main() {
     
     if (shouldClearData) {
       console.log('🗑️  Clearing existing participant data...');
-      await prisma.householdDependent.deleteMany();
-      await prisma.participant.deleteMany();
+      await query('DELETE FROM household_dependents');
+      await query('DELETE FROM participants');
       console.log('✅ Existing data cleared');
     }
     
@@ -281,6 +345,6 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await pgPool.end();
     console.log('🔌 Database connection closed');
   });

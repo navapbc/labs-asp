@@ -20,6 +20,7 @@ export const createParticipantSchema = z.object({
   preferredLanguage: z.string().optional().describe('Preferred language'),
   monthlyIncome: z.number().optional().describe('Monthly income amount'),
   occupation: z.string().optional().describe('Occupation'),
+  datasourcetype: z.string().optional().default('START').describe('Source system that created this record (e.g., START, APRICOT360)'),
 });
 
 // Household dependent schema for creation
@@ -34,6 +35,7 @@ export const createHouseholdDependentSchema = z.object({
   genderIdentity: z.string().optional().describe('Gender identity'),
   ethnicity: z.string().optional().describe('Ethnicity'),
   race: z.string().optional().describe('Race'),
+  datasourcetype: z.string().optional().default('START').describe('Source system that created this record (e.g., START, APRICOT360)'),
 });
 
 // WIC eligibility update schema for participants
