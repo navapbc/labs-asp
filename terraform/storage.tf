@@ -20,11 +20,13 @@ resource "google_storage_bucket" "terraform_state" {
   labels = local.common_labels
 }
 
-# Cloud Storage bucket for screenshots and artifacts
+# Cloud Storage buckets for screenshots and artifacts (per environment)
 resource "google_storage_bucket" "artifacts" {
-  name          = "labs-asp-artifacts"
+  for_each = local.environments
+  
+  name          = "labs-asp-artifacts-${each.key}"
   location      = local.region
-  force_destroy = false
+  force_destroy = each.key == "prod" ? false : true  # Protect prod data
 
   # Enable uniform bucket-level access
   uniform_bucket_level_access = true
@@ -43,19 +45,23 @@ resource "google_storage_bucket" "artifacts" {
 
   lifecycle_rule {
     condition {
-      age = 90
+      age = each.key == "prod" ? 90 : 30  # Keep prod data longer
     }
     action {
       type = "Delete"
     }
   }
 
-  labels = local.common_labels
+  labels = merge(local.common_labels, {
+    environment = each.key
+  })
 }
 
-# IAM binding for Cloud Run services to access artifacts bucket
+# IAM binding for Cloud Run services to access artifacts buckets
 resource "google_storage_bucket_iam_member" "cloud_run_artifacts_access" {
-  bucket = google_storage_bucket.artifacts.name
+  for_each = local.environments
+  
+  bucket = google_storage_bucket.artifacts[each.key].name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.cloud_run.email}"
 }

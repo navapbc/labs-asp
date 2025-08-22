@@ -4,8 +4,6 @@ resource "google_cloud_run_v2_service" "app" {
 
   name     = each.value.cloud_run_service_name
   location = local.region
-  
-  deletion_policy = "ABANDON" # Prevent accidental deletion
 
   template {
     service_account = google_service_account.cloud_run.email
@@ -101,15 +99,13 @@ resource "google_cloud_run_v2_service" "app" {
 
       env {
         name  = "STORAGE_BUCKET"
-        value = google_storage_bucket.artifacts.name
+        value = google_storage_bucket.artifacts[each.key].name
       }
 
       # CORS configuration for multi-environment access
       env {
         name  = "CORS_ORIGINS"
-        value = each.key == "prod" ? 
-          "https://${var.domain_name},https://www.${var.domain_name}" : 
-          "https://${each.value.domain_prefix}.${var.domain_name},http://localhost:4111,*"
+        value = each.key == "prod" ? "https://${var.domain_name},https://www.${var.domain_name}" : "https://${each.value.domain_prefix}.${var.domain_name},http://localhost:4111,*"
       }
 
       # Port configuration

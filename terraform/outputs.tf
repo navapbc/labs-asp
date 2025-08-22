@@ -29,10 +29,12 @@ output "github_actions_service_account" {
   value       = google_service_account.github_actions.email
 }
 
-# Storage bucket names
-output "artifacts_bucket" {
-  description = "Name of the artifacts storage bucket"
-  value       = google_storage_bucket.artifacts.name
+# Storage bucket names (per environment)
+output "artifacts_buckets" {
+  description = "Names of the artifacts storage buckets per environment"
+  value = {
+    for env, bucket in google_storage_bucket.artifacts : env => bucket.name
+  }
 }
 
 output "build_cache_bucket" {
@@ -98,14 +100,26 @@ output "environment_urls" {
   }
 }
 
+# Workload Identity Pool outputs
+output "workload_identity_pool_name" {
+  description = "Full name of the workload identity pool"
+  value       = google_iam_workload_identity_pool.github_actions.name
+}
+
+output "workload_identity_provider_name" {
+  description = "Full name of the workload identity provider"
+  value       = google_iam_workload_identity_pool_provider.github_actions.name
+}
+
 # GitHub Actions deployment info
 output "github_actions_info" {
   description = "Information for GitHub Actions setup"
   value = {
-    service_account_email = google_service_account.github_actions.email
-    project_id           = local.project_id
-    region               = local.region
-    artifact_registry    = "${local.region}-docker.pkg.dev/${local.project_id}/${google_artifact_registry_repository.labs_asp.repository_id}"
+    service_account_email           = google_service_account.github_actions.email
+    workload_identity_provider      = google_iam_workload_identity_pool_provider.github_actions.name
+    project_id                     = local.project_id
+    region                         = local.region
+    artifact_registry              = "${local.region}-docker.pkg.dev/${local.project_id}/${google_artifact_registry_repository.labs_asp.repository_id}"
     
     cloud_run_services = {
       for env, config in local.environments : env => {

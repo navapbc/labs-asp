@@ -113,7 +113,7 @@ jobs:
           --set-env-vars="NODE_ENV=${{ steps.env.outputs.ENVIRONMENT }}" \
           --set-env-vars="ENVIRONMENT=${{ steps.env.outputs.ENVIRONMENT }}" \
           --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
-          --set-env-vars="STORAGE_BUCKET=labs-asp-artifacts" \
+          --set-env-vars="STORAGE_BUCKET=labs-asp-artifacts-${{ steps.env.outputs.ENVIRONMENT }}" \
           --set-secrets="DATABASE_URL=${{ steps.env.outputs.DATABASE_SECRET }}:latest" \
           --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
           --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
