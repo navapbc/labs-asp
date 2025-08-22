@@ -37,7 +37,10 @@ export const serverMiddleware = [
       // Handle login page GET request
       if (url.pathname === '/auth/login' && c.req.method === 'GET') {
         return new Response(createLoginPage(), {
-          headers: { 'Content-Type': 'text/html' }
+          headers: { 
+            'Content-Type': 'text/html',
+            'Content-Security-Policy': "default-src 'self'; font-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com data:; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' https: wss: ws:;"
+          }
         });
       }
 
