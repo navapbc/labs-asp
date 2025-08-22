@@ -13,7 +13,14 @@
     "seed:csv": "tsx src/seed-csv.ts",
     "seed:apricot360": "tsx -r dotenv/config src/seed-apricot360.ts",
     "db:migrate": "node migrations/run-migrations.js",
-    "db:setup": "node migrations/run-migrations.js"
+    "db:setup": "node migrations/run-migrations.js",
+    "docker:build": "docker build -t labs-asp .",
+    "docker:run": "docker run -p 4111:4111 --env-file .env labs-asp",
+    "terraform:init": "cd terraform && terraform init",
+    "terraform:plan": "cd terraform && terraform plan",
+    "terraform:apply": "cd terraform && terraform apply",
+    "deploy:dev": "gcloud run deploy labs-asp-dev --source . --region us-central1",
+    "deploy:prod": "gcloud run deploy labs-asp-prod --source . --region us-central1"
   },
   "keywords": [],
   "author": "",

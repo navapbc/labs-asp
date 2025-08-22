@@ -8,6 +8,27 @@ import {
 
 // Server middleware configuration extracted from index.ts
 export const serverMiddleware = [
+  // Health check endpoint - no authentication required
+  {
+    handler: async (c: any, next: any) => {
+      const url = new URL(c.req.url);
+
+      if (url.pathname === '/health' && c.req.method === 'GET') {
+        return new Response(JSON.stringify({
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          version: process.env.GITHUB_SHA || 'dev',
+          environment: process.env.ENVIRONMENT || 'development'
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      await next();
+    },
+    path: '/health',
+  },
   // Login route - handles password authentication
   {
     handler: async (c: any, next: any) => {
