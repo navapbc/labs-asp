@@ -47,7 +47,7 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
-        workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+        workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
@@ -185,7 +185,7 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
-        workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+        workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2

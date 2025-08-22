@@ -91,24 +91,38 @@ resource "google_project_iam_member" "github_actions_service_account_user" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
-# Workload Identity Pool for GitHub Actions
+# Import existing Workload Identity Pool
+import {
+  to = google_iam_workload_identity_pool.github_actions
+  id = "projects/nava-labs/locations/global/workloadIdentityPools/github-actions-pool"
+}
+
+# Workload Identity Pool for GitHub Actions (existing)
 resource "google_iam_workload_identity_pool" "github_actions" {
   workload_identity_pool_id = "github-actions-pool"
   display_name              = "GitHub Actions Pool"
   description               = "Workload Identity Pool for GitHub Actions"
 }
 
-# Workload Identity Pool Provider for GitHub Actions
+# Import existing Workload Identity Pool Provider
+import {
+  to = google_iam_workload_identity_pool_provider.github_actions
+  id = "projects/nava-labs/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider"
+}
+
+# Workload Identity Pool Provider for GitHub Actions (existing)
 resource "google_iam_workload_identity_pool_provider" "github_actions" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_actions.workload_identity_pool_id
-  workload_identity_pool_provider_id = "github-actions-provider"
-  display_name                       = "GitHub Actions Provider"
+  workload_identity_pool_provider_id = "github-provider"
+  display_name                       = "GitHub Provider"
   description                        = "Workload Identity Pool Provider for GitHub Actions"
 
+  attribute_condition = "assertion.repository_owner=='navapbc'"
   attribute_mapping = {
-    "google.subject"       = "assertion.sub"
-    "attribute.actor"      = "assertion.actor"
-    "attribute.repository" = "assertion.repository"
+    "google.subject"           = "assertion.sub"
+    "attribute.actor"          = "assertion.actor"
+    "attribute.repository"     = "assertion.repository"
+    "attribute.repository_owner" = "assertion.repository_owner"
   }
 
   oidc {
