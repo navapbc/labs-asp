@@ -15,6 +15,13 @@ Resolves #{TICKET NUMBER or URL or description} or Adds {new capability or featu
 > * https://opensource.com/article/18/6/anatomy-perfect-pull-request
 > * https://developers.google.com/blockly/guides/modify/contribute/write_a_good_pr
 
+## Testing
+
+> What was tested? How did you test it? Add unit tests for new functions, integration tests for API/database interactions, and E2E tests for critical user flows.
+> * https://martinfowler.com/articles/practical-test-pyramid.html
+> * https://blog.logrocket.com/javascript-testing-best-practices/
+> * https://www.testim.io/blog/typescript-unit-testing-101/
+
 ## Context for reviewers
 
 > Background context, more in-depth details of the implementation, and anything else you'd like to call out or ask reviewers.

@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Ask a Question
-    url: https://github.com/labs-asp-experiments/labs-asp-experiments/discussions
-    about: Ask questions and discuss ideas with the community
-  - name: Security Issue
-    url: mailto:security@example.com
-    about: Please report security vulnerabilities privately 
