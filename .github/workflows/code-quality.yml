@@ -1,0 +1,160 @@
+name: Code Quality & Standards
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main ]
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check PR title format
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            fix
+            feat
+            docs
+            style
+            refactor
+            perf
+            test
+            chore
+            ci
+          requireScope: false
+          disallowScopes: |
+            release
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
+
+  file-changes:
+    name: Detect File Changes
+    runs-on: ubuntu-latest
+    outputs:
+      typescript: ${{ steps.changes.outputs.typescript }}
+      yaml: ${{ steps.changes.outputs.yaml }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            typescript:
+              - '**/*.ts'
+              - '**/*.tsx'
+              - '**/*.js'
+              - '**/*.jsx'
+            yaml:
+              - '**/*.yml'
+              - '**/*.yaml'
+
+  lint-typescript:
+    name: Lint TypeScript/JavaScript
+    runs-on: ubuntu-latest
+    needs: file-changes
+    if: needs.file-changes.outputs.typescript == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies and run linting
+        run: |
+          # Install root dependencies if package.json exists
+          if [ -f "package.json" ]; then
+            echo "Installing root dependencies..."
+            pnpm install
+          fi
+          
+          # Find all directories with package.json (excluding node_modules)
+          for dir in $(find . -name "package.json" -not -path "*/node_modules/*" -exec dirname {} \; | sort); do
+            if [ "$dir" = "." ]; then
+              echo "Skipping root directory for project-specific operations"
+              continue
+            fi
+            
+            project_name=$(basename "$dir")
+            echo "Processing project: $project_name"
+            
+            cd "$dir"
+            
+            # Install dependencies
+            echo "Installing dependencies for $project_name..."
+            pnpm install
+            
+            # Run linting if lint script exists
+            if pnpm run lint --if-present 2>/dev/null; then
+              echo "Linting completed for $project_name"
+            else
+              echo "No lint script found for $project_name"
+            fi
+            
+            cd - > /dev/null
+          done
+
+  validate-yaml:
+    name: Validate YAML
+    runs-on: ubuntu-latest
+    needs: file-changes
+    if: needs.file-changes.outputs.yaml == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: |
+            .github/
+          config_data: |
+            extends: default
+            rules:
+              line-length: disable
+              trailing-spaces: disable
+              new-line-at-end-of-file: disable
+              document-start: disable
+              brackets: disable
+              truthy: disable
+              indentation:
+                spaces: 2
+
+  security-check:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Run security audit
+        run: |
+          # Find all directories with package.json (excluding node_modules)
+          for dir in $(find . -name "package.json" -not -path "*/node_modules/*" -exec dirname {} \; | sort); do
+            project_name=$(basename "$dir")
+            echo "Running security audit for: $project_name"
+            
+            cd "$dir"
+            
+            # Run security audit
+            if pnpm audit --audit-level=high; then
+              echo "Security audit passed for $project_name"
+            else
+              echo "Security vulnerabilities found in $project_name"
+              exit 1
+            fi
+            
+            cd - > /dev/null
+          done 
