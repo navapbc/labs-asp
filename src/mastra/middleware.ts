@@ -8,6 +8,27 @@ import {
 
 // Server middleware configuration extracted from index.ts
 export const serverMiddleware = [
+  // Health check endpoint - no authentication required
+  {
+    handler: async (c: any, next: any) => {
+      const url = new URL(c.req.url);
+
+      if (url.pathname === '/health' && c.req.method === 'GET') {
+        return new Response(JSON.stringify({
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          version: process.env.GITHUB_SHA || 'dev',
+          environment: process.env.ENVIRONMENT || 'development'
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      await next();
+    },
+    path: '/health',
+  },
   // Login route - handles password authentication
   {
     handler: async (c: any, next: any) => {
@@ -16,7 +37,10 @@ export const serverMiddleware = [
       // Handle login page GET request
       if (url.pathname === '/auth/login' && c.req.method === 'GET') {
         return new Response(createLoginPage(), {
-          headers: { 'Content-Type': 'text/html' }
+          headers: { 
+            'Content-Type': 'text/html',
+            'Content-Security-Policy': "default-src 'self'; font-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com data:; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' https: wss: ws:;"
+          }
         });
       }
 
