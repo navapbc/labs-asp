@@ -15,11 +15,6 @@ This guide will help you set up and run the frontend application for the Riversi
 pnpm install
 ```
 
-2. Install additional dependencies for shadcn/ui:
-```bash
-pnpm add @radix-ui/react-slot class-variance-authority clsx tailwindcss-animate
-```
-
 ## Configuration
 
 The application is already configured with:
@@ -30,6 +25,8 @@ The application is already configured with:
 - TypeScript
 
 ## Running the Application
+
+### Note - the application can run without running the mastra backend in sync with the frontend
 
 1. Start the Mastra backend (in one terminal):
 ```bash
