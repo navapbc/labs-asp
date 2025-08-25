@@ -260,7 +260,11 @@ export default function ChatPage() {
                 ← Back to Client
               </Button>
               <div>
+<<<<<<< HEAD
                 <h1 className="text-2xl font-bold text-gray-900">Agentic Submission Tool</h1>
+=======
+                <h1 className="text-2xl font-bold text-gray-900">AI Assistant Chat</h1>
+>>>>>>> 43ecea7 (chat setup)
                 <p className="text-gray-600">Helping {client.name} with benefits applications</p>
               </div>
             </div>
@@ -274,6 +278,7 @@ export default function ChatPage() {
       {/* Main Content - Chat and Website */}
       <div className="flex h-[calc(100vh-80px)]">
         {/* Left Side - Chat */}
+<<<<<<< HEAD
         <div className="w-2/5 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
           <Card className="h-full border-0 rounded-none flex flex-col">
             <CardHeader className="border-b bg-white flex-shrink-0">
@@ -308,6 +313,36 @@ export default function ChatPage() {
                 {chatHistory.slice(1).map((message, index) => (
                   <div
                     key={index}
+=======
+        <div className="w-2/5 border-r border-gray-200 bg-white">
+          <Card className="h-full border-0 rounded-none">
+            <CardHeader className="border-b bg-gray-50">
+              <CardTitle className="flex items-center space-x-2">
+                <span className="font-bold text-lg">{client.name}</span>
+              </CardTitle>
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 mb-2">
+                  Application Progress
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div
+                    className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${client.applicationProgress ?? 0}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {client.applicationProgress ?? 0}% complete
+                </p>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="flex-1 flex flex-col p-0">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.slice(1).map((message) => (
+                  <div
+                    key={message.id}
+>>>>>>> 43ecea7 (chat setup)
                     className={`flex ${
                       message.role === 'user' ? 'justify-end' : 'justify-start'
                     }`}
@@ -324,9 +359,12 @@ export default function ChatPage() {
                   </div>
                 ))}
                 
+<<<<<<< HEAD
                 {/* AI Response Objects */}
                 {renderAIResponseObject()}
                 
+=======
+>>>>>>> 43ecea7 (chat setup)
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2">
@@ -340,6 +378,7 @@ export default function ChatPage() {
                 )}
                 
                 <div ref={messagesEndRef} />
+<<<<<<< HEAD
               </div>
             </CardContent>
           </Card>
@@ -407,6 +446,55 @@ export default function ChatPage() {
                 </defs>
                 <rect width="100" height="100" fill="url(#wave)"/>
               </svg>
+=======
+              </div>
+
+              {/* Input Form */}
+              <div className="border-t p-4 bg-white sticky bottom-0 left-0 right-0 z-10">
+                <form onSubmit={handleFormSubmit} className="space-y-2">
+                  <div className="relative">
+                    <textarea
+                      value={input}
+                      onChange={handleInputChange}
+                      placeholder="Ask me to help with benefits applications, research programs, or navigate websites..."
+                      className="w-full min-h-[80px] p-3 pr-20 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isLoading || !input.trim()}
+                      className="absolute bottom-2 right-2 px-4 py-1 h-auto min-h-0"
+                      tabIndex={0}
+                    >
+                      {isLoading ? 'Sending...' : 'Send'}
+                    </Button>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="text-xs text-gray-500">
+                      {input.length} characters
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Side - WIC Website */}
+        <div className="w-3/5 bg-white">
+          <div className="h-full flex flex-col">
+            <div className="border-b bg-gray-50 px-4 py-3">
+              <h2 className="text-lg font-semibold text-gray-900">WIC Riverside County Website</h2>
+              <p className="text-sm text-gray-600">Live view of the WIC application process</p>
+            </div>
+            <div className="flex-1">
+              <iframe
+                src="https://www.ruhealth.org/appointments/apply-4-wic-form"
+                title="WIC Riverside County Website"
+                className="w-full h-full border-0"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+              />
+>>>>>>> 43ecea7 (chat setup)
             </div>
           </div>
         </div>
