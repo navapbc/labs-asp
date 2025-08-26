@@ -6,7 +6,8 @@ import { useParams, useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useChat } from '@ai-sdk/react'
+import { experimental_useObject as useObject } from "@ai-sdk/react"
+import { z } from 'zod'
 
 interface Client {
   id: string
@@ -44,6 +45,20 @@ const mockClients: Record<string, Client> = {
   }
 }
 
+// Define the schema for AI responses
+const aiResponseSchema = z.object({
+  message: z.string().describe('Main response message'),
+  action: z.string().optional().describe('Current action being performed'),
+  status: z.string().optional().describe('Current status of the operation'),
+  progress: z.number().optional().describe('Progress percentage (0-100)'),
+  details: z.string().optional().describe('Additional details or context'),
+  url: z.string().optional().describe('Current website URL'),
+  screenshot: z.string().optional().describe('Screenshot filename if taken'),
+  error: z.string().optional().describe('Error message if something went wrong'),
+  nextStep: z.string().optional().describe('Next step to take'),
+  completed: z.boolean().optional().describe('Whether the task is completed'),
+})
+
 export default function ChatPage() {
   const router = useRouter()
   const params = useParams()
@@ -51,18 +66,29 @@ export default function ChatPage() {
   const client = mockClients[clientId]
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isTyping, setIsTyping] = useState(false)
+  const [input, setInput] = useState('')
+  const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>>([
+    {
+      role: 'assistant',
+      content: `You are the Web Automation Agent for Riverside County Benefits Portal. You're helping ${client?.name || 'the client'} with their benefits applications. You can navigate websites, research information, and help fill out forms for programs like CalFresh, Medi-Cal, WIC, and Housing Assistance. Be helpful, professional, and take action to assist with their specific needs.`,
+      timestamp: new Date()
+    }
+  ])
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: '/api/chat',
-    initialMessages: [
-      {
-        id: '1',
-        role: 'system',
-        content: `You are the Web Automation Agent for Riverside County Benefits Portal. You're helping ${client?.name} with their benefits applications. You can navigate websites, research information, and help fill out forms for programs like CalFresh, Medi-Cal, WIC, and Housing Assistance. Be helpful, professional, and take action to assist with their specific needs.`
-      }
-    ],
-    onFinish: () => {
+  const { object, submit, isLoading } = useObject({
+    api: '/api/chat-object',
+    schema: aiResponseSchema,
+    onFinish: (event) => {
       setIsTyping(false)
+      // Add the AI response to chat history
+      if (event.object) {
+        const responseContent = event.object.message || 'Response received from agent'
+        setChatHistory(prev => [...prev, {
+          role: 'assistant',
+          content: responseContent,
+          timestamp: new Date()
+        }])
+      }
     },
     onError: (error) => {
       console.error('Chat error:', error)
@@ -72,7 +98,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [chatHistory, object])
 
   useEffect(() => {
     if (isLoading) {
@@ -98,8 +124,125 @@ export default function ChatPage() {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (input.trim()) {
-      handleSubmit(e)
+      // Add user message to chat history
+      const userMessage = {
+        role: 'user' as const,
+        content: input,
+        timestamp: new Date()
+      }
+      setChatHistory(prev => [...prev, userMessage])
+      
+      // Submit to AI using useObject
+      submit({ input: input })
+      
+      // Clear input
+      setInput('')
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+  }
+
+  // Function to render AI response object
+  const renderAIResponseObject = () => {
+    if (!object) return null
+
+    const baseClasses = "rounded-lg p-3 mb-2"
+    
+    const objects = []
+    
+    if (object.message) {
+      objects.push(
+        <div key="message" className={`${baseClasses} bg-gray-100 text-black`}>
+          <div className="text-sm">{object.message}</div>
+        </div>
+      )
+    }
+    
+    if (object.action) {
+      objects.push(
+        <div key="action" className={`${baseClasses} bg-blue-100 text-blue-900 border-l-4 border-blue-500`}>
+          <div className="text-sm font-medium">🔄 {object.action}</div>
+        </div>
+      )
+    }
+    
+    if (object.status) {
+      objects.push(
+        <div key="status" className={`${baseClasses} bg-green-100 text-green-900 border-l-4 border-green-500`}>
+          <div className="text-sm font-medium">📊 {object.status}</div>
+        </div>
+      )
+    }
+    
+    if (object.progress !== undefined) {
+      objects.push(
+        <div key="progress" className={`${baseClasses} bg-purple-100 text-purple-900 border-l-4 border-purple-500`}>
+          <div className="text-sm font-medium">📈 Progress: {object.progress}%</div>
+          <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
+            <div 
+              className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${object.progress}%` }}
+            ></div>
+          </div>
+        </div>
+      )
+    }
+    
+    if (object.details) {
+      objects.push(
+        <div key="details" className={`${baseClasses} bg-yellow-100 text-yellow-900 border-l-4 border-yellow-500`}>
+          <div className="text-sm">💡 {object.details}</div>
+        </div>
+      )
+    }
+    
+    if (object.url) {
+      objects.push(
+        <div key="url" className={`${baseClasses} bg-indigo-100 text-indigo-900 border-l-4 border-indigo-500`}>
+          <div className="text-sm font-medium">🌐 Current URL:</div>
+          <div className="text-xs break-all">{object.url}</div>
+        </div>
+      )
+    }
+    
+    if (object.screenshot) {
+      objects.push(
+        <div key="screenshot" className={`${baseClasses} bg-orange-100 text-orange-900 border-l-4 border-orange-500`}>
+          <div className="text-sm">📸 Screenshot captured: {object.screenshot}</div>
+        </div>
+      )
+    }
+    
+    if (object.error) {
+      objects.push(
+        <div key="error" className={`${baseClasses} bg-red-100 text-red-900 border-l-4 border-red-500`}>
+          <div className="text-sm font-medium">⚠️ Error: {object.error}</div>
+        </div>
+      )
+    }
+    
+    if (object.nextStep) {
+      objects.push(
+        <div key="nextStep" className={`${baseClasses} bg-teal-100 text-teal-900 border-l-4 border-teal-500`}>
+          <div className="text-sm font-medium">➡️ Next Step:</div>
+          <div className="text-sm">{object.nextStep}</div>
+        </div>
+      )
+    }
+    
+    if (object.completed !== undefined) {
+      objects.push(
+        <div key="completed" className={`${baseClasses} ${object.completed ? 'bg-green-100 text-green-900 border-l-4 border-green-500' : 'bg-gray-100 text-gray-900'}`}>
+          <div className="text-sm font-medium">
+            {object.completed ? '✅ ' : '⏳ '}{object.completed ? 'Task completed successfully!' : 'Task in progress...'}
+          </div>
+        </div>
+      )
+    }
+    
+    return objects
   }
 
   return (
@@ -161,10 +304,10 @@ export default function ChatPage() {
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-                
-                {messages.slice(1).map((message) => (
+                {/* Chat messages */}
+                {chatHistory.slice(1).map((message, index) => (
                   <div
-                    key={message.id}
+                    key={index}
                     className={`flex ${
                       message.role === 'user' ? 'justify-end' : 'justify-start'
                     }`}
@@ -180,6 +323,9 @@ export default function ChatPage() {
                     </div>
                   </div>
                 ))}
+                
+                {/* AI Response Objects */}
+                {renderAIResponseObject()}
                 
                 {isTyping && (
                   <div className="flex justify-start">
