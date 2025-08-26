@@ -1,0 +1,249 @@
+name: Automated Release Pipeline
+
+on:
+  # Automatic release on develop push (CI-driven)
+  push:
+    branches: [develop]
+  
+  # Manual release trigger with options
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type (auto-detects from commits if not specified)'
+        required: false
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+      skip_release:
+        description: 'Skip release creation (deploy only)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PROJECT_ID: nava-labs
+  REGION: us-central1
+
+jobs:
+  # Analyze commits to determine release type
+  analyze:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.changes.outputs.should_release }}
+      release_type: ${{ steps.changes.outputs.release_type }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Analyze commit messages
+      id: changes
+      run: |
+        # Get commits since last release
+        LAST_TAG=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+        
+        if [ -z "$LAST_TAG" ]; then
+          COMMIT_RANGE="HEAD"
+          echo "No previous release found, analyzing all commits"
+        else
+          COMMIT_RANGE="${LAST_TAG}..HEAD"
+          echo "Analyzing commits since ${LAST_TAG}"
+        fi
+        
+        COMMITS=$(git log $COMMIT_RANGE --oneline --no-merges)
+        echo "Commits to analyze:"
+        echo "$COMMITS"
+        
+        # Determine release type from conventional commits
+        RELEASE_TYPE="patch"
+        SHOULD_RELEASE="false"
+        
+        if echo "$COMMITS" | grep -qE "^[a-f0-9]+ (feat|fix|docs|style|refactor|perf|test|chore)"; then
+          SHOULD_RELEASE="true"
+        fi
+        
+        if echo "$COMMITS" | grep -qE "^[a-f0-9]+ feat"; then
+          RELEASE_TYPE="minor"
+        fi
+        
+        if echo "$COMMITS" | grep -qE "BREAKING CHANGE|!:"; then
+          RELEASE_TYPE="major"
+        fi
+        
+        # Override with manual input if provided
+        if [ "${{ github.event.inputs.release_type }}" != "" ] && [ "${{ github.event.inputs.release_type }}" != "auto" ]; then
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+          SHOULD_RELEASE="true"
+        fi
+        
+        if [ "${{ github.event.inputs.skip_release }}" == "true" ]; then
+          SHOULD_RELEASE="false"
+        fi
+        
+        echo "should_release=${SHOULD_RELEASE}" >> $GITHUB_OUTPUT
+        echo "release_type=${RELEASE_TYPE}" >> $GITHUB_OUTPUT
+        echo "Determined: should_release=${SHOULD_RELEASE}, release_type=${RELEASE_TYPE}"
+
+  # Create release PR to main
+  create_release:
+    needs: analyze
+    if: needs.analyze.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+      
+    steps:
+    - name: Checkout develop
+      uses: actions/checkout@v4
+      with:
+        ref: develop
+        fetch-depth: 0
+
+    - name: Calculate version
+      id: version
+      run: |
+        LAST_TAG=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+        
+        if [ -z "$LAST_TAG" ]; then
+          CURRENT="v0.0.0"
+        else
+          CURRENT="$LAST_TAG"
+        fi
+        
+        # Remove 'v' prefix
+        CURRENT_NUM=${CURRENT#v}
+        IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_NUM"
+        MAJOR=${VERSION_PARTS[0]:-0}
+        MINOR=${VERSION_PARTS[1]:-0}
+        PATCH=${VERSION_PARTS[2]:-0}
+        
+        # Increment based on type
+        case ${{ needs.analyze.outputs.release_type }} in
+          major)
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            ;;
+          minor)
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            ;;
+          patch)
+            PATCH=$((PATCH + 1))
+            ;;
+        esac
+        
+        NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+        echo "tag=${NEW_TAG}" >> $GITHUB_OUTPUT
+        echo "New version: ${NEW_TAG}"
+
+    - name: Create release PR
+      id: pr
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Generate changelog
+        LAST_TAG=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+        if [ -z "$LAST_TAG" ]; then
+          COMMIT_RANGE="HEAD"
+        else
+          COMMIT_RANGE="${LAST_TAG}..HEAD"
+        fi
+        
+        CHANGELOG=$(git log $COMMIT_RANGE --oneline --no-merges --pretty=format:"- %s (%h)")
+        
+        # Create PR to main
+        PR_BODY="## 🚀 Release ${{ steps.version.outputs.tag }}
+
+        **Release Type:** ${{ needs.analyze.outputs.release_type }}
+        
+        ### Changes
+        ${CHANGELOG}
+        
+        ---
+        This release will be automatically deployed to production after CI passes and PR is approved."
+        
+        # Check if PR already exists
+        EXISTING_PR=$(gh pr list --base main --head develop --json number --jq '.[0].number' || echo "")
+        
+        if [ -n "$EXISTING_PR" ]; then
+          echo "Updating existing PR #${EXISTING_PR}"
+          gh pr edit ${EXISTING_PR} --title "🚀 Release ${{ steps.version.outputs.tag }}" --body "${PR_BODY}"
+          echo "pr_number=${EXISTING_PR}" >> $GITHUB_OUTPUT
+        else
+          echo "Creating new release PR"
+          PR_NUMBER=$(gh pr create \
+            --base main \
+            --head develop \
+            --title "🚀 Release ${{ steps.version.outputs.tag }}" \
+            --body "${PR_BODY}" | grep -oE '[0-9]+$')
+          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+        fi
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Create tag and GitHub release when PR is merged to main
+  finalize_release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout main
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check if this is a release merge
+      id: check
+      run: |
+        # Check if this commit came from a release PR
+        COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+        if echo "$COMMIT_MSG" | grep -q "Release v"; then
+          echo "is_release=true" >> $GITHUB_OUTPUT
+          VERSION=$(echo "$COMMIT_MSG" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        else
+          echo "is_release=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create tag and GitHub release
+      if: steps.check.outputs.is_release == 'true'
+      run: |
+        VERSION="${{ steps.check.outputs.version }}"
+        
+        # Create and push tag
+        git tag ${VERSION}
+        git push origin ${VERSION}
+        
+        # Generate release notes
+        LAST_TAG=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -2 | head -1)
+        if [ -z "$LAST_TAG" ]; then
+          COMMIT_RANGE="HEAD"
+        else
+          COMMIT_RANGE="${LAST_TAG}..${VERSION}"
+        fi
+        
+        RELEASE_NOTES=$(git log $COMMIT_RANGE --oneline --no-merges --pretty=format:"- %s (%h)")
+        
+        # Create GitHub release
+        gh release create ${VERSION} \
+          --title "Release ${VERSION}" \
+          --notes "${RELEASE_NOTES}" \
+          --target main
+        
+        echo "🎉 Released ${VERSION} to production!"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
