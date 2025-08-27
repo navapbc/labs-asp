@@ -113,6 +113,20 @@ async function runScorerTests(): Promise<void> {
     let passed = 0;
     let failed = 0;
     
+    // Create timestamped results file
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const resultsPath = path.join(__dirname, '../test-results', `language-preference-${timestamp}.json`);
+    await fs.mkdir(path.dirname(resultsPath), { recursive: true });
+    
+    // Initialize results file with metadata
+    const initialData = {
+      timestamp: new Date().toISOString(),
+      testRun: `language-preference-${timestamp}`,
+      totalTests: testCases.length,
+      results: [] as TestResult[]
+    };
+    await fs.writeFile(resultsPath, JSON.stringify(initialData, null, 2));
+    
     for (const testCase of testCases) {
       console.log(`Testing: ${testCase.id}`);
       console.log(`${testCase.description}`);
@@ -142,7 +156,7 @@ async function runScorerTests(): Promise<void> {
           failed++;
         }
         
-        results.push({
+        const testResult = {
           testCase: testCase.id,
           description: testCase.description,
           score: result.score,
@@ -151,13 +165,20 @@ async function runScorerTests(): Promise<void> {
           reason: result.reason || 'No reason provided',
           tags: testCase.tags,
           compliance: testCase.expectedCompliance,
-        });
+        };
+        
+        results.push(testResult);
+        
+        // Append this result to the file
+        const currentData = JSON.parse(await fs.readFile(resultsPath, 'utf-8'));
+        currentData.results.push(testResult);
+        await fs.writeFile(resultsPath, JSON.stringify(currentData, null, 2));
         
       } catch (error) {
         console.log(`ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
         failed++;
         
-        results.push({
+        const testResult = {
           testCase: testCase.id,
           description: testCase.description,
           score: null,
@@ -166,7 +187,14 @@ async function runScorerTests(): Promise<void> {
           reason: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           tags: testCase.tags,
           compliance: testCase.expectedCompliance,
-        });
+        };
+        
+        results.push(testResult);
+        
+        // Append this result to the file
+        const currentData = JSON.parse(await fs.readFile(resultsPath, 'utf-8'));
+        currentData.results.push(testResult);
+        await fs.writeFile(resultsPath, JSON.stringify(currentData, null, 2));
       }
       
       console.log('─'.repeat(80));
@@ -201,19 +229,16 @@ async function runScorerTests(): Promise<void> {
       });
     });
     
-    // Save results to JSON
-    const resultsPath = path.join(__dirname, '../test-results/language-preference-results.json');
-    await fs.mkdir(path.dirname(resultsPath), { recursive: true });
-    await fs.writeFile(resultsPath, JSON.stringify({
-      timestamp: new Date().toISOString(),
-      summary: {
-        total: passed + failed,
-        passed,
-        failed,
-        successRate: (passed / (passed + failed)) * 100
-      },
-      results
-    }, null, 2));
+    // Update final summary in results file
+    const currentData = JSON.parse(await fs.readFile(resultsPath, 'utf-8'));
+    currentData.summary = {
+      total: passed + failed,
+      passed,
+      failed,
+      successRate: (passed / (passed + failed)) * 100
+    };
+    currentData.completedAt = new Date().toISOString();
+    await fs.writeFile(resultsPath, JSON.stringify(currentData, null, 2));
     
     console.log(`\nResults saved to: ${resultsPath}`);
     
