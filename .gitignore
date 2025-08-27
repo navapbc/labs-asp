@@ -6,6 +6,9 @@ dist
 .env
 *.db
 *.db-*
+.vscode
+.next
+
 
 # Database files at repository root
 /mastra.db
