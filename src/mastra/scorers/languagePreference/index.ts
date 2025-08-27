@@ -89,3 +89,9 @@ export function createLanguagePreferenceScorer({
     },
   });
 }
+
+export const SCORER_CONFIG = {
+  name: 'languagePreference',
+  description: 'Evaluates if the web automation agent changes website language to match participant language preferences',
+  // sheetsId: 'your-specific-sheets-id'
+};

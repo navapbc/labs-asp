@@ -18,6 +18,7 @@ full_conversation.txt
 Benefits-Cal-Walkthrough.md
 
 /src/generated/prisma
+test-results/
 
 # FuseBox cache
 .fusebox/

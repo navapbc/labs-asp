@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:scorer": "tsx scripts/run-scorer-tests.ts",
+    "test:scorer:language": "tsx scripts/run-scorer-tests.ts languagePreference",
     "dev": "mastra dev",
     "dev:pretty": "mastra dev --inspect | npx pino-pretty",
     "build": "mastra build",
