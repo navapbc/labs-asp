@@ -1,0 +1,483 @@
+.civic-mega-menu {
+  display: none;
+}
+
+@media (min-width: 1080px) {
+  .cmm-mobile-menu-wrapper {
+    display: none;
+  }
+
+  .civic-mega-menu {
+    display: block;
+  }
+}
+
+.cmm-li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cmm-ul--level-1 {
+  position: relative;
+  display: flex;
+}
+
+.cmm-ul:not(.cmm-ul--level-1) {
+  display: none;
+  flex-direction: column;
+}
+
+.cmm-ul--level-2 {
+  position: absolute;
+  top: 100%;
+  z-index: 10;
+}
+
+#civic-mega-menu ul.cmm-ul--level-2 li.cmm-li {
+  padding-left: 5px !important;
+  width: 300px !important;
+}
+
+#civic-mega-menu ul.cmm-ul--level-4 li.cmm-li {
+  padding-left: 5px !important;
+  width: 300px !important;
+}
+
+ul.cmm-ul--level-2 {
+  color: black;
+  transform: none;
+  left: unset !important;
+  z-index: 40;
+  padding: 0;
+  background-color: unset !important;
+  box-shadow: unset !important;
+  background-color: white;
+  box-shadow: 0px 0px 3px 2px #aaa;
+  top: 95% !important;
+  margin-left: var(--margin-left, 0);
+  margin-top: 16px;
+  min-height: 95px !important;
+}
+
+.region-header-left-2 {
+  margin: 0 3% 0 3% !important;
+}
+
+#civic-mega-menu ul.cmm-ul--level-2 .menu-title--level-2 {
+  display: none !important;
+}
+
+.menu_wrap {
+  background: white;
+  height: auto;
+  opacity: 0.9;
+  position: fixed;
+  top: 95px;
+  left: 0;
+}
+
+
+#civic-mega-menu .menu-item--level-1::after {
+  background: #40b4e5 !important;
+}
+
+/* Level 3 */
+#civic-mega-menu ul.cmm-ul--level-2 li.cmm-li:hover.cmm-li--level-3, #civic-mega-menu ul.cmm-ul--level-2 li.cmm-li.cmm-li--active-trail.cmm-li--level-3 {
+  background: #40b4e5 !important;
+}
+
+/* Level 4 */
+#civic-mega-menu ul.cmm-ul--level-3 li.cmm-li:hover.cmm-li--level-4, #civic-mega-menu ul.cmm-ul--level-3 li.cmm-li.cmm-li--active-trail.cmm-li--level-4 {
+  background: #40b4e5 !important;
+}
+
+
+#civic-mega-menu .cmm-ul--level-3 {
+  background-color: unset !important;
+}
+
+.cmm-li--level-3 svg {
+  color: #164575 !important;
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+
+@media screen and (min-width: 1000px) and (max-width: 1290px) {
+  #civic-mega-menu .cmm-ul--level-4 {
+    width: 90% !important;
+  }
+}
+
+@media screen and (min-width: 1291px) and (max-width: 1600px) {
+  #civic-mega-menu .cmm-ul--level-4 {
+    width: 100% !important;
+  }
+}
+
+#civic-mega-menu .cmm-ul--level-4 {
+  width: 100% !important;
+}
+
+#civic-mega-menu .cmm-column--level-2 {
+  padding: 11px 5px 0px 0px !important;
+}
+
+#civic-mega-menu ul.cmm-ul--level-2 {
+  padding-left: 12px !important;
+  width: 100% !important;
+  opacity: 0.9;
+  padding-bottom: 8px !important;
+  left: -15% !important;
+}
+
+@media screen and (min-width: 1451px) and (max-width: 2400px) {
+  #civic-mega-menu ul.cmm-ul--level-2 {
+    left: -15% !important;
+  }
+}
+
+@media screen and (min-width: 900px) and (max-width: 1450px) {
+  #civic-mega-menu ul.cmm-ul--level-2 {
+    left: -17% !important;
+  }
+}
+
+.cmm-li--level-3>span {
+  line-height: 13px;
+}
+
+#civic-mega-menu ul.cmm-ul--level-2 li.cmm-li a span {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+#civic-mega-menu ul.cmm-ul--level-3 li.cmm-li a span, #civic-mega-menu ul.cmm-ul--level-3 li.cmm-li .menu-item-value--level-3 {
+  font-weight: 300 !important;
+  font-size: 14px !important;
+  color: #09356a !important;
+}
+
+#civic-mega-menu .menu-item--level-1::after:hover {
+  height: 20px !important;
+}
+
+#civic-mega-menu .cmm-li--level-1:hover:not(.cmm-li--button) .menu-item--level-1::after,
+#civic-mega-menu .cmm-li--level-1.active:not(.cmm-li--button) .menu-item--level-1::after {
+  height: 6px !important;
+}
+
+/* line 2, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-1 {
+  position: static;
+  align-items: center;
+  /* margin-top: 24px; */
+}
+
+/* line 11, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-1 a {
+  box-shadow: inherit;
+  text-decoration: none;
+  position: relative;
+  width: 100%;
+}
+
+/* line 17, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .menu-item--level-1 {
+  position: relative;
+}
+
+/* line 20, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .menu-item--level-1::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 2px;
+  right: 2px;
+  height: 0;
+  transition: height 0.15s;
+  transform-style: preserve-3d;
+  background-color: #40b4e5;
+}
+
+/* line 35, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-1:hover:not(.cmm-li--button) .menu-item--level-1::after,
+#civic-mega-menu .cmm-li--level-1.active:not(.cmm-li--button) .menu-item--level-1::after {
+  height: 2px;
+}
+
+/* line 40, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--button:not(:last-child) {
+  padding-right: 20px;
+}
+
+/* line 44, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .menu-item.button {
+  text-align: center;
+  padding: 7px 15px;
+  max-width: 200px;
+  line-height: 1.25;
+  height: 55px;
+}
+
+/* line 52, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu ul.cmm-ul--level-2 {
+  color: black;
+  width: 100vw;
+  top: 36px;
+  left: -130px;
+  transform: none;
+  padding: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* line 62, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu ul.cmm-ul--level-2::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0;
+  width: 990px;
+  height: 21px;
+}
+
+@media screen and (min-width: 1200px) {
+
+  /* line 52, ../src/scss/partials/modules/_mega-menu.scss */
+  #civic-mega-menu ul.cmm-ul--level-2 {
+    width: 1170px;
+  }
+}
+
+/* line 87, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-column--level-2 p {
+  line-height: 1.2em;
+}
+
+/* line 92, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu a.menu-item {
+  text-decoration: none;
+}
+
+/* line 95, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu a.menu-item:hover {
+  text-decoration: none;
+}
+
+/* line 100, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-2:hover {
+  font-weight: 500;
+}
+
+/* line 104, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .menu-item--level-2,
+#civic-mega-menu .menu-item--level-3 {
+  font-size: inherit;
+}
+
+/* line 109, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-2,
+#civic-mega-menu .cmm-li--level-3,
+#civic-mega-menu .cmm-li--level-4 {
+  text-transform: uppercase;
+  font-size: 1.3rem;
+  padding: 5px 0;
+}
+
+#civic-mega-menu .cmm-li--level-3 a {
+  width: 106% !important;
+}
+
+/* line 125, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-3,
+#civic-mega-menu .cmm-column--level-2:nth-child(2) {
+  /* width: 400px; */
+}
+
+/* line 128, ../src/scss/partials/modules/_mega-menu.scss */
+/* #civic-mega-menu .cmm-ul--level-3 li,
+#civic-mega-menu .cmm-column--level-2:nth-child(2) li {
+  padding: 7px;
+} */
+
+/* line 131, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-3 a,
+#civic-mega-menu .cmm-column--level-2:nth-child(2) a {
+  line-height: 12px;
+}
+
+#civic-mega-menu .cmm-ul--level-4 a {
+  line-height: 14px;
+}
+
+#civic-mega-menu .cmm-ul--level-3 {
+  display: flex !important;
+}
+
+/* line 139, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-3,
+#civic-mega-menu .cmm-ul--level-4 {
+  display: none;
+  /* padding: 11px 5px 0px 0px !important; */
+  height: 100%;
+}
+
+/* line 146, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-3::before,
+#civic-mega-menu .cmm-ul--level-4::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+}
+
+/* line 158, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-3>.menu-item,
+#civic-mega-menu .cmm-li--level-4>.menu-item {
+  position: relative;
+  width: 100%;
+}
+
+/* line 163, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-3:hover>.menu-item, #civic-mega-menu .cmm-li--level-3.active>.menu-item,
+#civic-mega-menu .cmm-li--level-4:hover>.menu-item,
+#civic-mega-menu .cmm-li--level-4.active>.menu-item {
+  font-weight: 500;
+  /* color: white; */
+  position: relative;
+  width: 100%;
+}
+
+/* line 170, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-3:hover>.menu-item::after, #civic-mega-menu .cmm-li--level-3.active>.menu-item::after,
+#civic-mega-menu .cmm-li--level-4:hover>.menu-item::after,
+#civic-mega-menu .cmm-li--level-4.active>.menu-item::after {
+  content: '';
+  position: absolute;
+  background-color: #40b4e5;
+  top: -10px;
+  left: -20px;
+  right: -20px;
+  bottom: -10px;
+}
+
+/* line 180, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-3:hover>.menu-item>.menu-item-value, #civic-mega-menu .cmm-li--level-3.active>.menu-item>.menu-item-value,
+#civic-mega-menu .cmm-li--level-4:hover>.menu-item>.menu-item-value,
+#civic-mega-menu .cmm-li--level-4.active>.menu-item>.menu-item-value {
+  position: relative;
+  z-index: 1;
+}
+
+/* line 187, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-4 {
+  position: absolute;
+  top: 0;
+  left: 300px;
+  width: 300px !important;
+  background: linear-gradient(white, #d3dde7);
+  border-left: 5px solid #40b4e5;
+  padding: 11px 5px 0px 0px !important;
+  z-index: 999;
+  height: 440px !important;
+}
+
+/* line 193, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-ul--level-4 .block--bg-image-block {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+}
+
+/* line 203, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-2:hover>.cmm-ul--level-3 {
+  display: flex;
+}
+
+.wrapped {
+  flex-wrap: wrap !important;
+  display: flex !important;
+  height: 375px !important;
+}
+
+/* line 211, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-3:hover>.cmm-ul--level-4 {
+  display: flex;
+}
+
+/* line 215, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-4 {
+  color: white;
+  width: 100%;
+  /* max-width: 200px; */
+}
+
+/* line 221, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .menu-item--level-3,
+#civic-mega-menu .menu-item--level-4 {
+  display: relative;
+  z-index: 1;
+}
+
+/* line 17, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .menu-item--level-1 {
+  position: relative;
+}
+
+/* line 40, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--button:not(:last-child) {
+  padding-right: 20px;
+}
+
+/* line 116, ../src/scss/partials/modules/_mega-menu.scss */
+#civic-mega-menu .cmm-li--level-2:first-child {
+  padding-top: 0;
+}
+
+.civic-mega-menu ul.cmm-ul--level-2 {
+  background-color: #ffffff;
+  padding: 25px 16px;
+  box-sizing: border-box;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 100vw;
+}
+
+.menu-item--level-2 {
+  font-size: 18px;
+}
+
+.menu-item--level-3 {
+  font-size: 14px;
+}
+
+.cmm-ul--level-2 {
+  box-shadow: 0 4px 5px rgba(0, 0, 0, .5);
+}
+
+.menu-title--level-2 {
+  font-size: 32px;
+  margin-top: 0;
+  border-bottom: 2px solid black;
+}
+
+.civic-mega-menu a.menu-item:hover {
+  text-decoration: underline;
+}
+
+.cmm-column {
+  flex-wrap: wrap !important;
+  height: 450px !important;
+}
+
+.menu_wrap {
+  height: 450px !important;
+}

@@ -1,0 +1,17 @@
+.node--type-emergency-alert {
+  position: relative;
+  width: 100%;
+  z-index: 10;
+  background-color: #dc3545;
+}
+
+.alert-banner {
+  margin: 0;
+  padding: 20px 0;
+  position: relative;
+  color: white;
+}
+
+.alert-banner-body > *:last-child {
+  margin-bottom: 0;
+}

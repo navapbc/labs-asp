@@ -1,0 +1,22 @@
+/*
+ * The Typekit service used to deliver this font or fonts for use on websites
+ * is provided by Adobe and is subject to these Terms of Use
+ * http://www.adobe.com/products/eulas/tou_typekit. For font license
+ * information, see the list below.
+ *
+ * roca:
+ *   - http://typekit.com/eulas/00000000000000007750b2f4
+ *
+ * © 2009-2025 Adobe Systems Incorporated. All Rights Reserved.
+ */
+/*{"last_published":"2024-03-24 21:00:51 UTC"}*/
+
+@import url("https://p.typekit.net/p.css?s=1&k=koe1kzw&ht=tk&f=53882&a=82965682&app=typekit&e=css");
+
+@font-face {
+font-family:"roca";
+src:url("https://use.typekit.net/af/fb6fcc/00000000000000007750b2f4/30/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"),url("https://use.typekit.net/af/fb6fcc/00000000000000007750b2f4/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff"),url("https://use.typekit.net/af/fb6fcc/00000000000000007750b2f4/30/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:700;font-stretch:normal;
+}
+
+.tk-roca { font-family: "roca",sans-serif; }

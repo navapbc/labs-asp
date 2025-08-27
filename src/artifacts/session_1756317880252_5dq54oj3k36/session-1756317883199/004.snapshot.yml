@@ -1,0 +1,234 @@
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - text:                 
+        - generic [ref=e6]:
+          - link "Riverside University Health System Logo" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img "Riverside University Health System Logo" [ref=e12] [cursor=pointer]
+          - generic [ref=e13]:
+            - generic [ref=e16]:
+              - paragraph [ref=e19]:
+                - link "Find Your Way" [ref=e20] [cursor=pointer]:
+                  - /url: https://www.ruhealth.org/find-your-way
+                  - generic [ref=e21] [cursor=pointer]: Find Your Way
+                  - img [ref=e22] [cursor=pointer]
+              - paragraph [ref=e26]:
+                - link "MyRUHealth Patient Portal" [ref=e27] [cursor=pointer]:
+                  - /url: https://myruhealth.org/mychart/Authentication/Login
+                  - generic [ref=e28] [cursor=pointer]: MyRUHealth Patient Portal
+                  - img [ref=e29] [cursor=pointer]
+              - paragraph [ref=e33]:
+                - link "Giving" [ref=e34] [cursor=pointer]:
+                  - /url: https://www.ruhsfoundation.org/
+                  - generic [ref=e35] [cursor=pointer]: Giving
+                  - img [ref=e36] [cursor=pointer]: 
+              - paragraph [ref=e40]:
+                - link "Find us on social:" [ref=e42] [cursor=pointer]:
+                  - /url: /social-hub
+                  - text: "Find us on social:"
+                  - img [ref=e43] [cursor=pointer]: 
+              - search [ref=e45]:
+                - generic [ref=e46]:
+                  - generic [ref=e47]: Search
+                  - searchbox "Search" [ref=e48]
+                  - button "Submit" [ref=e49] [cursor=pointer]:
+                    - generic [ref=e50] [cursor=pointer]: Submit
+                    - img [ref=e51] [cursor=pointer]: 
+            - generic [ref=e53]:
+              - navigation [ref=e59]:
+                - list [ref=e61]:
+                  - listitem [ref=e62]:
+                    - link "RUHS" [ref=e63] [cursor=pointer]:
+                      - /url: "#"
+                  - listitem [ref=e64]:
+                    - link "News" [ref=e65] [cursor=pointer]:
+                      - /url: /news
+                  - listitem [ref=e66]:
+                    - link "Locations" [ref=e67] [cursor=pointer]:
+                      - /url: /map-locations
+                  - listitem [ref=e68]:
+                    - link "Appointments" [ref=e69] [cursor=pointer]:
+                      - /url: /appointments
+                  - listitem [ref=e70]:
+                    - link "Resources" [ref=e71] [cursor=pointer]:
+                      - /url: /resources
+                  - listitem [ref=e72]:
+                    - link "Services" [ref=e73] [cursor=pointer]:
+                      - /url: "#"
+                  - listitem [ref=e74]:
+                    - link "Careers" [ref=e75] [cursor=pointer]:
+                      - /url: https://www.governmentjobs.com/careers/riverside/ruhsjobs
+              - link "Select Language" [ref=e84] [cursor=pointer]:
+                - /url: "#"
+                - generic [ref=e85] [cursor=pointer]: Select Language
+      - main [ref=e86]:
+        - article [ref=e90]:
+          - generic [ref=e92]:
+            - generic [ref=e96]:
+              - heading "Apply 4 WIC" [level=1] [ref=e97]
+              - paragraph [ref=e98]:
+                - link "WIC Home" [ref=e99] [cursor=pointer]:
+                  - /url: /node/5834/
+                  - generic [ref=e100] [cursor=pointer]: WIC Home
+            - generic [ref=e109]:
+              - generic [ref=e110]:
+                - paragraph [ref=e111]
+                - paragraph [ref=e112]: "We are here to help! If you have already checked your eligibility for WIC benefits, then please fill out the below information. Please note: There are some exceptions to the standard income guidelines that may qualify you for WIC benefits. If your income is slightly above the guidelines. There may be some exceptions that may allow you to qualify."
+              - generic [ref=e113]:
+                - generic [ref=e114]: Name
+                - textbox "Name" [ref=e115]: Jane Doe
+              - generic [ref=e116]:
+                - generic [ref=e117]: Date of Birth
+                - textbox "Date of Birth" [ref=e118]
+              - generic [ref=e119]:
+                - generic [ref=e120]: Home Address
+                - textbox "Home Address" [ref=e121]
+              - generic [ref=e122]:
+                - generic [ref=e123]: Mailing address (if different from home address)
+                - textbox "Mailing address (if different from home address)" [ref=e124]
+              - generic [ref=e125]:
+                - generic [ref=e126]: Mobile Number
+                - textbox "Mobile Number" [ref=e127]
+              - group "Can you receive text messages" [ref=e128]:
+                - generic [ref=e130]: Can you receive text messages
+                - generic [ref=e132]:
+                  - generic [ref=e133]:
+                    - radio "Yes" [ref=e134]
+                    - generic [ref=e135]: "Yes"
+                  - generic [ref=e136]:
+                    - radio "No" [ref=e137]
+                    - generic [ref=e138]: "No"
+              - generic [ref=e139]:
+                - generic [ref=e140]: Email
+                - textbox "Email" [ref=e141]
+              - generic [ref=e142]:
+                - generic [ref=e143]: What is your preferred language
+                - combobox [ref=e144]
+                - combobox "- None -" [ref=e147] [cursor=pointer]:
+                  - textbox "- None -" [ref=e148] [cursor=pointer]
+              - group "Do you have MediCal" [ref=e149]:
+                - generic [ref=e151]: Do you have MediCal
+                - generic [ref=e153]:
+                  - generic [ref=e154]:
+                    - radio "Yes" [ref=e155]
+                    - generic [ref=e156]: "Yes"
+                  - generic [ref=e157]:
+                    - radio "No" [ref=e158]
+                    - generic [ref=e159]: "No"
+                  - generic [ref=e160]:
+                    - radio "In Progress" [ref=e161]
+                    - generic [ref=e162]: In Progress
+              - generic [ref=e163]:
+                - generic [ref=e164]: "If yes - MediCal Case #"
+                - 'textbox "If yes - MediCal Case #" [ref=e165]'
+              - group "Please select all that apply" [ref=e166]:
+                - generic [ref=e168]: Please select all that apply
+                - generic [ref=e170]:
+                  - generic [ref=e171]:
+                    - checkbox "Pregnant" [ref=e172]
+                    - generic [ref=e173]: Pregnant
+                  - generic [ref=e174]:
+                    - checkbox "Post-partum" [ref=e175]
+                    - generic [ref=e176]: Post-partum
+                  - generic [ref=e177]:
+                    - checkbox "Infant-breastfeeding" [ref=e178]
+                    - generic [ref=e179]: Infant-breastfeeding
+                  - generic [ref=e180]:
+                    - checkbox "Infant-formula" [ref=e181]
+                    - generic [ref=e182]: Infant-formula
+                  - generic [ref=e183]:
+                    - checkbox "Children/Toddler 0-5" [checked] [ref=e184]
+                    - generic [ref=e185]: Children/Toddler 0-5
+              - 'group "I authorize my WIC appointments: (select all that apply)" [ref=e186]':
+                - generic [ref=e188]: "I authorize my WIC appointments: (select all that apply)"
+                - generic [ref=e190]:
+                  - generic [ref=e191]:
+                    - checkbox "In-Person" [checked] [active] [ref=e192]
+                    - generic [ref=e193]: In-Person
+                  - generic [ref=e194]:
+                    - checkbox "Virtual (phone)" [ref=e195]
+                    - generic [ref=e196]: Virtual (phone)
+                  - generic [ref=e197]:
+                    - checkbox "Telehealth (video)" [ref=e198]
+                    - generic [ref=e199]: Telehealth (video)
+              - generic [ref=e200]:
+                - generic [ref=e201]: Please choose the WIC Clinic Closest to you
+                - combobox [ref=e202]
+                - combobox "Riverside Neighborhood WIC" [ref=e273] [cursor=pointer]:
+                  - textbox "Riverside Neighborhood WIC" [ref=e274] [cursor=pointer]
+              - paragraph [ref=e208]: Thank you for submitting your information. Please be aware that A WIC staff will be connecting with you through e-mail or phone or text message.
+              - group "CAPTCHA" [ref=e209]:
+                - generic [ref=e210]: CAPTCHA
+                - iframe [ref=e215]:
+                  - generic [ref=f1e2]:
+                    - generic [ref=f1e3]:
+                      - checkbox "I'm not a robot" [ref=f1e7]
+                      - generic [ref=f1e11]: I'm not a robot
+                    - generic [ref=f1e12]:
+                      - generic [ref=f1e15]: reCAPTCHA
+                      - generic [ref=f1e16]:
+                        - link "Privacy" [ref=f1e17] [cursor=pointer]:
+                          - /url: https://www.google.com/intl/en/policies/privacy/
+                        - generic [ref=f1e18]: "-"
+                        - link "Terms" [ref=f1e19] [cursor=pointer]:
+                          - /url: https://www.google.com/intl/en/policies/terms/
+                - generic [ref=e216]: This question is for testing whether or not you are a human visitor and to prevent automated spam submissions.
+              - button "Submit" [ref=e218] [cursor=pointer]
+    - contentinfo [ref=e219]:
+      - generic [ref=e220]:
+        - generic [ref=e221]:
+          - navigation "Footer menu 1" [ref=e224]:
+            - heading "Footer menu 1" [level=2] [ref=e225]
+            - list [ref=e226]:
+              - listitem [ref=e227]:
+                - link "Services and Locations" [ref=e228] [cursor=pointer]:
+                  - /url: https://www.ruhealth.org/index.php/medical-center/locations
+              - listitem [ref=e229]:
+                - link "MyRUHealth Patient Portal" [ref=e230] [cursor=pointer]:
+                  - /url: https://myruhealth.org/mychart/
+              - listitem [ref=e231]:
+                - link "Patient Advocate" [ref=e232] [cursor=pointer]:
+                  - /url: https://www.ruhealth.org/medical-center/patients-visitors/patient-advocate
+          - paragraph [ref=e237]:
+            - text: RUHS Behavioral Health
+            - text: (
+            - link "800) 499-3008" [ref=e238] [cursor=pointer]:
+              - /url: tel:8004993008
+            - text: RUHS Community Health Centers
+            - link "(800) 720‑9553" [ref=e239] [cursor=pointer]:
+              - /url: tel:18007209553
+          - paragraph [ref=e244]:
+            - text: RUHS Medical Center
+            - link "(951) 486‑4000" [ref=e245] [cursor=pointer]:
+              - /url: tel:19514864000
+            - text: RUHS Public Health
+            - link "(951) 358‑5000" [ref=e246] [cursor=pointer]:
+              - /url: tel:19513585000
+          - link "RUHS Logo" [ref=e250] [cursor=pointer]:
+            - /url: /
+            - img "RUHS Logo" [ref=e252] [cursor=pointer]
+        - generic [ref=e257]:
+          - alert [ref=e258]:
+            - img [ref=e259]: 
+            - text: If you are experiencing a medical emergency, please call 911
+          - paragraph [ref=e261]:
+            - text: © 2024 All Rights Reserved |
+            - link "Privacy Practices" [ref=e262] [cursor=pointer]:
+              - /url: /sites/default/files/Legacy/NPP_English_2021_FINAL.pdf
+            - text: "|"
+            - link "Patient Rights" [ref=e263] [cursor=pointer]:
+              - /url: /medical-center/patients-visitors/patient-rights
+            - text: "|"
+            - link "Terms of Use" [ref=e264] [cursor=pointer]:
+              - /url: /terms-of-use
+            - text: "|"
+            - link "Price Transparency" [ref=e265] [cursor=pointer]:
+              - /url: /resources/hospital-price-transparency
+            - text: "|"
+            - link "Help Paying Your Bill" [ref=e266] [cursor=pointer]:
+              - /url: https://www.ruhealth.org/medical-center/patients-visitors/billing-insurance
+  - img [ref=e271]
