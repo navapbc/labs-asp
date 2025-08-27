@@ -21,9 +21,6 @@ The project needed a frontend user interface to provide a chat experience for us
 
 - Custom-built UI with Vercel AI SDK (PR #4)
 - Vercel AI SDK chatbot template (PR #13)
-- Third-party chat widget integration
-- Minimal HTML/CSS interface
-- Full-stack framework like Next.js
 
 ## Decision Outcome
 
@@ -55,7 +52,7 @@ Both approaches use Vercel AI SDK but differ in implementation strategy and scop
 - Good, because provides full control over user experience
 - Good, because integrates seamlessly with existing backend
 - Good, because leverages proven AI chat components
-- Good, because includes complete user management (login, dashboard, client profiles)
+- Good, because includes complete user management (login, dashboard, client profiles) (all non-working at the moment)
 - Bad, because requires additional frontend development effort
 - Bad, because increases codebase complexity
 - Bad, because more code to maintain and test
@@ -66,30 +63,9 @@ Both approaches use Vercel AI SDK but differ in implementation strategy and scop
 - Good, because maintained by Vercel team
 - Good, because includes model selection dropdowns for testing
 - Good, because lighter weight and focused on chat functionality
-- Bad, because limited to chat interface only (no user management)
-- Bad, because requires integration with existing Mastra backend
+- Bad, because limited to chat interface only (no user management) (could put back in, original template had some of this, removed because we didn't need the DB interaction)
+- Bad, because requires integration with existing Mastra backend (learning curve - both needed to be up to date with versioning and had to remove existing pattern)
 - Bad, because template may have limitations for custom requirements
-
-### Third-party chat widget integration
-
-- Good, because faster implementation
-- Good, because maintained by third party
-- Bad, because limited customization options
-- Bad, because potential vendor lock-in
-
-### Minimal HTML/CSS interface
-
-- Good, because simple and lightweight
-- Good, because easy to maintain
-- Bad, because poor user experience
-- Bad, because limited functionality
-
-### Full-stack framework like Next.js
-
-- Good, because comprehensive solution
-- Good, because modern development experience
-- Bad, because overkill for simple chat interface
-- Bad, because increases complexity and dependencies
 
 ## Links
 
