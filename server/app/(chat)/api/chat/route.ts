@@ -33,7 +33,7 @@ import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { Chat, DBMessage } from '@/lib/db/schema';
-import { mastra } from '../../../../../src/mastra/index';
+import { mastra } from 'src/mastra/index';
 
 
 
