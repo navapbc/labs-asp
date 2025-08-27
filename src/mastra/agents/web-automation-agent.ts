@@ -1,7 +1,3 @@
-import {
-  createAnswerRelevancyScorer,
-  createToxicityScorer
-} from "@mastra/evals/scorers/llm";
 import { exaMCP, playwrightMCP } from '../mcp';
 import { pgVector, postgresStore } from '../storage';
 
@@ -156,14 +152,6 @@ export const webAutomationAgent = new Agent({
   },
   memory: memory,
   scorers: {
-    relevancy: {
-      scorer: createAnswerRelevancyScorer({ model: google("gemini-2.5-pro") }),
-      sampling: { type: "ratio", rate: 0.5 }
-    },
-    safety: {
-      scorer: createToxicityScorer({ model: google("gemini-2.5-pro") }),
-      sampling: { type: "ratio", rate: 1 }
-    },
     languagePreference: {
       scorer: createLanguagePreferenceScorer({
         model: google("gemini-2.5-pro"),

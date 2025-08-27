@@ -22,18 +22,12 @@ Evaluation should focus on whether the agent took appropriate action based on th
 
 // Preprocess step prompt
 export const createPreprocessPrompt = ({ userInput, agentOutput }: { userInput: string; agentOutput: string }) => `
-Analyze this web automation conversation for language preferences and actions:
+Extract language info from this conversation:
 
-User Input: ${userInput}
-Agent Output: ${agentOutput}
+User: ${userInput}
+Agent: ${agentOutput}
 
-Extract:
-1. What language does the participant prefer (if mentioned)?
-2. What language change actions did the agent take?
-3. Did the agent successfully set the website language?
-4. What language was the website set to?
-
-Return JSON with participantLanguage, languageChangeActions array, websiteLanguageSet boolean, and targetLanguage.
+Return only JSON with: participantLanguage, languageChangeActions array, websiteLanguageSet boolean, targetLanguage.
 `;
 
 // Analysis step prompt  
@@ -48,21 +42,13 @@ export const createAnalysisPrompt = ({
   websiteLanguageSet: boolean;
   targetLanguage: string | null;
 }) => `
-Evaluate language preference compliance based on this analysis:
+Rate compliance:
+- Participant wants: ${participantLanguage || 'None'}
+- Actions taken: ${languageChangeActions.join(', ') || 'None'}
+- Language set: ${websiteLanguageSet}
+- Target: ${targetLanguage || 'None'}
 
-Participant Language Preference: ${participantLanguage || 'None specified'}
-Language Change Actions: ${languageChangeActions.join(', ') || 'None'}
-Website Language Set: ${websiteLanguageSet}
-Target Language: ${targetLanguage || 'Not specified'}
-
-Scoring criteria:
-- "excellent": Agent identified participant language preference and successfully changed website language to match
-- "good": Agent attempted to change language and mostly succeeded 
-- "partial": Agent recognized language preference but didn't fully implement the change
-- "poor": Agent failed to change language despite clear preference
-- "no_preference": No language preference was specified by participant
-
-Return JSON with compliance level, languageMatch boolean, actionsTaken boolean, and confidence (0-1).
+Return JSON with: compliance ("excellent"/"good"/"partial"/"poor"/"no_preference"), languageMatch boolean, actionsTaken boolean, confidence (0-1).
 `;
 
 // Reason generation step prompt
@@ -81,12 +67,10 @@ export const createReasonPrompt = ({
   participantLanguage: string | null;
   targetLanguage: string | null;
 }) => `
-Explain the language preference compliance score of ${score} based on:
-- Compliance Level: ${compliance}
-- Participant Language: ${participantLanguage || 'Not specified'}
-- Target Language Set: ${targetLanguage || 'Not set'}
-- Language Match: ${languageMatch}
-- Actions Taken: ${actionsTaken}
-
-Provide a clear explanation of why this score was assigned and what the agent did well or could improve.
+Explain score ${score} in 1-2 sentences:
+- Compliance: ${compliance}
+- Participant wanted: ${participantLanguage || 'None'}
+- Agent set: ${targetLanguage || 'None'}  
+- Match: ${languageMatch}
+- Action taken: ${actionsTaken}
 `;
