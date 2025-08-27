@@ -1,0 +1,195 @@
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - text:                 
+        - generic [ref=e6]:
+          - link "Riverside University Health System Logo" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img "Riverside University Health System Logo" [ref=e12] [cursor=pointer]
+          - generic [ref=e13]:
+            - generic [ref=e16]:
+              - paragraph [ref=e19]:
+                - link "Find Your Way" [ref=e20] [cursor=pointer]:
+                  - /url: https://www.ruhealth.org/find-your-way
+                  - generic [ref=e21] [cursor=pointer]: Find Your Way
+                  - img [ref=e22] [cursor=pointer]
+              - paragraph [ref=e26]:
+                - link "MyRUHealth Patient Portal" [ref=e27] [cursor=pointer]:
+                  - /url: https://myruhealth.org/mychart/Authentication/Login
+                  - generic [ref=e28] [cursor=pointer]: MyRUHealth Patient Portal
+                  - img [ref=e29] [cursor=pointer]
+              - paragraph [ref=e33]:
+                - link "Giving" [ref=e34] [cursor=pointer]:
+                  - /url: https://www.ruhsfoundation.org/
+                  - generic [ref=e35] [cursor=pointer]: Giving
+                  - img [ref=e36] [cursor=pointer]: 
+              - paragraph [ref=e40]:
+                - link "Find us on social:" [ref=e42] [cursor=pointer]:
+                  - /url: /social-hub
+                  - text: "Find us on social:"
+                  - img [ref=e43] [cursor=pointer]: 
+              - search [ref=e45]:
+                - generic [ref=e46]:
+                  - generic [ref=e47]: Search
+                  - searchbox "Search" [ref=e48]
+                  - button "Submit" [ref=e49] [cursor=pointer]:
+                    - generic [ref=e50] [cursor=pointer]: Submit
+                    - img [ref=e51] [cursor=pointer]: 
+            - generic [ref=e53]:
+              - navigation [ref=e59]:
+                - list [ref=e61]:
+                  - listitem [ref=e62]:
+                    - link "RUHS" [ref=e63] [cursor=pointer]:
+                      - /url: "#"
+                  - listitem [ref=e64]:
+                    - link "News" [ref=e65] [cursor=pointer]:
+                      - /url: /news
+                  - listitem [ref=e66]:
+                    - link "Locations" [ref=e67] [cursor=pointer]:
+                      - /url: /map-locations
+                  - listitem [ref=e68]:
+                    - link "Appointments" [ref=e69] [cursor=pointer]:
+                      - /url: /appointments
+                  - listitem [ref=e70]:
+                    - link "Resources" [ref=e71] [cursor=pointer]:
+                      - /url: /resources
+                  - listitem [ref=e72]:
+                    - link "Services" [ref=e73] [cursor=pointer]:
+                      - /url: "#"
+                  - listitem [ref=e74]:
+                    - link "Careers" [ref=e75] [cursor=pointer]:
+                      - /url: https://www.governmentjobs.com/careers/riverside/ruhsjobs
+              - link "Select Language" [ref=e219] [cursor=pointer]:
+                - /url: "#"
+                - generic [ref=e220] [cursor=pointer]: Select Language
+      - main [ref=e79]:
+        - article [ref=e83]:
+          - generic [ref=e85]:
+            - generic [ref=e87]:
+              - generic [ref=e92]:
+                - img "Apply 4 WIC" [ref=e94]
+                - heading "Apply 4 WIC" [level=1] [ref=e96]:
+                  - generic [ref=e97]: Apply 4 WIC
+              - generic [ref=e99]:
+                - link "Apply 4 WIC" [ref=e102] [cursor=pointer]:
+                  - /url: /apply-4-wic
+                  - img [ref=e104] [cursor=pointer]: 
+                  - heading "Apply 4 WIC" [level=3] [ref=e106] [cursor=pointer]
+                  - paragraph
+                - link "Who Qualifies" [ref=e109] [cursor=pointer]:
+                  - /url: /who-qualifies-wic
+                  - img [ref=e111] [cursor=pointer]
+                  - heading "Who Qualifies" [level=3] [ref=e113] [cursor=pointer]
+                  - paragraph
+                - link "WIC App" [ref=e116] [cursor=pointer]:
+                  - /url: /wic-app
+                  - img [ref=e118] [cursor=pointer]: 
+                  - heading "WIC App" [level=3] [ref=e120] [cursor=pointer]
+                  - paragraph
+                - link "WIC Card" [ref=e123] [cursor=pointer]:
+                  - /url: /wic-card
+                  - img [ref=e125] [cursor=pointer]: 
+                  - heading "WIC Card" [level=3] [ref=e127] [cursor=pointer]
+                  - paragraph
+                - link "WIC Shopping" [ref=e130] [cursor=pointer]:
+                  - /url: /wic-shopping
+                  - img [ref=e132] [cursor=pointer]: 
+                  - heading "WIC Shopping" [level=3] [ref=e134] [cursor=pointer]
+                  - paragraph
+                - link "WIC Messaging" [ref=e137] [cursor=pointer]:
+                  - /url: /wic-messaging
+                  - img [ref=e139] [cursor=pointer]: 
+                  - heading "WIC Messaging" [level=3] [ref=e141] [cursor=pointer]
+                  - paragraph
+            - generic [ref=e145]:
+              - paragraph [ref=e146]: Thanks for your interest in the WIC program. Please be aware that only local WIC Agency staff can determine for certain if you qualify for WIC services.
+              - paragraph [ref=e147]
+              - paragraph [ref=e148]:
+                - strong [ref=e149]: Let's begin!
+                - strong [ref=e150]: "Eligibility:"
+                - text: "Click on the answer that best describes your situation:"
+            - generic:
+              - generic:
+                - tablist [ref=e151]:
+                  - tab "I am currently receiving or pending receiving Medi-Cal, Food Stamps/SNAP, TANF, FDPIR" [ref=e152]
+                  - tab "I am currently enrolled on WIC from another county or state" [ref=e153] [cursor=pointer]
+                  - tab "None of the above" [active] [selected] [ref=e154] [cursor=pointer]
+                - tabpanel [ref=e221]:
+                  - paragraph [ref=e222]:
+                    - strong [ref=e223]: "Eligibility:"
+                  - paragraph [ref=e224]:
+                    - text: "Please review the following chart then choose the option right below that best describes your family and income. Please note: There are some exceptions to the standard income guidelines that may qualify you for WIC benefits. If your income is slightly above the guidelines. There may be some exceptions that may allow you to qualify."
+                    - link "Please contact the WIC staff" [ref=e225] [cursor=pointer]:
+                      - /url: /node/5853
+                    - text: "or give us a call at:"
+                    - link "855-RIV-HERO" [ref=e226] [cursor=pointer]:
+                      - /url: tel:18557484376
+                    - link "(855-748-4376)" [ref=e227] [cursor=pointer]:
+                      - /url: tel:18557484376
+                  - paragraph [ref=e228]: "Number of persons in Family Unit*: Unborn children should be counted in family total. Example: Pregnant woman with a single unborn child are counted as two (2) in family unit. Pregnant woman with two unborn children (twins) are counted as three (3). Hourly**: Decimals are rounded up to the nearest dollar/cent."
+                  - generic [ref=e229]:
+                    - paragraph [ref=e231]
+                    - paragraph [ref=e233]
+                  - paragraph [ref=e234]
+                  - paragraph [ref=e235]: Please continue to fill out the application form.
+                  - paragraph [ref=e236]:
+                    - link "Apply 4 WIC Form" [ref=e237] [cursor=pointer]:
+                      - /url: /node/5854
+                      - generic [ref=e238] [cursor=pointer]: Apply 4 WIC Form
+    - contentinfo [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - navigation "Footer menu 1" [ref=e166]:
+            - heading "Footer menu 1" [level=2] [ref=e167]
+            - list [ref=e168]:
+              - listitem [ref=e169]:
+                - link "Services and Locations" [ref=e170] [cursor=pointer]:
+                  - /url: https://www.ruhealth.org/index.php/medical-center/locations
+              - listitem [ref=e171]:
+                - link "MyRUHealth Patient Portal" [ref=e172] [cursor=pointer]:
+                  - /url: https://myruhealth.org/mychart/
+              - listitem [ref=e173]:
+                - link "Patient Advocate" [ref=e174] [cursor=pointer]:
+                  - /url: https://www.ruhealth.org/medical-center/patients-visitors/patient-advocate
+          - paragraph [ref=e179]:
+            - text: RUHS Behavioral Health
+            - text: (
+            - link "800) 499-3008" [ref=e180] [cursor=pointer]:
+              - /url: tel:8004993008
+            - text: RUHS Community Health Centers
+            - link "(800) 720‑9553" [ref=e181] [cursor=pointer]:
+              - /url: tel:18007209553
+          - paragraph [ref=e186]:
+            - text: RUHS Medical Center
+            - link "(951) 486‑4000" [ref=e187] [cursor=pointer]:
+              - /url: tel:19514864000
+            - text: RUHS Public Health
+            - link "(951) 358‑5000" [ref=e188] [cursor=pointer]:
+              - /url: tel:19513585000
+          - link "RUHS Logo" [ref=e192] [cursor=pointer]:
+            - /url: /
+            - img "RUHS Logo" [ref=e194] [cursor=pointer]
+        - generic [ref=e199]:
+          - alert [ref=e200]:
+            - img [ref=e201]: 
+            - text: If you are experiencing a medical emergency, please call 911
+          - paragraph [ref=e203]:
+            - text: © 2024 All Rights Reserved |
+            - link "Privacy Practices" [ref=e204] [cursor=pointer]:
+              - /url: /sites/default/files/Legacy/NPP_English_2021_FINAL.pdf
+            - text: "|"
+            - link "Patient Rights" [ref=e205] [cursor=pointer]:
+              - /url: /medical-center/patients-visitors/patient-rights
+            - text: "|"
+            - link "Terms of Use" [ref=e206] [cursor=pointer]:
+              - /url: /terms-of-use
+            - text: "|"
+            - link "Price Transparency" [ref=e207] [cursor=pointer]:
+              - /url: /resources/hospital-price-transparency
+            - text: "|"
+            - link "Help Paying Your Bill" [ref=e208] [cursor=pointer]:
+              - /url: https://www.ruhealth.org/medical-center/patients-visitors/billing-insurance
+  - img [ref=e212]

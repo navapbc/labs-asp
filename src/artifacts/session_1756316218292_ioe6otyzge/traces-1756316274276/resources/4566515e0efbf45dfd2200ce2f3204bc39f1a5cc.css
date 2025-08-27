@@ -1,0 +1,1031 @@
+.region--admin-content {
+  display: none;
+}
+.node__content {
+  margin-top: 0;
+}
+
+@media screen and (min-width: 38em) {
+  .layout-container {
+    margin:
+0;
+  }
+}
+
+header.header-fixed { position: relative; }
+.layout-container { padding-top: 0 !important; }
+
+/* Front Video */
+.translate-middle {
+  transform: translate(-50%,-50%) !important;
+}
+.start-50 {
+  left: 50% !important;
+}
+.top-50 {
+  top: 50% !important;
+}
+
+.paragraph--type--video-banner-bg .btn-primary { margin-top:0; }
+.paragraph--type--video-banner-bg div.field.field-type--text-long.field-name--field-content { padding: 0; width: 100%;}
+header {pointer-events: auto;}
+div#block-mobielsocialicons p {
+  margin-bottom: 0;
+}
+
+
+/* Main Nav/Menu */
+.we-mega-menu-submenu li.we-mega-menu-li a { font-family: 'Open Sans', sans-serif; }
+.menuplustranslator { padding-left: 0; }
+.newmenumega { padding-left: 0; }
+
+.navbar { padding: 0 !important; margin: 0;}
+.nav-tabs .dropdown-menu { margin-top: 1px !important; }
+
+.ruhsstylecolumn, .medicalcenterclass {
+  z-index: 10000;
+}
+
+/* For the dropdown menus */
+.we-mega-menu-submenu {
+  border-radius: 0 0 8px 8px;
+}
+
+@media (min-width: 992px) {
+  .we-mega-menu-submenu li.we-mega-menu-li:first-child > a, .we-mega-menu-submenu li.we-mega-menu-li:first-child > span {
+    padding-top: .5rem;
+  }
+}
+
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(1) .we-mega-menu-group > a {
+  background: linear-gradient(to right, #45a049 0%, #45a049 30%, #C4D600 70%, #C4D600 100%);
+  background-size: 200% 100%;
+  background-position: right bottom;
+  color: #000;
+  padding: 10px 0 10px 10px;
+  border-radius: 5px 5px 0 0;
+  transition: all 0.3s ease;
+}
+
+/* Hover state */
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(1) .we-mega-menu-group > a:hover {
+  background-position: left bottom;
+  color: white;
+}
+
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(2) .we-mega-menu-group > a {
+  background: linear-gradient(to right, #F4511E 0%, #F4511E 40%, #F38B00 60%, #F38B00 100%);
+  background-size: 200% 100%;
+  background-position: right bottom;
+  color: white;
+  padding: 10px 0 10px 10px;
+  border-radius: 5px 5px 0 0;
+  transition: all 0.3s ease;
+}
+
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(2) .we-mega-menu-group > a:hover {
+  background-position: left bottom;
+}
+
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(3) .we-mega-menu-group > a {
+  background: linear-gradient(to right, #1976D2 0%, #1976D2 40%, #002D73 60%, #002D73 100%);
+  background-size: 200% 100%;
+  background-position: right bottom;
+  color: white;
+  padding: 10px 0 10px 10px;
+  border-radius: 5px 5px 0 0;
+  transition: all 0.3s ease;
+}
+
+.region--admin-content { display: block;}
+
+/* Force list items in messages to display as blocks with proper spacing */
+[data-drupal-messages] .alert ul li {
+  display: block !important;
+  margin-bottom: 10px !important;
+  clear: both !important;
+  float: none !important;
+  width: 100% !important;
+}
+
+/* Reset any existing styles that might be causing inline display */
+[data-drupal-messages] .alert ul {
+  display: block !important;
+  list-style-type: disc !important; 
+  padding-left: 20px !important;
+}
+
+/* Add stronger override for any inline styles */
+[data-drupal-messages] .alert ul li {
+  position: relative !important;
+  line-height: 1.5em !important; 
+}
+
+/* Add line break before second list item */
+[data-drupal-messages] .alert ul li:nth-child(2) {
+  margin-top: 15px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+/* Make success messages more noticeable for anonymous users */
+.user-logged-out [data-drupal-messages] .alert-primary {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+  font-weight: 500;
+}
+
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(3) .we-mega-menu-group > a:hover {
+  background-position: left bottom;
+}
+
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(4) .we-mega-menu-group > a {
+  background: linear-gradient(to right, #623B5D 0%, #623B5D 40%, #8B3D82 60%, #8B3D82 100%);
+  background-size: 200% 100%;
+  background-position: right bottom;
+  color: white;
+  padding: 10px 0 10px 10px;
+  border-radius: 5px 5px 0 0;
+  transition: all 0.3s ease;
+}
+
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(4) .we-mega-menu-group > a:hover {
+  background-position: left bottom;
+}
+
+/* Hide arrows on colored links */
+.we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(1) .we-mega-menu-group > a::before, .we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(2) .we-mega-menu-group > a::before, .we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(3) .we-mega-menu-group > a::before, .we-mega-menu-submenu-inner .we-mega-menu-row > div:nth-child(4) .we-mega-menu-group > a::before {
+  display: none;
+}
+
+/* Ensure text remains visible during hover */
+.we-mega-menu-submenu-inner .we-mega-menu-group > a:hover {
+  text-decoration: none;
+}
+
+/* Submenu item styles - excluding the main colored links */
+.we-mega-menu-submenu .nav.nav-tabs.subul li:not(.we-mega-menu-group) > a.we-mega-menu-li,
+.we-mega-menu-submenu .nav.nav-tabs.subul li:not(.we-mega-menu-group) > a.we-megamenu-nolink {
+    padding-left: 10px;
+    transition: background-color 0.3s ease;
+    border-bottom: 1px solid #ddd !important; /* Force border to stay */
+    background-clip: padding-box; /* Prevents background from covering border */
+}
+
+.we-mega-menu-submenu .nav.nav-tabs.subul li:not(.we-mega-menu-group) > a.we-mega-menu-li:hover,
+.we-mega-menu-submenu .nav.nav-tabs.subul li:not(.we-mega-menu-group) > a.we-megamenu-nolink:hover {
+    background-color: #f5f5f5;
+    position: relative;
+    z-index: 0;
+}
+
+/* Ensure text remains visible during hover */
+.we-mega-menu-submenu-inner .we-mega-menu-group > a:hover {
+    text-decoration: none;
+}
+
+/* If you need to ensure these styles only apply to top-level items */
+.navbar-we-mega-menu .we-mega-menu-ul > .we-mega-menu-li > .we-mega-menu-submenu .we-mega-menu-group > a {
+  font-weight: bold;
+}
+
+.we-mega-menu-submenu li.we-mega-menu-li:first-child > a::before {
+  margin-top: -.3125rem;
+}
+
+/* CKEDITOR */
+.ckeditor-accordion-container > dl dt > a, .ckeditor-accordion-container > dl dt > a:not(.button) {
+  display: block;
+  padding: 10px 15px 10px 50px;
+  background-color: #015bb3;
+  color: #fff;
+  cursor: pointer;
+  -webkit-transition: background-color 300ms;
+  transition: background-color 300ms;
+  border-bottom: 1px solid #015bb3;
+}
+
+.we-mega-menu-backend { }
+header.sticky-top {
+  transition: all 0.3s ease;
+}
+
+.slick img {
+  height: 550px;
+  object-fit: cover;
+}
+
+.provider-listing {
+    margin: 2rem 0;
+  }
+  
+  .provider-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  
+  .provider-card {
+    flex: 1 1 300px;
+    max-width: 400px;
+    padding: 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .provider-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+  }
+  
+  .provider-specialties {
+    margin: 1rem 0;
+  }
+  
+  .provider-specialties ul {
+    margin-top: 0.25rem;
+    padding-left: 1.5rem;
+  }
+  
+  .provider-link {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #0071b3;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  
+  .provider-link:hover {
+    background-color: #00598f;
+  }
+  
+  @media (max-width: 768px) {
+    .provider-cards {
+      flex-direction: column;
+    }
+    
+    .provider-card {
+      max-width: 100%;
+    }
+  }
+
+  .provider-search-container {
+    margin-bottom: 30px;
+  }
+  
+  .provider-search-container .form-item {
+    margin-bottom: 15px;
+    width: 100%;
+  }
+  
+  .provider-search-container label {
+    font-weight: bold;
+    display: block;
+  }
+  
+  .provider-search-container input[type="text"],
+  .provider-search-container select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+  }
+  
+  .advanced-search-options {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+  }
+  
+  .mt-3 {
+    margin-top: 1rem;
+  }
+  
+  .mb-3 {
+    margin-bottom: 1rem;
+  }
+
+  
+  .profile-pic-wrapper {
+    position: relative;  /* Create a positioning context */
+    width: 150px;
+    height: 150px;
+    top: -20px;
+    /* This wrapper defines the overall circle size. */
+  }
+  .profile-pic {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: 50% 5%;
+    background-repeat: no-repeat;
+    border: 5px solid #fff;
+  }
+
+  .provider-title-link {
+    font-weight: bold;
+}
+
+.provider-credentials {
+  font-weight: normal;
+}
+  
+  /* The stamp is layered on top via absolute positioning */
+  .stamp {
+    position: absolute;
+    bottom: 0;   /* Adjust as needed */
+    right: 0; /* Adjust as needed */
+    width: 40px; /* Control the stamp size */
+    height: auto;
+    z-index: 2;  /* Ensure it appears above the photo */
+  }
+  
+  .orange { color: orange; }
+  
+  .providers .bg-light-1 { background-color: #E6E6E6 !important;}
+  
+  .ruhs_star { 
+    background-image: url("/themes/custom/civic/images/ruhs_inside.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-size: 60% auto;
+    background-position: -10px -40px;
+  }
+  .providers .card-title a {
+    color: #042b52 !important;
+  }
+  .btn-primary { background-color: #042b52;}
+  .bg-light-1 {
+    background-color: #E6E6E6 !important;
+}
+
+.col .form-number {
+  width: 100%; 
+  box-sizing: border-box;
+}
+
+.provider-name-note { display: none;}
+/* Target the form by its ID */
+#node-provider-directory-form {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-top: 50px;
+}
+
+/* Form container styling */
+#node-provider-directory-form {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #212529;
+}
+
+/* General form elements */
+#node-provider-directory-form .form-item {
+  margin-bottom: 1rem;
+}
+
+/* Labels styling */
+#node-provider-directory-form label:not(.option) {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #212529;
+}
+
+/* Form control styling (inputs, selects, textareas) */
+#node-provider-directory-form input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+#node-provider-directory-form select,
+#node-provider-directory-form textarea {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  box-sizing: border-box;
+}
+
+/* Focus states */
+#node-provider-directory-form input:not([type="checkbox"]):not([type="radio"]):focus,
+#node-provider-directory-form select:focus,
+#node-provider-directory-form textarea:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Required field indicator */
+#node-provider-directory-form .form-required::after {
+  content: "*";
+  margin-left: 4px;
+  color: #dc3545;
+}
+
+/* Select elements */
+#node-provider-directory-form select {
+  height: calc(2.25rem + 2px);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23343a40' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 8px 10px;
+  padding-right: 1.75rem;
+}
+
+/* Checkbox and radio styling */
+#node-provider-directory-form input[type="checkbox"],
+#node-provider-directory-form input[type="radio"] {
+  position: relative;
+  margin-top: 0.3rem;
+  margin-right: 0.5rem;
+}
+
+/* Form description text */
+#node-provider-directory-form .description {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+/* Invalid field styling */
+#node-provider-directory-form .error input,
+#node-provider-directory-form .error select,
+#node-provider-directory-form .error textarea {
+  border-color: #dc3545;
+}
+
+#node-provider-directory-form .error .form-item--error-message {
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 80%;
+  color: #dc3545;
+}
+
+/* Form actions (buttons) */
+#node-provider-directory-form .form-actions {
+  margin-top: 1.5rem;
+}
+
+#node-provider-directory-form .button {
+  display: inline-block;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-radius: 0.25rem;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Primary button */
+#node-provider-directory-form .button--primary {
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+#node-provider-directory-form .button--primary:hover {
+  color: #fff;
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+/* Secondary button */
+#node-provider-directory-form .button--secondary {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+#node-provider-directory-form .button--secondary:hover {
+  color: #fff;
+  background-color: #5a6268;
+  border-color: #545b62;
+}
+
+/* Make number inputs take full width */
+#node-provider-directory-form .form-number {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Field groups */
+#node-provider-directory-form fieldset {
+  border: 1px solid #ececec;
+  border-radius: 0.25rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  background-color: #fcfcfc;
+}
+
+#node-provider-directory-form legend {
+  width: auto;
+  padding: .5rem 1rem;
+  margin-bottom: 0;
+  font-weight: bold;
+  background-color: #fcfcfc;
+  border: 1px solid #ececec;
+  border-radius: 0.25rem;
+}
+
+/* Multi-column layouts */
+#node-provider-directory-form .row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+
+#node-provider-directory-form .col,
+#node-provider-directory-form .col-md-4 {
+  position: relative;
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+@media (min-width: 768px) {
+  #node-provider-directory-form .col-md-4 {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+  }
+}
+
+/* Hide draggable handles and their table cell */
+.field-multiple-table .field-multiple-drag {
+  display: none;
+}
+
+/* Hide weight column and header */
+.field-multiple-table .delta-order,
+.field-multiple-table th.tabledrag-hide {
+  display: none !important;
+}
+
+/* Hide the "Show row weights" link that normally appears above the table */
+.tabledrag-toggle-weight-wrapper {
+  display: none;
+}
+
+/* Style the remove button to be dark blue */
+.field-multiple-table input[name$="_remove_button"] {
+  background-color: #0d6efd; /* Bootstrap dark blue */
+  border-color: #0d6efd;
+  color: white;
+}
+
+.field-multiple-table input[name$="_remove_button"]:hover {
+  background-color: #0b5ed7; /* Slightly darker blue on hover */
+  border-color: #0a58ca;
+}
+
+/* Style the remove button to be dark blue */
+#node-provider-directory-form .field-multiple-table input[name$="_remove_button"] {
+  background-color: #0d6efd; /* Bootstrap dark blue */
+  border-color: #0d6efd;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+#node-provider-directory-form .field-multiple-table input[name$="_remove_button"]:hover {
+  background-color: #0b5ed7; /* Slightly darker blue on hover */
+  border-color: #0a58ca;
+}
+
+
+/* Make it responsive for smaller screens */
+@media (max-width: 767px) {
+  #node-provider-directory-form #edit-field-pd-languages-spoken .form-checkboxes .form-item {
+    flex: 0 0 50%; /* Two columns on medium screens */
+    max-width: 50%;
+  }
+}
+
+@media (max-width: 480px) {
+  #node-provider-directory-form #edit-field-pd-languages-spoken .form-checkboxes .form-item {
+    flex: 0 0 100%; /* One column on very small screens */
+    max-width: 100%;
+  }
+}
+
+#node-provider-directory-form #edit-field-pd-languages-spoken--wrapper .fieldset-wrapper .form-checkboxes {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+#node-provider-directory-form #edit-field-pd-languages-spoken--wrapper .fieldset-wrapper .form-checkboxes .js-form-item {
+  flex: 0 0 33.333% !important;
+  max-width: 33.333% !important;
+  box-sizing: border-box !important;
+}
+
+/* Style all buttons with the specified color */
+#node-provider-directory-form button,
+#node-provider-directory-form input[type="submit"],
+#node-provider-directory-form input[type="button"],
+#node-provider-directory-form .button {
+  background-color: #042b52;
+  border-color: #042b52;
+  color: white;
+}
+
+
+/* Style for hover state */
+#node-provider-directory-form button:hover,
+#node-provider-directory-form input[type="submit"]:hover,
+#node-provider-directory-form input[type="button"]:hover,
+#node-provider-directory-form .button:hover {
+  background-color: #031e3b; /* Slightly darker on hover */
+  border-color: #031e3b;
+}
+
+/* Target all remove buttons by their value attribute */
+input[type="submit"][value="Remove"] {
+  color: #dc3545 !important;
+  background-color: transparent !important;
+  border-color: #dc3545 !important;
+  display: inline-block !important;
+  font-weight: 400 !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  user-select: none !important;
+  padding: .375rem .75rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  border-radius: .25rem !important;
+  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out !important;
+}
+
+/* Hover state for all remove buttons */
+input[type="submit"][value="Remove"]:hover {
+  color: #fff !important;
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  background-image: none !important; /* This prevents gradient overlays */
+}
+
+/* Active/focus state to prevent blue outlines */
+input[type="submit"][value="Remove"]:active,
+input[type="submit"][value="Remove"]:focus {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.5) !important;
+  background-color: #dc3545 !important;
+  color: #fff !important;
+  border-color: #dc3545 !important;
+  outline: none !important;
+}
+
+/* Style for focus state */
+#node-provider-directory-form button:focus,
+#node-provider-directory-form input[type="submit"]:focus,
+#node-provider-directory-form input[type="button"]:focus,
+#node-provider-directory-form .button:focus {
+  box-shadow: 0 0 0 0.2rem rgba(4, 43, 82, 0.25) !important;
+}
+
+/* Hide paragraph top section in Education & Training form */
+#node-provider-directory-form .field--name-field-education-training .paragraph-top {
+  display: none !important;
+}
+
+/* Hide table header in Education & Training form */
+#node-provider-directory-form #field-education-training-values thead {
+  display: none !important;
+}
+
+/* Add more space at the top of the paragraph content since we removed the header */
+#node-provider-directory-form .field--name-field-education-training .paragraphs-subform {
+  padding-top: 20px;
+}
+
+/* Make the form more compact without the extra header elements */
+#node-provider-directory-form .field--name-field-education-training .field-multiple-table {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Adjust spacing of the paragraph content */
+#node-provider-directory-form .field--name-field-education-training .paragraphs-content {
+  margin-bottom: 15px;
+}
+
+/* Fix the button color to match your requested color scheme */
+#node-provider-directory-form .field--name-field-education-training input[type="submit"],
+#node-provider-directory-form .field--name-field-education-training button {
+  background-color: #042b52 !important;
+  border-color: #042b52 !important;
+  color: white !important;
+}
+
+/* Make paragraph tables fit 100% width */
+#node-provider-directory-form .field--name-field-education-training .field-multiple-table,
+#node-provider-directory-form .field--name-field-education-training .paragraphs-subform {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Hide paragraph top section and make subform take full width */
+#node-provider-directory-form .field--name-field-education-training .paragraph-top {
+  display: none !important;
+}
+
+/* Hide table header for cleaner appearance */
+#node-provider-directory-form #field-education-training-values thead {
+  display: none !important;
+}
+
+/* Adjust the table cell widths */
+#node-provider-directory-form .field--name-field-education-training .field-multiple-table td:first-child {
+  width: 1%; /* Make drag handle column as small as possible */
+}
+
+#node-provider-directory-form .field--name-field-education-training .field-multiple-table td:nth-child(2) {
+  width: 99%; /* Give main content column most of the space */
+}
+
+/* Ensure paragraphs content fields extend full width */
+#node-provider-directory-form .field--name-field-education-training .paragraphs-content .text-full,
+#node-provider-directory-form .field--name-field-education-training .paragraphs-content .form-textarea,
+#node-provider-directory-form .field--name-field-education-training .paragraphs-content .form-select,
+#node-provider-directory-form .field--name-field-education-training .paragraphs-content .select2-container {
+  width: 100% !important;
+}
+
+/* Fix select2 elements to match full width */
+#node-provider-directory-form .field--name-field-education-training .select2-container {
+  min-width: 100% !important;
+}
+
+/* Remove unnecessary padding/margins */
+#node-provider-directory-form .field--name-field-education-training .field-multiple-table {
+  margin: 0;
+}
+
+#node-provider-directory-form .field--name-field-education-training .paragraphs-subform {
+  padding: 10px 0;
+}
+
+/* Make date inputs larger and more visible */
+#node-provider-directory-form .field--name-field-education-training .form-date {
+  width: 100% !important;
+}
+
+/* Hide paragraph top section in Practice Locations form */
+#node-provider-directory-form #edit-group-practice-locations .paragraph-top {
+  display: none !important;
+}
+
+/* Hide table header in Practice Locations form */
+#node-provider-directory-form #edit-group-practice-locations #field-ruhs-locations-values thead {
+  display: none !important;
+}
+
+/* Add more space at the top of the paragraph content since we removed the header */
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-subform {
+  padding-top: 20px;
+}
+
+/* Make the form more compact without the extra header elements */
+#node-provider-directory-form #edit-group-practice-locations .field--name-field-ruhs-locations .field-multiple-table {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Adjust spacing of the paragraph content */
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-content {
+  margin-bottom: 15px;
+}
+
+/* Fix the button color to match your requested color scheme */
+#node-provider-directory-form #edit-group-practice-locations input[type="submit"],
+#node-provider-directory-form #edit-group-practice-locations button {
+  background-color: #042b52 !important;
+  border-color: #042b52 !important;
+  color: white !important;
+}
+
+/* Make paragraph tables fit 100% width */
+#node-provider-directory-form #edit-group-practice-locations .field-multiple-table,
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-subform {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Adjust the table cell widths */
+#node-provider-directory-form #edit-group-practice-locations .field-multiple-table td:first-child {
+  width: 1%; /* Make drag handle column as small as possible */
+}
+
+#node-provider-directory-form #edit-group-practice-locations .field-multiple-table td:nth-child(2) {
+  width: 99%; /* Give main content column most of the space */
+}
+
+/* Ensure paragraphs content fields extend full width */
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-content .text-full,
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-content .form-textarea,
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-content .form-select,
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-content .select2-container {
+  width: 100% !important;
+}
+
+/* Fix select2 elements to match full width */
+#node-provider-directory-form #edit-group-practice-locations .select2-container {
+  min-width: 100% !important;
+}
+
+/* Remove unnecessary padding/margins */
+#node-provider-directory-form #edit-group-practice-locations .field-multiple-table {
+  margin: 0;
+}
+
+#node-provider-directory-form #edit-group-practice-locations .paragraphs-subform {
+  padding: 10px 0;
+}
+
+/* Make time inputs larger and more visible */
+#node-provider-directory-form #edit-group-practice-locations .form-time {
+  width: 100% !important;
+}
+
+#node-provider-directory-form .vertical-tabs {
+  display: none !important;
+}
+/* Change fieldset legend to say "Locations" */
+#node-provider-directory-form .field--name-field-ruhs-locations .field-label h4.label {
+  visibility: hidden;
+  position: relative;
+}
+
+#node-provider-directory-form .field--name-field-ruhs-locations .field-label h4.label::after {
+  content: "Locations";
+  visibility: visible;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Hide paragraph top section in Locations form */
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraph-top {
+  display: none !important;
+}
+
+/* Hide table header in Locations form */
+#node-provider-directory-form #field-ruhs-locations-values thead {
+  display: none !important;
+}
+
+/* Add more space at the top of the paragraph content since we removed the header */
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-subform {
+  padding-top: 20px;
+}
+
+/* Make the form more compact without the extra header elements */
+#node-provider-directory-form .field--name-field-ruhs-locations .field-multiple-table {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Adjust spacing of the paragraph content */
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-content {
+  margin-bottom: 15px;
+}
+
+/* Fix the button color to match color scheme */
+#node-provider-directory-form .field--name-field-ruhs-locations input[type="submit"],
+#node-provider-directory-form .field--name-field-ruhs-locations button {
+  background-color: #042b52 !important;
+  border-color: #042b52 !important;
+  color: white !important;
+}
+
+/* Make paragraph tables fit 100% width */
+#node-provider-directory-form .field--name-field-ruhs-locations .field-multiple-table,
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-subform {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Adjust the table cell widths */
+#node-provider-directory-form .field--name-field-ruhs-locations .field-multiple-table td:first-child {
+  width: 1%; /* Make drag handle column as small as possible */
+}
+
+#node-provider-directory-form .field--name-field-ruhs-locations .field-multiple-table td:nth-child(2) {
+  width: 99%; /* Give main content column most of the space */
+}
+
+/* Ensure paragraphs content fields extend full width */
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-content .text-full,
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-content .form-textarea,
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-content .form-select,
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-content .select2-container {
+  width: 100% !important;
+}
+
+/* Fix select2 elements to match full width */
+#node-provider-directory-form .field--name-field-ruhs-locations .select2-container {
+  min-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Remove unnecessary padding/margins */
+#node-provider-directory-form .field--name-field-ruhs-locations .field-multiple-table {
+  margin: 0;
+}
+
+#node-provider-directory-form .field--name-field-ruhs-locations .paragraphs-subform {
+  padding: 10px 0;
+}
+
+/* Style hours of operation table */
+#node-provider-directory-form .field--name-field-hours-of-operation table {
+  width: 100%;
+}
+
+#node-provider-directory-form .field--name-field-hours-of-operation .form-time {
+  width: 100% !important;
+}
+
+/* Improve office hours interface */
+#node-provider-directory-form .office-hours-slot .office-hours-label {
+  font-weight: bold;
+}
+
+#node-provider-directory-form .js-office-hours-operation {
+  display: inline-block;
+  margin-right: 8px;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+/* Style address fields to be wider */
+#node-provider-directory-form .field--name-field-address .form-select,
+#node-provider-directory-form .field--name-field-address .form-text {
+  width: 100% !important;
+}
+
+/* Improve facility type dropdown appearance */
+#node-provider-directory-form #edit-field-ruhs-locations-0-subform-field-facility-type-wrapper .select2-container,
+#node-provider-directory-form #edit-field-ruhs-locations-0-subform-field-chc-location-wrapper .select2-container,
+#node-provider-directory-form #edit-field-ruhs-locations-0-subform-field-position-wrapper .select2-container {
+  width: 100% !important;
+}
+
+/* Style telephone field for better visibility */
+#node-provider-directory-form .field--name-field-phone .form-tel {
+  width: 100% !important;
+}
+
+.js-form-item-field-pd-patient-age-adult {
+  display: none;
+}
+
+@media only screen and (max-width: 992px) {
+  div.layout-container {
+      top: 0;
+  }
+}
+
+#field-chc-locations-add-more-wrapper thead {
+  display: none;
+}
+.field--name-field-pd-languages-spoken strong.d-block.h5.mb-0 {
+  font-size: 0; /* Hide original text */
+  line-height: 1.2; /* Maintain proper line height for pseudo-elements */
+}
+
+.field--name-field-pd-languages-spoken strong.d-block.h5.mb-0::before {
+  content: "Language Spoken in Addition to ";
+  font-size: 1.25rem; /* h5 size */
+  font-weight: 500; /* Normal h5 weight */
+  display: inline;
+}
+
+.field--name-field-pd-languages-spoken strong.d-block.h5.mb-0::after {
+  content: "English";
+  font-size: 1.25rem; /* h5 size */
+  font-weight: bold;
+  text-decoration: underline;
+  display: inline;
+}

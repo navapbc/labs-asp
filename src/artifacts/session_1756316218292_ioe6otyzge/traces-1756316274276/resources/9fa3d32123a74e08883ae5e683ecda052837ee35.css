@@ -1,0 +1,19 @@
+/* menu-utility.css */
+
+@media (min-width: 992px){
+    .we-mega-menu-ul .we-mega-menu-li.dropdown-menu .we-mega-menu-submenu {
+      display: none;
+    }
+}
+
+.cmm-mobile-menu-wrapper-inner{
+  height: 100vh !important;
+  overflow-y: auto !important;
+}
+
+.cmm-mobile-ul--level-1 {
+  display: -ms-flexbox !important;
+  display: flex !important;
+  -ms-flex-direction: column !important;
+  flex-direction: column !important;
+}

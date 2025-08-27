@@ -1,0 +1,5 @@
+.slick img, .slick iframe {
+    border: 0;
+    min-width: 100% !important;
+    min-height: 1px;
+  }
