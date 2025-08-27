@@ -1,0 +1,82 @@
+/**
+* A Simplified Version of the Bootstrap 4 Grid
+*/
+.cmm-flex {
+  display: flex;
+  box-sizing: border-box;
+}
+
+.cmm-row {
+  width: 100%;
+  display: flex;
+  box-sizing: border-box;
+}
+
+.cmm-column {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.cmm-col-1,
+.cmm-col-2,
+.cmm-col-3,
+.cmm-col-4,
+.cmm-col-5,
+.cmm-col-6,
+.cmm-col-7,
+.cmm-col-8,
+.cmm-col-9,
+.cmm-col-10,
+.cmm-col-11,
+.cmm-col-12 {
+  box-sizing: border-box;
+}
+
+.cmm-col-1 {
+  width: 8.33333%;
+}
+
+.cmm-col-2 {
+  width: 16.66666%;
+}
+
+.cmm-col-3 {
+  width: 25%;
+}
+
+.cmm-col-4 {
+  width: 33.33333%;
+}
+
+.cmm-col-5 {
+  width: 41.66666%;
+}
+
+.cmm-col-6 {
+  width: 50%;
+}
+
+.cmm-col-7 {
+  width: 58.33333%;
+}
+
+.cmm-col-8 {
+  width: 66.66666%;
+}
+
+.cmm-col-9 {
+  width: 75%;
+}
+
+.cmm-col-10 {
+  width: 83.33333%;
+}
+
+.cmm-col-11 {
+  width: 91.66666%;
+}
+
+.cmm-col-12 {
+  width: 100%;
+}

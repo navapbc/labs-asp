@@ -1,0 +1,7 @@
+.layout-3 .cmm-li:hover > .cmm-ul {
+  display: flex;
+}
+
+.civic-mega-menu:not(.layout-3) .cmm-li:hover > .cmm-ul {
+  display: flex;
+}
