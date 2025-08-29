@@ -3,12 +3,12 @@ import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { anthropic } from '@ai-sdk/anthropic';
 import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
 import { databaseTools } from '../tools/database-tools';
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
 import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+import { stepCountIs } from 'ai';
 
 const storage = postgresStore;
 
@@ -181,6 +181,22 @@ export const webAutomationAgent = new Agent({
     telemetry: {
       isEnabled: true,
       functionId: 'webAutomationAgent.generate',
+      recordInputs: true,
+      recordOutputs: true,
+      metadata: {
+        agentId: 'webAutomationAgent',
+        agentName: 'Web Automation Agent',
+      },
+    },
+  },
+  defaultVNextStreamOptions: {
+    stopWhen: stepCountIs(50),
+    modelSettings: {
+      temperature: 0.1,
+    },
+    telemetry: {
+      isEnabled: true,
+      functionId: 'webAutomationAgent.streamVNext',
       recordInputs: true,
       recordOutputs: true,
       metadata: {
