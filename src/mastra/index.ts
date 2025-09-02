@@ -17,7 +17,7 @@ export const mastra = new Mastra({
   storage: postgresStore,
   logger: new PinoLogger({
     name: 'Mastra',
-    level: 'debug', // Change from 'info' to 'debug' to capture more error details
+    level: 'info', // Change from 'info' to 'debug' to capture more error details
   }),
 
   telemetry: {
