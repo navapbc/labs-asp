@@ -9,7 +9,7 @@ interface BrowserFrame {
 }
 
 interface BrowserStreamingMessage {
-  type: 'offer' | 'answer' | 'ice-candidate' | 'start-streaming' | 'stop-streaming';
+  type: 'offer' | 'answer' | 'ice-candidate' | 'start-streaming' | 'stop-streaming' | 'control-mode' | 'user-input';
   data?: any;
   sessionId?: string;
 }
@@ -21,6 +21,7 @@ export class BrowserStreamingService extends EventEmitter {
     ws: WebSocket;
     client: any; // CDP client
     cdpEndpoint: string;
+    controlMode: 'agent' | 'user';
   }>();
   private cdpPort: number;
 
@@ -87,6 +88,14 @@ export class BrowserStreamingService extends EventEmitter {
       
       case 'stop-streaming':
         await this.stopBrowserCapture(message.sessionId || 'default');
+        break;
+      
+      case 'control-mode':
+        await this.handleChangeControlMode(ws, message.sessionId || 'default', message.data?.mode);
+        break;
+
+      case 'user-input':
+        await this.handleUserInput(ws, message.sessionId || 'default', message.data);
         break;
       
       case 'offer':
@@ -161,7 +170,8 @@ export class BrowserStreamingService extends EventEmitter {
       this.activeSessions.set(sessionId, {
         ws,
         client,
-        cdpEndpoint
+        cdpEndpoint,
+        controlMode: 'agent', // Default to agent control
       });
 
       // Notify client that streaming started
@@ -212,6 +222,105 @@ export class BrowserStreamingService extends EventEmitter {
       
     } catch (error) {
       console.error('Error stopping browser capture:', error);
+    }
+  }
+
+  private async handleChangeControlMode(ws: WebSocket, sessionId: string, newMode: 'agent' | 'user') {
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      console.warn(`No active session found for control mode change: ${sessionId}`);
+      return;
+    }
+
+    if (newMode === 'agent' || newMode === 'user') {
+      session.controlMode = newMode;
+      console.log(`Control mode for session ${sessionId} changed to: ${newMode}`);
+
+      // Notify the client of the change
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'control-mode-changed',
+          sessionId,
+          data: { mode: newMode }
+        }));
+      }
+    } else {
+      console.warn(`Invalid control mode received: ${newMode}`);
+    }
+  }
+
+  private async handleUserInput(ws: WebSocket, sessionId: string, inputData: any) {
+    const session = this.activeSessions.get(sessionId);
+    if (!session || session.controlMode !== 'user') {
+      // Ignore user input if not in user control mode
+      return;
+    }
+
+    try {
+      const { Input } = session.client;
+
+      switch (inputData.type) {
+        case 'click':
+          console.log('Dispatching mouse event (click):', { x: inputData.x, y: inputData.y, button: inputData.button });
+          // Move to the click position first to ensure hover/focus events are triggered
+          await Input.dispatchMouseEvent({
+            type: 'mouseMoved',
+            x: inputData.x,
+            y: inputData.y,
+          });
+          
+          await Input.dispatchMouseEvent({
+            type: 'mousePressed',
+            x: inputData.x,
+            y: inputData.y,
+            button: inputData.button,
+            clickCount: 1,
+          });
+          await Input.dispatchMouseEvent({
+            type: 'mouseReleased',
+            x: inputData.x,
+            y: inputData.y,
+            button: inputData.button,
+            clickCount: 1,
+          });
+          break;
+
+        case 'mousemove':
+          await Input.dispatchMouseEvent({
+            type: 'mouseMoved',
+            x: inputData.x,
+            y: inputData.y,
+          });
+          break;
+
+        case 'keydown':
+        case 'keyup':
+          await Input.dispatchKeyEvent({
+            type: inputData.type === 'keydown' ? 'keyDown' : 'keyUp',
+            key: inputData.key,
+            code: inputData.code,
+            text: inputData.text,
+          });
+          break;
+
+        case 'scroll':
+          await Input.dispatchMouseEvent({
+            type: 'mouseWheel',
+            x: inputData.x,
+            y: inputData.y,
+            deltaX: inputData.deltaX,
+            deltaY: inputData.deltaY,
+          });
+          break;
+
+        default:
+          console.warn('Unknown user input type:', inputData.type);
+      }
+    } catch (error) {
+      console.error('Error handling user input:', error);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'error', error: 'Failed to process user input' }));
+      }
     }
   }
 
