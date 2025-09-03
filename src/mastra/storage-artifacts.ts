@@ -16,11 +16,11 @@ export class ArtifactStorage {
         mime_type TEXT NOT NULL,
         size INTEGER NOT NULL,
         content BYTEA NOT NULL,
-        metadata JSONB DEFAULT '{}',
+        metadata JSONB NOT NULL DEFAULT '{}',
         trace_id TEXT,
         thread_id TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
       
       CREATE INDEX IF NOT EXISTS idx_mastra_artifacts_session_id ON mastra_artifacts(session_id);
@@ -34,10 +34,11 @@ export class ArtifactStorage {
 
   async storeArtifact(artifact: Omit<PlaywrightArtifact, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     const id = randomUUID();
+    const now = new Date().toISOString();
     const insertQuery = `
       INSERT INTO mastra_artifacts (
-        id, session_id, file_name, file_type, mime_type, size, content, metadata, trace_id, thread_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        id, session_id, file_name, file_type, mime_type, size, content, metadata, trace_id, thread_id, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING id
     `;
     
@@ -52,6 +53,8 @@ export class ArtifactStorage {
       artifact.metadata,
       artifact.traceId,
       artifact.threadId,
+      now,
+      now,
     ]);
 
     return result.rows[0].id;

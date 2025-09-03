@@ -3,12 +3,13 @@ import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { anthropic } from '@ai-sdk/anthropic';
 import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
 import { databaseTools } from '../tools/database-tools';
+
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
 import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+import { stepCountIs } from 'ai';
 
 const storage = postgresStore;
 
@@ -50,7 +51,7 @@ export const webAutomationAgent = new Agent({
 
     **Core Approach:**
     1. AUTONOMOUS: Take decisive action without asking for permission
-    2. RESEARCH-FIRST: For unknown services/programs, research first then proceed directly to automation
+    2. BROWSER-FIRST: When asked to do web automation, create a browser artifact at the start of web automation tasks using the createBrowserArtifact tool
     3. DATA-DRIVEN: When user data is available, use it immediately to populate forms
     4. GOAL-ORIENTED: Always work towards completing the stated objective
 
@@ -68,6 +69,10 @@ export const webAutomationAgent = new Agent({
     - Fill all available fields with the participant data
     - Proceed through the application process autonomously
 
+    **Browser Artifact Protocol:**
+    When starting web automation tasks, the system will automatically provide a browser artifact for live streaming.
+    The browser artifact provides a persistent workspace where users can see the automation in real-time.
+    
     **Web Search Protocol:**
     When given tasks like "apply for MISP in Riverside County", use the following steps:
     1. Web search for the service to understand the process and find the correct website
@@ -181,6 +186,22 @@ export const webAutomationAgent = new Agent({
     telemetry: {
       isEnabled: true,
       functionId: 'webAutomationAgent.generate',
+      recordInputs: true,
+      recordOutputs: true,
+      metadata: {
+        agentId: 'webAutomationAgent',
+        agentName: 'Web Automation Agent',
+      },
+    },
+  },
+  defaultVNextStreamOptions: {
+    stopWhen: stepCountIs(50),
+    modelSettings: {
+      temperature: 0.1,
+    },
+    telemetry: {
+      isEnabled: true,
+      functionId: 'webAutomationAgent.streamVNext',
       recordInputs: true,
       recordOutputs: true,
       metadata: {
