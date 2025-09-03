@@ -59,6 +59,26 @@ export const serverMiddleware = [
     handler: async (c: any, next: any) => {
       const url = new URL(c.req.url);
 
+      // In development mode, be more permissive
+      if (process.env.NODE_ENV !== 'production') {
+        // Allow all localhost requests in dev
+        if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '0.0.0.0') {
+          await next();
+          return;
+        }
+        // Allow dev playground requests
+        const isDevPlayground = c.req.header('x-mastra-dev-playground') === 'true';
+        if (isDevPlayground) {
+          await next();
+          return;
+        }
+        // Allow API routes for dev playground functionality
+        if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/agents/')) {
+          await next();
+          return;
+        }
+      }
+
       // Allow Playground system requests to pass (telemetry/memory/etc.)
       // The Playground adds this header on its internal API calls
       const isDevPlayground = c.req.header('x-mastra-dev-playground') === 'true';
