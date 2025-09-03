@@ -18,26 +18,36 @@ You'll need these installed on your computer:
 
 ## Step-by-Step Setup
 
-### 1. Get the Code and Navigate to the Correct Directory
+### 1. Get the Code with Submodules
+
+This project uses Git submodules to manage the client frontend. You'll need to clone with submodules or set them up after cloning.
+
+#### Option A: Clone with Submodules (Recommended)
 ```bash
-# Clone the repository
-git clone https://github.com/navapbc/labs-asp-experiments.git
-cd labs-asp-experiments/mastra-test-app
+# Clone the repository with submodules
+git clone --recurse-submodules https://github.com/navapbc/labs-asp.git
+cd labs-asp
 ```
 
-> **Important**: Make sure you're in the `mastra-test-app` directory for all the following commands. This is where all the app files are located.
+#### Option B: If You Already Cloned Without Submodules
+```bash
+# If you already cloned the repo, initialize submodules
+git submodule update --init --recursive
+```
+
+> **Important**: This project uses the `client/` directory as a Git submodule that tracks the `labs-asp` branch of the AI chatbot repository.
 
 ### 2. Opening Terminal in Visual Studio Code
 
 If you're using Visual Studio Code:
 
-1. **Open the project folder**: Go to `File > Open Folder` and select the `mastra-test-app` directory
+1. **Open the project folder**: Go to `File > Open Folder` and select the `labs-asp` directory
 2. **Open the terminal**: 
    - Use the keyboard shortcut: `Ctrl+(backtick)` on Mac
    - Or go to `Terminal > New Terminal` in the menu
    - Or use `View > Terminal`
 
-The terminal should automatically open in the correct `mastra-test-app` directory. You can verify this by running `pwd` (on Mac) to see your current directory path.
+The terminal should automatically open in the correct `labs-asp` directory. You can verify this by running `pwd` (on Mac) to see your current directory path.
 
 ### 3. Install Dependencies
 ```bash
@@ -107,7 +117,7 @@ If the app displays errors or becomes unresponsive:
 
 2. **Start fresh**:
    - Open a new terminal (see "Opening Terminal in Visual Studio Code" above)
-   - Make sure you're in the `mastra-test-app` directory: `cd labs-asp-experiments/mastra-test-app`
+   - Make sure you're in the `labs-asp` directory: `cd labs-asp`
    - Restart the app: `pnpm dev`
 
 3. **If problems persist**:
@@ -133,6 +143,91 @@ pnpm dev
 
 # View database (read-only)
 pnpm db:studio
+```
+
+## Git Submodule Management
+
+This project uses Git submodules to manage the client frontend. The `client/` directory is a submodule that tracks the `labs-asp` branch of the AI chatbot repository.
+
+### Initial Setup (One-Time Configuration)
+
+Set up Git to automatically handle submodules and create a convenient alias:
+
+```bash
+# Configure Git to automatically handle submodules in most operations
+git config --global submodule.recurse true
+
+# Create an alias for pulling with submodules
+git config --global alias.spull "pull --recurse-submodules"
+```
+
+### Daily Workflow Commands
+
+```bash
+# Pull latest changes from both main repo and submodules
+git spull
+
+# Alternative: Pull with submodules (if you don't have the alias)
+git pull --recurse-submodules
+
+# Update submodule to latest commit from its remote branch
+git submodule update --remote client
+
+# Check submodule status
+git submodule status
+
+# Initialize submodules if they're missing
+git submodule update --init --recursive
+```
+
+### Working with Submodules
+
+#### After a PR is Merged
+When PRs are merged into the main repository, always pull with submodules:
+```bash
+git spull  # Pulls both main repo and submodule changes automatically
+```
+
+#### If You Need to Update the Submodule Reference
+Sometimes you'll need to update the main repository to point to a newer commit in the submodule:
+```bash
+# Update submodule to latest remote commit
+git submodule update --remote client
+
+# Add and commit the submodule reference update
+git add client
+git commit -m "feat: update client submodule to latest commit"
+git push
+```
+
+#### Checking Submodule Configuration
+You can view the submodule configuration in `.gitmodules`:
+```bash
+cat .gitmodules
+```
+
+This shows how the submodule is configured to track the `labs-asp` branch.
+
+### Troubleshooting Submodules
+
+#### Submodule Directory is Empty
+```bash
+git submodule update --init --recursive
+```
+
+#### Submodule is Out of Date
+```bash
+git submodule update --remote client
+```
+
+#### Reset Submodule to Match Main Repository
+```bash
+git submodule update --recursive
+```
+
+#### View What Branch the Submodule is Tracking
+```bash
+git config -f .gitmodules --get submodule.client.branch
 ```
 
 ### Admin-Only Commands
