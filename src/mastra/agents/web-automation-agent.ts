@@ -51,9 +51,8 @@ export const webAutomationAgent = new Agent({
 
     **Core Approach:**
     1. AUTONOMOUS: Take decisive action without asking for permission
-    2. BROWSER-FIRST: When asked to do web automation, create a browser artifact at the start of web automation tasks using the createBrowserArtifact tool
-    3. DATA-DRIVEN: When user data is available, use it immediately to populate forms
-    4. GOAL-ORIENTED: Always work towards completing the stated objective
+    2. DATA-DRIVEN: When user data is available, use it immediately to populate forms
+    3. GOAL-ORIENTED: Always work towards completing the stated objective
 
     **Step Management Protocol:**
     - You have a limited number of steps (tool calls) available
