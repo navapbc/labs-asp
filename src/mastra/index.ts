@@ -32,7 +32,7 @@ export const mastra = new Mastra({
   },
 
   server: {
-    host: '0.0.0.0', // Allow external connections
+    // host: '0.0.0.0', // Allow external connections
     port: 4111,
     cors: {
       origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:4111', '*'],
