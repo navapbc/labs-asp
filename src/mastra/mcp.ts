@@ -28,11 +28,12 @@ export const playwrightMCP = new MCPClient({
         "--headless",
         "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "--viewport-size=1920,1080",
-        `--output-dir=${outputDir}`,
-        "--save-trace",
-        "--isolated"
-        // Note: Removed --save-session for clean browser state on each run
+        // `--output-dir=${outputDir}`,
+        // "--save-trace",
+        // "--isolated"
+        // Note: Removed --save-trace and --save-session for clean browser state on each run
         // Add back --save-session if you want to persist browser state between conversations
+        // Note: artifacts will not be saved to the output directory unless the args are uncommented
       ],
       env: {
       }
