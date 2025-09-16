@@ -115,19 +115,25 @@ export class BrowserStreamingService extends EventEmitter {
       // Connect to the Playwright MCP server's CDP endpoint with retry logic
       let cdpEndpoint = null;
       let retries = 0;
-      const maxRetries = 10;
+      const maxRetries = 15; // Increased retries for better reliability
       
       while (!cdpEndpoint && retries < maxRetries) {
         cdpEndpoint = await this.getCDPEndpoint();
         if (!cdpEndpoint) {
           console.log(`Attempt ${retries + 1}/${maxRetries}: Waiting for Playwright browser to be available...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly faster retry
           retries++;
         }
       }
       
       if (!cdpEndpoint) {
-        throw new Error('Could not get CDP endpoint from Playwright MCP server after multiple attempts');
+        const errorMsg = 'Could not get CDP endpoint from Playwright MCP server after multiple attempts';
+        console.error(errorMsg);
+        ws.send(JSON.stringify({
+          type: 'error',
+          error: errorMsg
+        }));
+        return;
       }
 
       // Connect to CDP and start screencast
@@ -148,22 +154,31 @@ export class BrowserStreamingService extends EventEmitter {
         everyNthFrame: 1 // Capture every frame for smooth streaming
       });
 
-      // Handle screencast frames
+      // Handle screencast frames with better error handling
       Page.screencastFrame((params: any) => {
-        const frame: BrowserFrame = {
-          type: 'frame',
-          data: params.data, // Base64 encoded JPEG
-          timestamp: Date.now(),
-          sessionId
-        };
+        try {
+          const frame: BrowserFrame = {
+            type: 'frame',
+            data: params.data, // Base64 encoded JPEG
+            timestamp: Date.now(),
+            sessionId
+          };
 
-        // Send frame to WebSocket client
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify(frame));
+          // Send frame to WebSocket client with connection check
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(frame));
+          } else if (ws.readyState === WebSocket.CLOSED) {
+            console.log(`WebSocket closed for session ${sessionId}, stopping capture`);
+            this.stopBrowserCapture(sessionId);
+            return;
+          }
+
+          // Acknowledge the frame
+          Page.screencastFrameAck({ sessionId: params.sessionId });
+        } catch (error) {
+          console.error('Error handling screencast frame:', error);
+          // Don't stop the entire capture for frame errors, just log them
         }
-
-        // Acknowledge the frame
-        Page.screencastFrameAck({ sessionId: params.sessionId });
       });
 
       // Store session info
