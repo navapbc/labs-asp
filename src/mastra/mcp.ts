@@ -25,9 +25,10 @@ export const playwrightMCP = new MCPClient({
       args: [
         "@playwright/mcp@latest", 
         "--browser=chromium",
-        // "--headless",
+        "--headless",
         "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "--viewport-size=1920,1080",
+        "--isolated",
         // `--output-dir=${outputDir}`,
         // "--save-trace",
         // "--isolated"
