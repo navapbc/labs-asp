@@ -49,12 +49,6 @@ const memory = new Memory({
         messageRange: 2,
         scope: "resource"
      },
-     threads: {
-       generateTitle: {
-         model: google("gemini-2.5-flash"), // Use faster/cheaper model for titles
-         instructions: "Generate a concise title based on the web automation task or website being accessed.",
-       },
-     },
   },
 });
 
