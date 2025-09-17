@@ -23,7 +23,7 @@ const memory = new Memory({
     // Remove tool calls from memory to save tokens, but keep working memory updates
     // This excludes verbose Playwright, database, and Exa tool interactions from memory context
     // while preserving useful working memory context for continuity
-    new ToolCallFilter({ exclude: ["updateWorkingMemory"] }),
+    new ToolCallFilter(),
     // Apply token limiting as the final step (for Claude Sonnet 4's ~200k context)
     new TokenLimiter(150000),
   ],
