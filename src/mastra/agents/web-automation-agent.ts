@@ -3,6 +3,7 @@ import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { ToolCallFilter, TokenLimiter } from '@mastra/memory/processors';
 import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
 import { databaseTools } from '../tools/database-tools';
 
@@ -18,8 +19,16 @@ const memory = new Memory({
   storage: storage,
   vector: vectorStore,
   embedder: openai.embedding('text-embedding-3-small'),
+  processors: [
+    // Remove tool calls from memory to save tokens, but keep working memory updates
+    // This excludes verbose Playwright, database, and Exa tool interactions from memory context
+    // while preserving useful working memory context for continuity
+    new ToolCallFilter({ exclude: ["updateWorkingMemory"] }),
+    // Apply token limiting as the final step (for Claude Sonnet 4's ~200k context)
+    new TokenLimiter(150000),
+  ],
   options: {
-    lastMessages: 10,
+    lastMessages: 5,
     workingMemory: { 
       enabled: true,
       scope: 'thread',
@@ -39,7 +48,13 @@ const memory = new Memory({
         topK: 5,
         messageRange: 2,
         scope: "resource"
-     }
+     },
+     threads: {
+       generateTitle: {
+         model: google("gemini-2.5-flash"), // Use faster/cheaper model for titles
+         instructions: "Generate a concise title based on the web automation task or website being accessed.",
+       },
+     },
   },
 });
 
@@ -53,6 +68,7 @@ export const webAutomationAgent = new Agent({
     1. AUTONOMOUS: Take decisive action without asking for permission
     2. DATA-DRIVEN: When user data is available, use it immediately to populate forms
     3. GOAL-ORIENTED: Always work towards completing the stated objective
+    4. EFFICIENT: When multiple tasks can be done simultaneously, execute them in parallel
 
     **Step Management Protocol:**
     - You have a limited number of steps (tool calls) available
@@ -143,8 +159,8 @@ export const webAutomationAgent = new Agent({
   // model: openai('gpt-5-2025-08-07'),
   // // model: openai('gpt-4.1-mini'),
   // model: anthropic('claude-sonnet-4-20250514'),
-  // model: google('gemini-2.5-pro'),
-  model: vertexAnthropic('claude-sonnet-4'),
+  model: google('gemini-2.5-pro'),
+  // model: vertexAnthropic('claude-sonnet-4'),
   tools: { 
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
     ...(await playwrightMCP.getTools()),
