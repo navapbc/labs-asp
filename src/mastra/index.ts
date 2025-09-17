@@ -7,9 +7,6 @@ import { dataOpsAgent } from './agents/data-ops-agent';
 import { serverMiddleware } from './middleware';
 
 export const mastra = new Mastra({
-  workflows: { 
-    webAutomationWorkflow
-  },
   agents: { 
     webAutomationAgent,
     dataOpsAgent,
