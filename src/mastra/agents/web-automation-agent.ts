@@ -164,11 +164,6 @@ export const webAutomationAgent = new Agent({
   tools: { 
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
     ...(await playwrightMCP.getTools()),
-    // Only get the specific EXA tools we want
-    ...Object.fromEntries(
-      Object.entries(await exaMCP.getTools())
-        .filter(([key]) => ['exa_web_search_exa', 'exa_crawling_exa'].includes(key))
-    )
   },
   memory: memory,
   scorers: {
