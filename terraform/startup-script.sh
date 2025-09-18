@@ -62,6 +62,11 @@ curl -sSL https://sdk.cloud.google.com | bash
 source /opt/google-cloud-sdk/path.bash.inc
 export PATH="/opt/google-cloud-sdk/bin:$PATH"
 
+# Add this VM's IP to the database authorized networks
+echo "Adding VM IP to database authorized networks..."
+VM_IP=$(curl -s http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip -H 'Metadata-Flavor: Google')
+gcloud sql instances patch app-dev --authorized-networks=$(gcloud sql instances describe app-dev --format="value(settings.ipConfiguration.authorizedNetworks[].value)" | tr '\n' ',' | sed 's/,$//'),$$VM_IP/32 || echo "Warning: Could not update database authorized networks"
+
 # Create .env file with secrets from Google Secret Manager
 echo "Creating .env file with secrets..."
 cat > .env << EOF
