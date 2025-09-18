@@ -36,6 +36,6 @@ services:
         apt-get install -y wget gnupg ca-certificates && 
         npm install -g @playwright/mcp@latest && 
         npx playwright install chromium --with-deps && 
-        npx @playwright/mcp@latest --port 8931 --browser=chromium --headless --no-sandbox
+        npx @playwright/mcp@latest --port 8931 --browser=chromium --headless --no-sandbox --user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' --viewport-size '1920,1080'
       "
     restart: unless-stopped
