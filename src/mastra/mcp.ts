@@ -17,25 +17,16 @@ const createOutputDir = () => {
 
 const { outputDir } = createOutputDir();
 
-// Use stdio transport for Playwright MCP (recommended approach)
+// Use HTTP transport for Playwright MCP (connects to containerized server)
 export const playwrightMCP = new MCPClient({
   servers: {
     playwright: {
-      command: "npx",
-      args: [
-        "@playwright/mcp@latest",
-        "--browser=chromium",
-        "--headless",
-        "--isolated",
-        "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "--viewport-size=1920,1080"
-        // `--output-dir=${outputDir}`,
-        // "--save-trace",
-        // "--isolated"
-        // Note: Removed --save-trace and --save-session for clean browser state on each run
-        // Add back --save-session if you want to persist browser state between conversations
-        // Note: artifacts will not be saved to the output directory unless the args are uncommented
-      ],
+      url: new URL("http://localhost:8931/mcp"),
+      requestInit: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        },
+      },
     },
   },
 });

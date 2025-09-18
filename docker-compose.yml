@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mastra-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4111:4111"   # Mastra dev server  
+      - "8931:8931"   # Playwright MCP server (for local testing)
+    env_file:
+      - .env
+    volumes:
+      # Mount Google credentials if using local file
+      - ./vertex-ai-credentials.json:/app/vertex-ai-credentials.json:ro
+      
+      # Mount artifacts directory for local development
+      - ./artifacts:/app/artifacts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4111/health", "||", "curl", "-f", "http://localhost:4111"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+# Optional: Separate service for development/debugging
+  playwright-mcp-standalone:
+    image: node:20-slim
+    profiles: ["debug"]  # Only start with --profile debug
+    ports:
+      - "8932:8931"  # Alternative port for standalone testing
+    command: >
+      sh -c "
+        apt-get update && 
+        apt-get install -y wget gnupg ca-certificates && 
+        npm install -g @playwright/mcp@latest && 
+        npx playwright install chromium --with-deps && 
+        npx @playwright/mcp@latest --port 8931 --browser=chromium --headless --no-sandbox
+      "
+    restart: unless-stopped
