@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🗑️  Destroying playground VM..."
+echo "Destroying playground VM..."
 
 # Destroy only the playground resources
 echo "Planning playground destruction..."
@@ -25,7 +25,7 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
         -auto-approve
     
     echo ""
-    echo "✅ Playground VM destroyed!"
+    echo "Playground VM destroyed!"
 else
     echo "Destruction cancelled."
 fi

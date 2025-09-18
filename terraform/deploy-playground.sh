@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Deploying playground VM..."
+echo "Deploying playground VM..."
 
 # Initialize Terraform if needed
 if [ ! -d ".terraform" ]; then
@@ -31,9 +31,9 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
         -auto-approve
     
     echo ""
-    echo "✅ Playground VM deployed!"
+    echo "Playground VM deployed!"
     echo ""
-    echo "📊 Getting playground info..."
+    echo "Getting playground info..."
     terraform output playground_url
     terraform output playground_ssh_command
 else
