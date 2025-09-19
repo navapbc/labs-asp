@@ -3,13 +3,13 @@ import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { TokenLimiter } from "@mastra/memory/processors";
 import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
 import { databaseTools } from '../tools/database-tools';
-
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
-import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import { stepCountIs } from 'ai';
+import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 
 const storage = postgresStore;
 
@@ -18,6 +18,10 @@ const memory = new Memory({
   storage: storage,
   vector: vectorStore,
   embedder: openai.embedding('text-embedding-3-small'),
+  processors: [
+    // Ensure the total tokens from memory don't exceed ~127k
+    new TokenLimiter(127000),
+  ],
   options: {
     lastMessages: 10,
     workingMemory: { 
