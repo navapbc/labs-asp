@@ -6,6 +6,8 @@ dist
 .env
 *.db
 *.db-*
+.cursor/mcp.json
+.vscode/
 
 # Database files at repository root
 /mastra.db
