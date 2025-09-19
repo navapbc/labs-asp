@@ -78,11 +78,11 @@ EXA_API_KEY=$(gcloud secrets versions access latest --secret="exa-api-key" 2>/de
 GROK_API_KEY=$(gcloud secrets versions access latest --secret="grok-api-key" 2>/dev/null || echo "")
 
 # Database Configuration (using app-dev)
-DATABASE_URL=$(gcloud secrets versions access latest --secret="database-url-dev" 2>/dev/null || echo "postgresql://app_user:NavaPBC1!@34.29.202.180/app_db?sslmode=disable")
+DATABASE_URL=$(gcloud secrets versions access latest --secret="database-url-dev" 2>/dev/null || echo "")
 
 # Authentication
-MASTRA_JWT_SECRET=$(gcloud secrets versions access latest --secret="mastra-jwt-secret" 2>/dev/null || echo "supersecretdevkeythatishs256safe!")
-MASTRA_APP_PASSWORD=$(gcloud secrets versions access latest --secret="mastra-app-password" 2>/dev/null || echo "NavaPBC1!")
+MASTRA_JWT_SECRET=$(gcloud secrets versions access latest --secret="mastra-jwt-secret" 2>/dev/null || echo "")
+MASTRA_APP_PASSWORD=$(gcloud secrets versions access latest --secret="mastra-app-password" 2>/dev/null || echo "")
 
 # Vertex AI Configuration
 GOOGLE_VERTEX_LOCATION=us-east5

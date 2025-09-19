@@ -46,8 +46,8 @@ resource "google_compute_instance" "playground" {
   })
 
   service_account {
-    # Use the labs-asp-cloud-run service account which has Secret Manager and Storage access
-    email = "labs-asp-cloud-run@nava-labs.iam.gserviceaccount.com"
+    # Use the development environment service account which has Secret Manager and SQL access
+    email = google_service_account.development.email
     scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
     ]
