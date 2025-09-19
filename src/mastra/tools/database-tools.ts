@@ -639,10 +639,5 @@ export const databaseTools = [
   getParticipantById,
   searchParticipantsByName,
   getParticipantWithHousehold,
-  searchParticipantsByLocation,
-  createParticipant,
-  createHouseholdDependent,
-  updateParticipantWicInfo,
-  updateDependentWicInfo,
-  updateParticipantDemographics,
+  searchParticipantsByLocation
 ]; 

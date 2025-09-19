@@ -2,17 +2,11 @@ import { postgresStore } from './storage';
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
-import { webAutomationWorkflow } from './workflows/web-automation-workflow';
-import { dataOpsAgent } from './agents/data-ops-agent';
 import { serverMiddleware } from './middleware';
 
 export const mastra = new Mastra({
-  workflows: { 
-    webAutomationWorkflow
-  },
   agents: { 
-    webAutomationAgent,
-    dataOpsAgent,
+    webAutomationAgent
   },
   storage: postgresStore,
   logger: new PinoLogger({

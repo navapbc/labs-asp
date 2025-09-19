@@ -23,11 +23,12 @@ export const playwrightMCP = new MCPClient({
     playwright: {
       command: "npx",
       args: [
-        "@playwright/mcp@latest", 
+        "@playwright/mcp@latest",
         "--browser=chromium",
         "--headless",
+        "--isolated",
         "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "--viewport-size=1920,1080",
+        "--viewport-size=1920,1080"
         // `--output-dir=${outputDir}`,
         // "--save-trace",
         // "--isolated"
@@ -35,8 +36,6 @@ export const playwrightMCP = new MCPClient({
         // Add back --save-session if you want to persist browser state between conversations
         // Note: artifacts will not be saved to the output directory unless the args are uncommented
       ],
-      env: {
-      }
     },
   },
 });
