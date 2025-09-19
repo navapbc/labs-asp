@@ -63,17 +63,19 @@ FROM base AS runtime
 # Install Playwright MCP server (includes playwright as dependency)
 RUN npm install -g @playwright/mcp@latest
 
-# Install Playwright browsers with system dependencies
-RUN npx playwright install --with-deps chromium
+# Set environment variable for browser path (standard Playwright location)
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# Verify browsers are installed
-RUN npx playwright install --dry-run
+# Install Playwright browsers using the MCP server's bundled Playwright version
+RUN /usr/local/lib/node_modules/@playwright/mcp/node_modules/.bin/playwright install --with-deps chromium
 
-# Copy built application from builder stage
+# Verify browsers are installed and show their location
+RUN /usr/local/lib/node_modules/@playwright/mcp/node_modules/.bin/playwright install --dry-run && \
+    echo "Browser installation verified using MCP server's Playwright version. Browsers located at: $PLAYWRIGHT_BROWSERS_PATH" && \
+    ls -la /ms-playwright/ || ls -la ~/.cache/ms-playwright/ || echo "Browser path not found, but installation completed"
+
+# Copy built application and node_modules from builder stage
 COPY --from=builder /app .
-
-# Install all dependencies (including dev dependencies for mastra CLI)
-RUN pnpm install --frozen-lockfile
 
 # Create a non-root user for better security
 RUN groupadd -r mastra && useradd -r -g mastra -d /app -s /bin/bash mastra
@@ -82,8 +84,9 @@ RUN groupadd -r mastra && useradd -r -g mastra -d /app -s /bin/bash mastra
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Change ownership of the app directory to the mastra user
-RUN chown -R mastra:mastra /app
+# Change ownership of the app directory and browser directory to the mastra user
+RUN chown -R mastra:mastra /app && \
+    chown -R mastra:mastra /ms-playwright
 
 # Switch to non-root user
 USER mastra

@@ -23,19 +23,3 @@ services:
       retries: 3
       start_period: 60s
     restart: unless-stopped
-
-# Optional: Separate service for development/debugging
-  playwright-mcp-standalone:
-    image: node:20-slim
-    profiles: ["debug"]  # Only start with --profile debug
-    ports:
-      - "8932:8931"  # Alternative port for standalone testing
-    command: >
-      sh -c "
-        apt-get update && 
-        apt-get install -y wget gnupg ca-certificates && 
-        npm install -g @playwright/mcp@latest && 
-        npx playwright install chromium --with-deps && 
-        npx @playwright/mcp@latest --port 8931 --browser=chromium --headless --no-sandbox --user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' --viewport-size '1920,1080'
-      "
-    restart: unless-stopped
