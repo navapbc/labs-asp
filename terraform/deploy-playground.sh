@@ -17,7 +17,13 @@ fi
 echo "Planning playground deployment..."
 terraform plan \
     -target="google_compute_firewall.allow_playground" \
-    -target="google_compute_instance.playground"
+    -target="google_compute_instance.playground" \
+    -target="google_project_iam_member.development_secret_accessor" \
+    -target="google_project_iam_member.development_sql_client" \
+    -target="google_project_iam_member.development_storage_object_admin" \
+    -target="google_project_iam_member.development_logging_writer" \
+    -target="google_project_iam_member.development_monitoring_writer" \
+    -target="google_project_iam_member.development_trace_agent"
 
 echo ""
 echo "Apply the playground deployment? (y/N)"
@@ -28,6 +34,12 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
     terraform apply \
         -target="google_compute_firewall.allow_playground" \
         -target="google_compute_instance.playground" \
+        -target="google_project_iam_member.development_secret_accessor" \
+        -target="google_project_iam_member.development_sql_client" \
+        -target="google_project_iam_member.development_storage_object_admin" \
+        -target="google_project_iam_member.development_logging_writer" \
+        -target="google_project_iam_member.development_monitoring_writer" \
+        -target="google_project_iam_member.development_trace_agent" \
         -auto-approve
     
     echo ""

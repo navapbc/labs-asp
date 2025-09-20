@@ -11,7 +11,13 @@ echo "Destroying playground VM..."
 echo "Planning playground destruction..."
 terraform plan -destroy \
     -target="google_compute_firewall.allow_playground" \
-    -target="google_compute_instance.playground"
+    -target="google_compute_instance.playground" \
+    -target="google_project_iam_member.development_secret_accessor" \
+    -target="google_project_iam_member.development_sql_client" \
+    -target="google_project_iam_member.development_storage_object_admin" \
+    -target="google_project_iam_member.development_logging_writer" \
+    -target="google_project_iam_member.development_monitoring_writer" \
+    -target="google_project_iam_member.development_trace_agent"
 
 echo ""
 echo "Destroy the playground VM? (y/N)"
@@ -22,6 +28,12 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
     terraform destroy \
         -target="google_compute_firewall.allow_playground" \
         -target="google_compute_instance.playground" \
+        -target="google_project_iam_member.development_secret_accessor" \
+        -target="google_project_iam_member.development_sql_client" \
+        -target="google_project_iam_member.development_storage_object_admin" \
+        -target="google_project_iam_member.development_logging_writer" \
+        -target="google_project_iam_member.development_monitoring_writer" \
+        -target="google_project_iam_member.development_trace_agent" \
         -auto-approve
     
     echo ""
