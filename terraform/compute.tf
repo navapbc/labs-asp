@@ -90,40 +90,40 @@ resource "google_compute_instance" "vm" {
 # Outputs for each VM
 output "playground_external_ip" {
   description = "External IP address of the playground VM"
-  value       = google_compute_instance.vm["playground"].network_interface[0].access_config[0].nat_ip
+  value       = try(google_compute_instance.vm["playground"].network_interface[0].access_config[0].nat_ip, null)
 }
 
 output "playground_internal_ip" {
   description = "Internal IP address of the playground VM"
-  value       = google_compute_instance.vm["playground"].network_interface[0].network_ip
+  value       = try(google_compute_instance.vm["playground"].network_interface[0].network_ip, null)
 }
 
 output "playground_ssh_command" {
   description = "SSH command to connect to the playground VM"
-  value       = "gcloud compute ssh ${google_compute_instance.vm["playground"].name} --zone=${var.playground_zone}"
+  value       = try("gcloud compute ssh ${google_compute_instance.vm["playground"].name} --zone=${var.playground_zone}", null)
 }
 
 output "playground_url" {
   description = "URL for accessing the playground"
-  value       = "http://${google_compute_instance.vm["playground"].network_interface[0].access_config[0].nat_ip}:4111"
+  value       = try("http://${google_compute_instance.vm["playground"].network_interface[0].access_config[0].nat_ip}:4111", null)
 }
 
 output "client_external_ip" {
   description = "External IP address of the client VM"
-  value       = google_compute_instance.vm["client"].network_interface[0].access_config[0].nat_ip
+  value       = try(google_compute_instance.vm["client"].network_interface[0].access_config[0].nat_ip, null)
 }
 
 output "client_internal_ip" {
   description = "Internal IP address of the client VM"
-  value       = google_compute_instance.vm["client"].network_interface[0].network_ip
+  value       = try(google_compute_instance.vm["client"].network_interface[0].network_ip, null)
 }
 
 output "client_ssh_command" {
   description = "SSH command to connect to the client VM"
-  value       = "gcloud compute ssh ${google_compute_instance.vm["client"].name} --zone=${var.playground_zone}"
+  value       = try("gcloud compute ssh ${google_compute_instance.vm["client"].name} --zone=${var.playground_zone}", null)
 }
 
 output "client_url" {
   description = "URL for accessing the client"
-  value       = "http://${google_compute_instance.vm["client"].network_interface[0].access_config[0].nat_ip}:3000"
+  value       = try("http://${google_compute_instance.vm["client"].network_interface[0].access_config[0].nat_ip}:3000", null)
 }

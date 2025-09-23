@@ -48,7 +48,7 @@ deploy_env() {
             echo ""
             echo "Note: It may take 5-10 minutes for the client to be fully ready."
             echo "Check the startup logs with:"
-            echo "  gcloud compute ssh client --zone=us-central1-a --command='sudo tail -f /var/log/startup-script-client.log'"
+            echo "  gcloud compute ssh client --zone=us-west1-a --command='sudo tail -f /var/log/startup-script-client.log'"
         fi
     else
         echo "$env deployment cancelled."
