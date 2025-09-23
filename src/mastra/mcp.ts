@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { MCPClient } from "@mastra/mcp";
 import { startArtifactWatcher } from './artifact-watcher';
-import { createBrowserStreamingService } from './browser-streaming';
 import path from 'path';
 
 // Create a unique session-based output directory
@@ -37,27 +36,3 @@ export const exaMCP = new MCPClient({
     },
   },
 });
-
-// Start browser streaming service (connects to Chrome CDP directly)
-const browserStreamingService = createBrowserStreamingService(
-  parseInt(process.env.BROWSER_STREAMING_PORT || '8933')
-);
-
-// Initialize browser streaming
-browserStreamingService.start().catch((error) => {
-  console.error('Failed to start browser streaming service:', error);
-});
-
-// Clean up on exit
-process.on('exit', () => {
-  browserStreamingService.stop();
-});
-
-process.on('SIGINT', () => {
-  browserStreamingService.stop().then(() => {
-    process.exit(0);
-  });
-});
-
-// Export browser streaming service for use in client
-export { browserStreamingService };

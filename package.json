@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
-    "@ai-sdk/google": "^1.2.22",
+    "@ai-sdk/google": "^2.0.15",
     "@ai-sdk/google-vertex": "^3.0.27",
     "@ai-sdk/openai": "^1.3.24",
     "@inquirer/prompts": "^7.8.6",

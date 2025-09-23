@@ -1,29 +1,53 @@
-# Playground VM Configuration
-# This file contains the compute resources for the playground environment
+# VM Configuration for both Playground and Client environments
+# This file contains compute resources using a unified approach
 
-# Firewall rule for playground (public)
-resource "google_compute_firewall" "allow_playground" {
-  name    = "allow-playground"
+# Local configuration for different VM types
+locals {
+  vms = {
+    playground = {
+      name           = "playground"
+      ports          = ["4111"]
+      startup_script = "startup-script.sh"
+      service        = "playground"
+      description    = "Allow playground access"
+    }
+    client = {
+      name           = "client"
+      ports          = ["3000", "8933"]
+      startup_script = "startup-script-client.sh"
+      service        = "client"
+      description    = "Allow client access"
+    }
+  }
+}
+
+# Firewall rules for each VM type
+resource "google_compute_firewall" "allow_vm" {
+  for_each = local.vms
+
+  name    = "allow-${each.key}"
   network = "default"
 
   allow {
     protocol = "tcp"
-    ports    = ["4111"]
+    ports    = each.value.ports
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["playground"]
+  target_tags   = [each.key]
 
-  description = "Allow playground access"
+  description = each.value.description
 }
 
-# Playground VM
-resource "google_compute_instance" "playground" {
-  name         = "playground"
+# VM instances for each type
+resource "google_compute_instance" "vm" {
+  for_each = local.vms
+
+  name         = each.value.name
   machine_type = var.playground_machine_type
   zone         = var.playground_zone
 
-  tags = ["playground"]
+  tags = [each.key]
 
   boot_disk {
     initialize_params {
@@ -41,7 +65,7 @@ resource "google_compute_instance" "playground" {
   }
 
   # Startup script with variable substitution
-  metadata_startup_script = templatefile("${path.module}/startup-script.sh", {
+  metadata_startup_script = templatefile("${path.module}/${each.value.startup_script}", {
     github_repo = var.github_repository
   })
 
@@ -56,30 +80,50 @@ resource "google_compute_instance" "playground" {
   labels = {
     environment = "development"
     project     = "labs-asp"
-    service     = "playground"
+    service     = each.value.service
   }
 
   # Allow stopping for maintenance
   allow_stopping_for_update = true
 }
 
-# Output the external IP
+# Outputs for each VM
 output "playground_external_ip" {
   description = "External IP address of the playground VM"
-  value       = google_compute_instance.playground.network_interface[0].access_config[0].nat_ip
+  value       = google_compute_instance.vm["playground"].network_interface[0].access_config[0].nat_ip
 }
 
 output "playground_internal_ip" {
   description = "Internal IP address of the playground VM"
-  value       = google_compute_instance.playground.network_interface[0].network_ip
+  value       = google_compute_instance.vm["playground"].network_interface[0].network_ip
 }
 
 output "playground_ssh_command" {
   description = "SSH command to connect to the playground VM"
-  value       = "gcloud compute ssh ${google_compute_instance.playground.name} --zone=${var.playground_zone}"
+  value       = "gcloud compute ssh ${google_compute_instance.vm["playground"].name} --zone=${var.playground_zone}"
 }
 
 output "playground_url" {
   description = "URL for accessing the playground"
-  value       = "http://${google_compute_instance.playground.network_interface[0].access_config[0].nat_ip}:4111"
+  value       = "http://${google_compute_instance.vm["playground"].network_interface[0].access_config[0].nat_ip}:4111"
+}
+
+output "client_external_ip" {
+  description = "External IP address of the client VM"
+  value       = google_compute_instance.vm["client"].network_interface[0].access_config[0].nat_ip
+}
+
+output "client_internal_ip" {
+  description = "Internal IP address of the client VM"
+  value       = google_compute_instance.vm["client"].network_interface[0].network_ip
+}
+
+output "client_ssh_command" {
+  description = "SSH command to connect to the client VM"
+  value       = "gcloud compute ssh ${google_compute_instance.vm["client"].name} --zone=${var.playground_zone}"
+}
+
+output "client_url" {
+  description = "URL for accessing the client"
+  value       = "http://${google_compute_instance.vm["client"].network_interface[0].access_config[0].nat_ip}:3000"
 }

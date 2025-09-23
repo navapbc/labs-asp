@@ -3,7 +3,6 @@ import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
 import { serverMiddleware } from './middleware';
-
 export const mastra = new Mastra({
   agents: { 
     webAutomationAgent
