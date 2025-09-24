@@ -17,9 +17,8 @@ const createOutputDir = () => {
 
 const { outputDir } = createOutputDir();
 
-// In Docker: playwright-mcp:8931, Local dev: localhost:8931
-const playwrightMCPUrl = process.env.PLAYWRIGHT_MCP_URL || 
-  (process.env.NODE_ENV === 'production' ? 'http://playwright-mcp:8931/mcp' : 'http://localhost:8931/mcp');
+// Environment-based MCP URL configuration
+const playwrightMCPUrl = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/mcp';
 
 export const playwrightMCP = new MCPClient({
   servers: {
