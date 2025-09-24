@@ -31,3 +31,11 @@ mastra-memory.db-*
 
 # Google Vertex AI
 vertex-ai-credentials.json
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.*
