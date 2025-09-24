@@ -17,11 +17,14 @@ const createOutputDir = () => {
 
 const { outputDir } = createOutputDir();
 
-// Use HTTP transport for Playwright MCP (connects to containerized server)
+// In Docker: playwright-mcp:8931, Local dev: localhost:8931
+const playwrightMCPUrl = process.env.PLAYWRIGHT_MCP_URL || 
+  (process.env.NODE_ENV === 'production' ? 'http://playwright-mcp:8931/mcp' : 'http://localhost:8931/mcp');
+
 export const playwrightMCP = new MCPClient({
   servers: {
     playwright: {
-      url: new URL("http://localhost:8931/mcp"),
+      url: new URL(playwrightMCPUrl),
     },
   },
 });
