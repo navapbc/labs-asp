@@ -8,9 +8,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8931:8931"   # Playwright MCP server
+      - "8933:8933"   # Browser streaming WebSocket port
     restart: unless-stopped
     networks:
       - mastra-network
+
 
   # Main Mastra Application
   mastra-app:
@@ -18,9 +20,10 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "4111:4111"   # Mastra dev server  
+      - "4111:4112"   # Mastra dev server (external:internal)  
     environment:
       - PLAYWRIGHT_MCP_URL=http://playwright-mcp:8931/mcp
+      - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
     env_file:
       - .env
