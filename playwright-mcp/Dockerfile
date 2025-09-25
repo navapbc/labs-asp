@@ -47,20 +47,21 @@ RUN groupadd -r playwright && useradd -r -g playwright -d /app -s /bin/bash play
 RUN mkdir -p /app && chown -R playwright:playwright /app && \
     chown -R playwright:playwright /ms-playwright
 
+# Copy browser streaming server and startup script
+COPY browser-streaming-server.js /app/browser-streaming-server.js
+COPY start-services.sh /app/start-services.sh
+
+# Make startup script executable and set ownership
+RUN chmod +x /app/start-services.sh && chown playwright:playwright /app/start-services.sh /app/browser-streaming-server.js
+
 # Switch to non-root user
 USER playwright
 
 # Set working directory
 WORKDIR /app
 
-# Expose MCP server port
-EXPOSE 8931
+# Expose MCP server port and browser streaming port
+EXPOSE 8931 8933
 
-# Start Playwright MCP server
-CMD ["/usr/local/lib/node_modules/@playwright/mcp/cli.js", \
-     "--port", "8931", \
-     "--isolated", \
-     "--browser", "chromium", \
-     "--no-sandbox", \
-     "--user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", \
-     "--viewport-size", "1920,1080"]
+# Start both services
+CMD ["/app/start-services.sh"]
