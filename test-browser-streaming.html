@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browser Streaming Test - Port 8933</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { margin: 5px; padding: 10px 15px; }
+        #status { margin: 10px 0; font-weight: bold; }
+        #canvas { border: 2px solid #333; margin: 10px 0; display: block; }
+        .connected { color: green; }
+        .disconnected { color: red; }
+        .connecting { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Browser Streaming WebSocket Test</h1>
+    <p>Direct connection to <code>ws://localhost:8933</code></p>
+    
+    <div>
+        <button onclick="connect()">Connect</button>
+        <button onclick="startStreaming()">Start Streaming</button>
+        <button onclick="stopStreaming()">Stop Streaming</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    
+    <div id="status" class="disconnected">Not connected</div>
+    
+    <canvas id="canvas" width="960" height="540"></canvas>
+    
+    <div id="messages" style="margin-top: 20px; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; font-family: monospace; font-size: 12px;"></div>
+    
+    <script>
+        let ws = null;
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let statusEl = document.getElementById('status');
+        let messagesEl = document.getElementById('messages');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            messagesEl.innerHTML += `[${timestamp}] ${message}<br>`;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function connect() {
+            if (ws) {
+                log('Already connected or connecting');
+                return;
+            }
+            
+            statusEl.textContent = 'Connecting...';
+            statusEl.className = 'connecting';
+            
+            ws = new WebSocket('ws://localhost:8933');
+            
+            ws.onopen = () => {
+                statusEl.textContent = 'Connected to WebSocket';
+                statusEl.className = 'connected';
+                log('WebSocket connection opened');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    log(`Received: ${message.type}`);
+                    
+                    if (message.type === 'frame') {
+                        // Draw the frame to canvas
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        };
+                        img.src = `data:image/jpeg;base64,${message.data}`;
+                    } else if (message.type === 'streaming-started') {
+                        log(`Streaming started for session: ${message.sessionId}`);
+                    } else if (message.type === 'streaming-stopped') {
+                        log(`Streaming stopped for session: ${message.sessionId}`);
+                    } else if (message.type === 'error') {
+                        log(`ERROR: ${message.error}`);
+                    }
+                } catch (err) {
+                    log(`Error parsing message: ${err.message}`);
+                }
+            };
+            
+            ws.onclose = () => {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'disconnected';
+                log('WebSocket connection closed');
+                ws = null;
+            };
+            
+            ws.onerror = (error) => {
+                statusEl.textContent = 'Connection error';
+                statusEl.className = 'disconnected';
+                log(`WebSocket error: ${error}`);
+            };
+        }
+        
+        function startStreaming() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected to WebSocket');
+                return;
+            }
+            
+            const message = {
+                type: 'start-streaming',
+                sessionId: 'test-session-' + Date.now()
+            };
+            
+            ws.send(JSON.stringify(message));
+            log(`Sent: ${message.type} for session ${message.sessionId}`);
+        }
+        
+        function stopStreaming() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected to WebSocket');
+                return;
+            }
+            
+            const message = {
+                type: 'stop-streaming',
+                sessionId: 'test-session'
+            };
+            
+            ws.send(JSON.stringify(message));
+            log(`Sent: ${message.type}`);
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        // Auto-connect on page load
+        window.onload = () => {
+            log('Page loaded. Click Connect to start.');
+        };
+    </script>
+</body>
+</html>

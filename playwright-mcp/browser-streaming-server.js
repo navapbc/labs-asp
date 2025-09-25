@@ -1,8 +1,41 @@
 #!/usr/bin/env node
 
-// Standalone browser streaming server for client container
+/**
+ * Standalone browser streaming server for Docker container
+ * 
+ * This service provides real-time browser frame streaming via WebSockets using Chrome DevTools Protocol (CDP).
+ * It connects to Playwright-managed Chrome instances and streams screencast frames to connected clients.
+ * 
+ * The service supports:
+ * - Real-time browser frame streaming
+ * - User input handling (mouse, keyboard, scroll)
+ * - Control mode switching (agent vs user control)
+ * - WebRTC signaling (for future implementation)
+ */
 const { WebSocketServer } = require('ws');
 const { EventEmitter } = require('events');
+
+/**
+ * @typedef {Object} BrowserFrame
+ * @property {'frame'} type - Message type identifier
+ * @property {string} data - Base64 encoded image data (JPEG format)
+ * @property {number} timestamp - Frame timestamp in milliseconds
+ * @property {string} sessionId - Session identifier
+ */
+
+/**
+ * @typedef {Object} BrowserStreamingMessage
+ * @property {'offer'|'answer'|'ice-candidate'|'start-streaming'|'stop-streaming'|'control-mode'|'user-input'} type - Message type
+ * @property {*} [data] - Optional message data (structure varies by message type)
+ * @property {string} [sessionId] - Optional session identifier
+ * 
+ * Message type details:
+ * - 'start-streaming': Begin browser frame capture for a session
+ * - 'stop-streaming': Stop browser frame capture for a session  
+ * - 'control-mode': Switch between 'agent' and 'user' control modes
+ * - 'user-input': Send user input events (click, mousemove, keydown, keyup, scroll)
+ * - 'offer'/'answer'/'ice-candidate': WebRTC signaling (future feature)
+ */
 
 class BrowserStreamingService extends EventEmitter {
   constructor(port, cdpPort = 9222) {
@@ -46,6 +79,11 @@ class BrowserStreamingService extends EventEmitter {
     console.log(`Browser streaming service started on port ${this.port}`);
   }
 
+  /**
+   * Handle incoming WebSocket messages
+   * @param {WebSocket} ws - WebSocket connection
+   * @param {BrowserStreamingMessage} message - Parsed message from client
+   */
   async handleMessage(ws, message) {
     switch (message.type) {
       case 'start-streaming':
@@ -123,6 +161,7 @@ class BrowserStreamingService extends EventEmitter {
       // Handle screencast frames with better error handling
       Page.screencastFrame((params) => {
         try {
+          /** @type {BrowserFrame} */
           const frame = {
             type: 'frame',
             data: params.data, // Base64 encoded JPEG
