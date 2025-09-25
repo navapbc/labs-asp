@@ -1,57 +1,68 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import { EventEmitter } from 'events';
+#!/usr/bin/env node
 
-interface BrowserFrame {
-  type: 'frame';
-  data: string; // Base64 encoded image
-  timestamp: number;
-  sessionId: string;
-}
+/**
+ * Standalone browser streaming server for Docker container
+ * 
+ * This service provides real-time browser frame streaming via WebSockets using Chrome DevTools Protocol (CDP).
+ * It connects to Playwright-managed Chrome instances and streams screencast frames to connected clients.
+ * 
+ * The service supports:
+ * - Real-time browser frame streaming
+ * - User input handling (mouse, keyboard, scroll)
+ * - Control mode switching (agent vs user control)
+ * - WebRTC signaling (for future implementation)
+ */
+const { WebSocketServer } = require('ws');
+const { EventEmitter } = require('events');
 
-interface BrowserStreamingMessage {
-  type: 'offer' | 'answer' | 'ice-candidate' | 'start-streaming' | 'stop-streaming' | 'control-mode' | 'user-input';
-  data?: any;
-  sessionId?: string;
-}
+/**
+ * @typedef {Object} BrowserFrame
+ * @property {'frame'} type - Message type identifier
+ * @property {string} data - Base64 encoded image data (JPEG format)
+ * @property {number} timestamp - Frame timestamp in milliseconds
+ * @property {string} sessionId - Session identifier
+ */
 
-export class BrowserStreamingService extends EventEmitter {
-  private wss: WebSocketServer;
-  private port: number;
-  private activeSessions = new Map<string, {
-    ws: WebSocket;
-    client: any; // CDP client
-    cdpEndpoint: string;
-    controlMode: 'agent' | 'user';
-  }>();
-  private cdpPort: number;
+/**
+ * @typedef {Object} BrowserStreamingMessage
+ * @property {'offer'|'answer'|'ice-candidate'|'start-streaming'|'stop-streaming'|'control-mode'|'user-input'} type - Message type
+ * @property {*} [data] - Optional message data (structure varies by message type)
+ * @property {string} [sessionId] - Optional session identifier
+ * 
+ * Message type details:
+ * - 'start-streaming': Begin browser frame capture for a session
+ * - 'stop-streaming': Stop browser frame capture for a session  
+ * - 'control-mode': Switch between 'agent' and 'user' control modes
+ * - 'user-input': Send user input events (click, mousemove, keydown, keyup, scroll)
+ * - 'offer'/'answer'/'ice-candidate': WebRTC signaling (future feature)
+ */
 
-  constructor(port: number, cdpPort: number = 9222) {
+class BrowserStreamingService extends EventEmitter {
+  constructor(port, cdpPort = 9222) {
     super();
     this.port = port;
     this.cdpPort = cdpPort; // Chrome DevTools Protocol port (fallback)
     this.wss = new WebSocketServer({ port });
+    this.activeSessions = new Map(); // Map<sessionId, {ws, client, cdpEndpoint, controlMode}>
   }
 
-
-
   async start() {
-    this.wss.on('connection', (ws: WebSocket, request: any) => {
+    this.wss.on('connection', (ws) => {
       console.log('Browser streaming client connected');
       
       ws.on('message', async (message) => {
         try {
-          const data: BrowserStreamingMessage = JSON.parse(message.toString());
+          const data = JSON.parse(message.toString());
           await this.handleMessage(ws, data);
         } catch (error) {
           console.error('Error handling browser streaming message:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          ws.send(JSON.stringify({ type: 'error', error: errorMessage }));
+          ws.send(JSON.stringify({ type: 'error', error: error.message }));
         }
       });
 
       ws.on('close', () => {
         console.log('Browser streaming client disconnected');
-        // Clean up any active sessions for this client
+        // Clean up sessions for this client
         for (const [sessionId, session] of this.activeSessions) {
           if (session.ws === ws) {
             this.stopBrowserCapture(sessionId);
@@ -60,7 +71,7 @@ export class BrowserStreamingService extends EventEmitter {
         }
       });
 
-      ws.on('error', (error: any) => {
+      ws.on('error', (error) => {
         console.error('Browser streaming WebSocket error:', error);
       });
     });
@@ -68,19 +79,12 @@ export class BrowserStreamingService extends EventEmitter {
     console.log(`Browser streaming service started on port ${this.port}`);
   }
 
-  async stop() {
-    // Stop all active sessions
-    for (const sessionId of this.activeSessions.keys()) {
-      await this.stopBrowserCapture(sessionId);
-    }
-    this.activeSessions.clear();
-
-    // Close WebSocket server
-    this.wss.close();
-    console.log('Browser streaming service stopped');
-  }
-
-  private async handleMessage(ws: WebSocket, message: BrowserStreamingMessage) {
+  /**
+   * Handle incoming WebSocket messages
+   * @param {WebSocket} ws - WebSocket connection
+   * @param {BrowserStreamingMessage} message - Parsed message from client
+   */
+  async handleMessage(ws, message) {
     switch (message.type) {
       case 'start-streaming':
         await this.startBrowserCapture(ws, message.sessionId || 'default');
@@ -110,7 +114,7 @@ export class BrowserStreamingService extends EventEmitter {
     }
   }
 
-  private async startBrowserCapture(ws: WebSocket, sessionId: string) {
+  async startBrowserCapture(ws, sessionId) {
     try {
       // Connect to the Playwright MCP server's CDP endpoint with retry logic
       let cdpEndpoint = null;
@@ -155,9 +159,10 @@ export class BrowserStreamingService extends EventEmitter {
       });
 
       // Handle screencast frames with better error handling
-      Page.screencastFrame((params: any) => {
+      Page.screencastFrame((params) => {
         try {
-          const frame: BrowserFrame = {
+          /** @type {BrowserFrame} */
+          const frame = {
             type: 'frame',
             data: params.data, // Base64 encoded JPEG
             timestamp: Date.now(),
@@ -165,9 +170,9 @@ export class BrowserStreamingService extends EventEmitter {
           };
 
           // Send frame to WebSocket client with connection check
-          if (ws.readyState === WebSocket.OPEN) {
+          if (ws.readyState === 1) { // WebSocket.OPEN
             ws.send(JSON.stringify(frame));
-          } else if (ws.readyState === WebSocket.CLOSED) {
+          } else if (ws.readyState === 3) { // WebSocket.CLOSED
             console.log(`WebSocket closed for session ${sessionId}, stopping capture`);
             this.stopBrowserCapture(sessionId);
             return;
@@ -208,7 +213,7 @@ export class BrowserStreamingService extends EventEmitter {
     }
   }
 
-  private async stopBrowserCapture(sessionId: string) {
+  async stopBrowserCapture(sessionId) {
     const session = this.activeSessions.get(sessionId);
     if (!session) {
       console.warn(`No active session found for: ${sessionId}`);
@@ -226,7 +231,7 @@ export class BrowserStreamingService extends EventEmitter {
       this.activeSessions.delete(sessionId);
       
       // Notify client that streaming stopped
-      if (session.ws.readyState === WebSocket.OPEN) {
+      if (session.ws.readyState === 1) { // WebSocket.OPEN
         session.ws.send(JSON.stringify({
           type: 'streaming-stopped',
           sessionId
@@ -240,7 +245,7 @@ export class BrowserStreamingService extends EventEmitter {
     }
   }
 
-  private async handleChangeControlMode(ws: WebSocket, sessionId: string, newMode: 'agent' | 'user') {
+  async handleChangeControlMode(ws, sessionId, newMode) {
     const session = this.activeSessions.get(sessionId);
     if (!session) {
       console.warn(`No active session found for control mode change: ${sessionId}`);
@@ -252,7 +257,7 @@ export class BrowserStreamingService extends EventEmitter {
       console.log(`Control mode for session ${sessionId} changed to: ${newMode}`);
 
       // Notify the client of the change
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws.readyState === 1) { // WebSocket.OPEN
         ws.send(JSON.stringify({
           type: 'control-mode-changed',
           sessionId,
@@ -264,7 +269,7 @@ export class BrowserStreamingService extends EventEmitter {
     }
   }
 
-  private async handleUserInput(ws: WebSocket, sessionId: string, inputData: any) {
+  async handleUserInput(ws, sessionId, inputData) {
     const session = this.activeSessions.get(sessionId);
     if (!session || session.controlMode !== 'user') {
       // Ignore user input if not in user control mode
@@ -333,13 +338,13 @@ export class BrowserStreamingService extends EventEmitter {
       }
     } catch (error) {
       console.error('Error handling user input:', error);
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws.readyState === 1) { // WebSocket.OPEN
         ws.send(JSON.stringify({ type: 'error', error: 'Failed to process user input' }));
       }
     }
   }
 
-  private async findChromePort(): Promise<number | null> {
+  async findChromePort() {
     try {
       // Use ps to find Playwright Chromium process with remote-debugging-port
       const { execSync } = require('child_process');
@@ -357,12 +362,12 @@ export class BrowserStreamingService extends EventEmitter {
       
       return null;
     } catch (error) {
-      console.log('Could not detect Playwright Chrome port:', (error as Error).message);
+      console.log('Could not detect Playwright Chrome port:', error.message);
       return null;
     }
   }
 
-  private async getCDPEndpoint(): Promise<string | null> {
+  async getCDPEndpoint() {
     try {
       // First try to find the actual Chrome port used by Playwright MCP
       const detectedPort = await this.findChromePort();
@@ -382,10 +387,10 @@ export class BrowserStreamingService extends EventEmitter {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const targets = await CDP.List({ port: portToTry });
-      console.log('Available CDP targets:', targets.map((t: any) => ({ type: t.type, url: t.url, title: t.title })));
+      console.log('Available CDP targets:', targets.map(t => ({ type: t.type, url: t.url, title: t.title })));
       
       // Find the first page target
-      const pageTarget = targets.find((target: any) => target.type === 'page');
+      const pageTarget = targets.find(target => target.type === 'page');
       
       if (pageTarget) {
         console.log('Found page target:', pageTarget.webSocketDebuggerUrl);
@@ -393,25 +398,48 @@ export class BrowserStreamingService extends EventEmitter {
         return pageTarget.webSocketDebuggerUrl;
       }
       
-      console.warn('No page target found, available targets:', targets.map((t: any) => t.type));
+      console.warn('No page target found, available targets:', targets.map(t => t.type));
       return null;
       
     } catch (error) {
-      console.log('Error connecting to CDP (this is normal if browser not ready yet):', (error as Error).message);
+      console.log('Error connecting to CDP (this is normal if browser not ready yet):', error.message);
       return null;
     }
   }
 
-  private async handleWebRTCSignaling(ws: WebSocket, message: BrowserStreamingMessage) {
+  async handleWebRTCSignaling(ws, message) {
     // TODO: Implement WebRTC signaling for even lower latency
     // This would replace the CDP screencast approach with true WebRTC streaming
     console.log('WebRTC signaling not yet implemented:', message.type);
   }
+
+  async stop() {
+    // Stop all active sessions
+    for (const sessionId of this.activeSessions.keys()) {
+      await this.stopBrowserCapture(sessionId);
+    }
+    this.activeSessions.clear();
+
+    // Close WebSocket server
+    this.wss.close();
+    console.log('Browser streaming service stopped');
+  }
 }
 
-export function createBrowserStreamingService(port: number, cdpPort?: number): BrowserStreamingService {
+function createBrowserStreamingService(port, cdpPort) {
   const streamingPort = port || parseInt(process.env.BROWSER_STREAMING_PORT || '8933');
   const chromePort = cdpPort || parseInt(process.env.CHROME_CDP_PORT || '9222');
   
   return new BrowserStreamingService(streamingPort, chromePort);
 }
+
+// Start the service
+const port = process.env.BROWSER_STREAMING_PORT || 8933;
+const cdpPort = process.env.CHROME_CDP_PORT || 9222;
+const service = createBrowserStreamingService(port, cdpPort);
+
+service.start().catch(console.error);
+
+// Handle shutdown
+process.on('SIGTERM', () => service.stop().then(() => process.exit(0)));
+process.on('SIGINT', () => service.stop().then(() => process.exit(0)));

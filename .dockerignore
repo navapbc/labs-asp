@@ -1,0 +1,47 @@
+# Node modules (will be installed in container)
+node_modules/
+
+# Build artifacts (will be built in container)
+dist/
+build/
+
+# Development files
+.git/
+.github/
+*.md
+.env.local
+.env.development
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Test files
+__tests__/
+*.test.*
+*.spec.*
+
+# Coverage reports
+coverage/
+
+# Artifacts directory (will be mounted as volume)
+artifacts/
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore

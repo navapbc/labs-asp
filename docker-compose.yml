@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Playwright MCP Server
+  playwright-mcp:
+    build:
+      context: ./playwright-mcp
+      dockerfile: Dockerfile
+    ports:
+      - "8931:8931"   # Playwright MCP server
+      - "8933:8933"   # Browser streaming WebSocket port
+    restart: unless-stopped
+    networks:
+      - mastra-network
+
+
+  # Main Mastra Application
+  mastra-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4111:4112"   # Mastra dev server (external:internal)  
+    environment:
+      - PLAYWRIGHT_MCP_URL=http://playwright-mcp:8931/mcp
+      - BROWSER_STREAMING_URL=ws://browser-streaming:8933
+      - NODE_ENV=production
+    env_file:
+      - .env
+    volumes:
+      # Mount Google credentials if using local file
+      - ./vertex-ai-credentials.json:/app/vertex-ai-credentials.json:ro
+      
+      # Mount artifacts directory for local development
+      - ./artifacts:/app/artifacts
+    depends_on:
+      - playwright-mcp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4111/health", "||", "curl", "-f", "http://localhost:4111"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - mastra-network
+
+networks:
+  mastra-network:
+    driver: bridge
