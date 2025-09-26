@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Playwright MCP Server
   playwright-mcp:
@@ -37,6 +35,45 @@ services:
       - playwright-mcp
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4111/health", "||", "curl", "-f", "http://localhost:4111"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - mastra-network
+
+  # AI Chatbot Next.js Application
+  ai-chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai-chatbot
+      args:
+        PLAYWRIGHT_MCP_URL: http://host.docker.internal:8931/mcp
+        BROWSER_STREAMING_URL: ws://host.docker.internal:8933
+    ports:
+      - "3000:3000"   # Next.js application
+    environment:
+      - PLAYWRIGHT_MCP_URL=http://playwright-mcp:8931/mcp
+      - BROWSER_STREAMING_URL=ws://playwright-mcp:8933
+      - NODE_ENV=production
+      - NEXTAUTH_URL=http://localhost:3000
+    env_file:
+      - client/.env.local
+    volumes:
+      # Mount Google credentials if using local file
+      - ./vertex-ai-credentials.json:/app/vertex-ai-credentials.json:ro
+      
+      # Mount artifacts directory for local development
+      - ./artifacts:/app/artifacts
+      
+      # Mount client vertex ai credentials
+      - ./client/vertex-ai-credentials.json:/app/client/vertex-ai-credentials.json:ro
+    depends_on:
+      - playwright-mcp
+      - mastra-app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health", "||", "curl", "-f", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
