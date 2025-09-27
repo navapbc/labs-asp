@@ -9,6 +9,7 @@ node /app/browser-streaming-server.js &
 # Start Playwright MCP server in foreground
 exec /usr/local/lib/node_modules/@playwright/mcp/cli.js \
      --port 8931 \
+     --host 0.0.0.0 \
      --isolated \
      --browser chromium \
      --no-sandbox \
