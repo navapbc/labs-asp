@@ -75,3 +75,12 @@ resource "google_service_account_iam_member" "github_actions_workload_identity" 
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/navapbc/labs-asp"
 }
+
+# Allow GitHub Actions service account to act as Cloud Run service accounts
+resource "google_service_account_iam_member" "github_actions_act_as_cloud_run" {
+  for_each = toset(["dev", "preview", "prod"])
+
+  service_account_id = "projects/${local.project_id}/serviceAccounts/cloud-run-${each.key}@${local.project_id}.iam.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.github_actions.email}"
+}
