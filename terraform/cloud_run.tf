@@ -184,28 +184,12 @@ resource "google_cloud_run_v2_service" "mastra_app" {
         container_port = 4112
       }
 
-      # Health checks
-      startup_probe {
-        http_get {
-          path = "/health"
-          port = 4112
-        }
-        initial_delay_seconds = 30
-        timeout_seconds       = 10
-        period_seconds        = 10
-        failure_threshold     = 5
+      # Volume mount for Cloud SQL proxy
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
       }
 
-      liveness_probe {
-        http_get {
-          path = "/health"
-          port = 4112
-        }
-        initial_delay_seconds = 60
-        timeout_seconds       = 5
-        period_seconds        = 30
-        failure_threshold     = 3
-      }
     }
 
     # Scaling configuration
@@ -216,6 +200,14 @@ resource "google_cloud_run_v2_service" "mastra_app" {
 
     # Extended timeout for web automation tasks
     timeout = "${var.mastra_timeout}s"
+
+    # Cloud SQL connection for database access
+    volumes {
+      name = "cloudsql"
+      cloud_sql_instance {
+        instances = ["nava-labs:us-central1:app-${var.environment}"]
+      }
+    }
   }
 
   # Traffic configuration
@@ -435,28 +427,12 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         container_port = 3000
       }
 
-      # Health checks
-      startup_probe {
-        http_get {
-          path = "/health"
-          port = 3000
-        }
-        initial_delay_seconds = 15
-        timeout_seconds       = 5
-        period_seconds        = 10
-        failure_threshold     = 3
+      # Volume mount for Cloud SQL proxy
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
       }
 
-      liveness_probe {
-        http_get {
-          path = "/health"
-          port = 3000
-        }
-        initial_delay_seconds = 30
-        timeout_seconds       = 5
-        period_seconds        = 30
-        failure_threshold     = 3
-      }
     }
 
     # Scaling configuration
@@ -467,6 +443,14 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
     # Standard timeout for web requests
     timeout = "${var.chatbot_timeout}s"
+
+    # Cloud SQL connection for database access
+    volumes {
+      name = "cloudsql"
+      cloud_sql_instance {
+        instances = ["nava-labs:us-central1:app-${var.environment}"]
+      }
+    }
   }
 
   # Traffic configuration
