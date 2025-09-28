@@ -1,0 +1,31 @@
+# GCP Project Configuration
+project_id = "nava-labs"
+region     = "us-central1"
+zone       = "us-central1-a"
+
+# Domain Configuration
+domain_name = "labs-asp.com"
+
+# Environment Selection (dev, preview, prod)
+environment = "dev"
+
+# Browser VM Configuration
+browser_vm_machine_type = "e2-standard-2"  # 2 vCPUs, 8GB RAM
+browser_vm_disk_size    = 20                # GB
+browser_image_url       = "us-central1-docker.pkg.dev/nava-labs/labs-asp/browser-streaming:latest"
+
+# Mastra Service Configuration (AI Agent Backend)
+mastra_image_url     = "us-central1-docker.pkg.dev/nava-labs/labs-asp/mastra-app:latest"
+mastra_cpu           = "2"      # vCPUs
+mastra_memory        = "4Gi"    # RAM
+mastra_min_instances = 0        # Scale to zero
+mastra_max_instances = 10       # Max scale
+mastra_timeout       = 300      # 5 minutes for automation tasks
+
+# AI Chatbot Service Configuration (Next.js Frontend)
+chatbot_image_url     = "us-central1-docker.pkg.dev/nava-labs/labs-asp/ai-chatbot:latest"
+chatbot_cpu           = "1"     # vCPUs
+chatbot_memory        = "2Gi"   # RAM
+chatbot_min_instances = 0       # Scale to zero
+chatbot_max_instances = 5       # Max scale
+chatbot_timeout       = 60      # 1 minute for web requests
