@@ -3,6 +3,7 @@ import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
 import { serverMiddleware } from './middleware';
+import { chatRoute } from '@mastra/ai-sdk';
 
 export const mastra = new Mastra({
   agents: { 
@@ -38,7 +39,12 @@ export const mastra = new Mastra({
       swaggerUI: true,     // Enable Swagger UI in production
       openAPIDocs: true,   // Enable OpenAPI docs in production
     },
-
+    apiRoutes: [
+      chatRoute({
+        path: '/chat',
+        agent: 'webAutomationAgent',
+      }),
+    ],
     middleware: serverMiddleware,
   },
 });

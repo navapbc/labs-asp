@@ -1,6 +1,6 @@
 services:
-  # Playwright MCP Server
-  playwright-mcp:
+  # Browser Streaming Service (includes Playwright MCP)
+  browser-streaming:
     build:
       context: ./playwright-mcp
       dockerfile: Dockerfile
@@ -20,7 +20,7 @@ services:
     ports:
       - "4111:4112"   # Mastra dev server (external:internal)  
     environment:
-      - PLAYWRIGHT_MCP_URL=http://playwright-mcp:8931/mcp
+      - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
       - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
     env_file:
@@ -32,7 +32,7 @@ services:
       # Mount artifacts directory for local development
       - ./artifacts:/app/artifacts
     depends_on:
-      - playwright-mcp
+      - browser-streaming
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4111/health", "||", "curl", "-f", "http://localhost:4111"]
       interval: 30s
@@ -54,10 +54,11 @@ services:
     ports:
       - "3000:3000"   # Next.js application
     environment:
-      - PLAYWRIGHT_MCP_URL=http://playwright-mcp:8931/mcp
-      - BROWSER_STREAMING_URL=ws://playwright-mcp:8933
+      - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
+      - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
       - NEXTAUTH_URL=http://localhost:3000
+      - NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
     env_file:
       - client/.env.local
     volumes:
@@ -70,7 +71,7 @@ services:
       # Mount client vertex ai credentials
       - ./client/vertex-ai-credentials.json:/app/client/vertex-ai-credentials.json:ro
     depends_on:
-      - playwright-mcp
+      - browser-streaming
       - mastra-app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health", "||", "curl", "-f", "http://localhost:3000"]
