@@ -1,4 +1,4 @@
 [submodule "client"]
 	path = client
 	url = https://github.com/navapbc/ai-chatbot.git
-	branch = labs-asp
+	branch = feat/client-server-integration
