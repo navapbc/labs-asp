@@ -33,9 +33,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Update submodules to latest remote commits
-        run: git submodule update --remote --recursive
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -131,9 +128,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Update submodules to latest remote commits
-        run: git submodule update --remote --recursive
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
