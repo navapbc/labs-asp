@@ -28,80 +28,80 @@ jobs:
       environment: ${{ steps.env.outputs.environment }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
-        workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-    - name: Configure Docker for Artifact Registry
-      run: gcloud auth configure-docker us-central1-docker.pkg.dev
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
-    - name: Determine environment
-      id: env
-      run: |
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          ENVIRONMENT="preview"
-        elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          ENVIRONMENT="prod"
-        elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-          ENVIRONMENT="dev"
-        else
-          ENVIRONMENT="preview"
-        fi
-        echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ENVIRONMENT="preview"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            ENVIRONMENT="prod"
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            ENVIRONMENT="dev"
+          else
+            ENVIRONMENT="preview"
+          fi
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
 
-    - name: Set image tags
-      id: images
-      run: |
-        TAG=${GITHUB_SHA:0:7}
-        echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:${TAG}" >> $GITHUB_OUTPUT
-        echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
-        echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
+      - name: Set image tags
+        id: images
+        run: |
+          TAG=${GITHUB_SHA:0:7}
+          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:${TAG}" >> $GITHUB_OUTPUT
+          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
+          echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
 
-    - name: Build and push browser-streaming image
-      run: |
-        docker build \
-          -f playwright-mcp/Dockerfile \
-          -t ${{ steps.images.outputs.browser_image }} \
-          ./playwright-mcp
-        docker push ${{ steps.images.outputs.browser_image }}
+      - name: Build and push browser-streaming image
+        run: |
+          docker build \
+            -f playwright-mcp/Dockerfile \
+            -t ${{ steps.images.outputs.browser_image }} \
+            ./playwright-mcp
+          docker push ${{ steps.images.outputs.browser_image }}
 
-        # Also tag as latest for Terraform
-        docker tag ${{ steps.images.outputs.browser_image }} ${ARTIFACT_REGISTRY}/browser-streaming:latest
-        docker push ${ARTIFACT_REGISTRY}/browser-streaming:latest
+          # Also tag as latest for Terraform
+          docker tag ${{ steps.images.outputs.browser_image }} ${ARTIFACT_REGISTRY}/browser-streaming:latest
+          docker push ${ARTIFACT_REGISTRY}/browser-streaming:latest
 
-    - name: Build and push mastra-app image
-      run: |
-        docker build \
-          --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
-          -f Dockerfile \
-          -t ${{ steps.images.outputs.mastra_image }} \
-          .
-        docker push ${{ steps.images.outputs.mastra_image }}
+      - name: Build and push mastra-app image
+        run: |
+          docker build \
+            --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
+            -f Dockerfile \
+            -t ${{ steps.images.outputs.mastra_image }} \
+            .
+          docker push ${{ steps.images.outputs.mastra_image }}
 
-        # Also tag as latest for Terraform
-        docker tag ${{ steps.images.outputs.mastra_image }} ${ARTIFACT_REGISTRY}/mastra-app:latest
-        docker push ${ARTIFACT_REGISTRY}/mastra-app:latest
+          # Also tag as latest for Terraform
+          docker tag ${{ steps.images.outputs.mastra_image }} ${ARTIFACT_REGISTRY}/mastra-app:latest
+          docker push ${ARTIFACT_REGISTRY}/mastra-app:latest
 
-    - name: Build and push ai-chatbot image
-      run: |
-        docker build \
-          --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
-          -f Dockerfile.ai-chatbot \
-          -t ${{ steps.images.outputs.chatbot_image }} \
-          .
-        docker push ${{ steps.images.outputs.chatbot_image }}
+      - name: Build and push ai-chatbot image
+        run: |
+          docker build \
+            --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
+            -f Dockerfile.ai-chatbot \
+            -t ${{ steps.images.outputs.chatbot_image }} \
+            .
+          docker push ${{ steps.images.outputs.chatbot_image }}
 
-        # Also tag as latest for Terraform
-        docker tag ${{ steps.images.outputs.chatbot_image }} ${ARTIFACT_REGISTRY}/ai-chatbot:latest
-        docker push ${ARTIFACT_REGISTRY}/ai-chatbot:latest
+          # Also tag as latest for Terraform
+          docker tag ${{ steps.images.outputs.chatbot_image }} ${ARTIFACT_REGISTRY}/ai-chatbot:latest
+          docker push ${ARTIFACT_REGISTRY}/ai-chatbot:latest
 
   # Deploy job for Cloud Run services
   deploy:
@@ -114,189 +114,189 @@ jobs:
       pull-requests: write
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
-        workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-    - name: Determine service names
-      id: services
-      run: |
-        ENV=${{ needs.build.outputs.environment }}
+      - name: Determine service names
+        id: services
+        run: |
+          ENV=${{ needs.build.outputs.environment }}
 
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          MASTRA_SERVICE="pr-${{ github.event.number }}-mastra-app"
-          CHATBOT_SERVICE="pr-${{ github.event.number }}-ai-chatbot"
-        else
-          MASTRA_SERVICE="mastra-app-${ENV}"
-          CHATBOT_SERVICE="ai-chatbot-${ENV}"
-        fi
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            MASTRA_SERVICE="pr-${{ github.event.number }}-mastra-app"
+            CHATBOT_SERVICE="pr-${{ github.event.number }}-ai-chatbot"
+          else
+            MASTRA_SERVICE="mastra-app-${ENV}"
+            CHATBOT_SERVICE="ai-chatbot-${ENV}"
+          fi
 
-        echo "mastra_service=${MASTRA_SERVICE}" >> $GITHUB_OUTPUT
-        echo "chatbot_service=${CHATBOT_SERVICE}" >> $GITHUB_OUTPUT
+          echo "mastra_service=${MASTRA_SERVICE}" >> $GITHUB_OUTPUT
+          echo "chatbot_service=${CHATBOT_SERVICE}" >> $GITHUB_OUTPUT
 
-        # Database secret based on environment
-        if [[ "${ENV}" == "prod" ]]; then
-          echo "database_secret=database-url-production" >> $GITHUB_OUTPUT
-        else
-          echo "database_secret=database-url-${ENV}" >> $GITHUB_OUTPUT
-        fi
+          # Database secret based on environment
+          if [[ "${ENV}" == "prod" ]]; then
+            echo "database_secret=database-url-production" >> $GITHUB_OUTPUT
+          else
+            echo "database_secret=database-url-${ENV}" >> $GITHUB_OUTPUT
+          fi
 
-    - name: Get browser VM internal IP
-      id: browser
-      run: |
-        # Get internal IP of browser VM for this environment
-        VM_NAME="browser-streaming-${{ needs.build.outputs.environment }}"
-        INTERNAL_IP=$(gcloud compute instances describe ${VM_NAME} \
-          --zone=us-central1-a \
-          --format='value(networkInterfaces[0].networkIP)' || echo "10.138.0.25")
-        echo "internal_ip=${INTERNAL_IP}" >> $GITHUB_OUTPUT
+      - name: Get browser VM internal IP
+        id: browser
+        run: |
+          # Get internal IP of browser VM for this environment
+          VM_NAME="browser-streaming-${{ needs.build.outputs.environment }}"
+          INTERNAL_IP=$(gcloud compute instances describe ${VM_NAME} \
+            --zone=us-central1-a \
+            --format='value(networkInterfaces[0].networkIP)' || echo "10.138.0.25")
+          echo "internal_ip=${INTERNAL_IP}" >> $GITHUB_OUTPUT
 
-    - name: Deploy Mastra Service
-      run: |
-        gcloud run deploy ${{ steps.services.outputs.mastra_service }} \
-          --image=${{ needs.build.outputs.mastra_image }} \
-          --platform=managed \
-          --region=${{ env.REGION }} \
-          --service-account=cloud-run-${{ needs.build.outputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-          --allow-unauthenticated \
-          --cpu=2 \
-          --memory=4Gi \
-          --timeout=300 \
-          --max-instances=10 \
-          --min-instances=0 \
-          --port=4112 \
-          --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
-          --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
-          --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
-          --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}" \
-          --set-env-vars="GOOGLE_VERTEX_PROJECT=${{ env.PROJECT_ID }}" \
-          --set-env-vars="GOOGLE_VERTEX_LOCATION=us-east5" \
-          --set-env-vars="PLAYWRIGHT_MCP_URL=http://${{ steps.browser.outputs.internal_ip }}:8931/mcp" \
-          --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
-          --set-env-vars="CORS_ORIGINS=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || '*' }}" \
-          --set-secrets="DATABASE_URL=${{ steps.services.outputs.database_secret }}:latest" \
-          --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
-          --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
-          --set-secrets="EXA_API_KEY=exa-api-key:latest" \
-          --set-secrets="GOOGLE_GENERATIVE_AI_API_KEY=google-generative-ai-key:latest" \
-          --set-secrets="GROK_API_KEY=grok-api-key:latest" \
-          --set-secrets="XAI_API_KEY=xai-api-key:latest" \
-          --set-secrets="MASTRA_JWT_SECRET=mastra-jwt-secret:latest" \
-          --set-secrets="MASTRA_APP_PASSWORD=mastra-app-password:latest" \
-          --set-secrets="MASTRA_JWT_TOKEN=mastra-jwt-token:latest" \
-          --set-secrets="GOOGLE_VERTEX_CREDENTIALS=vertex-ai-credentials:latest"
+      - name: Deploy Mastra Service
+        run: |
+          gcloud run deploy ${{ steps.services.outputs.mastra_service }} \
+            --image=${{ needs.build.outputs.mastra_image }} \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --service-account=cloud-run-${{ needs.build.outputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --allow-unauthenticated \
+            --cpu=2 \
+            --memory=4Gi \
+            --timeout=300 \
+            --max-instances=10 \
+            --min-instances=0 \
+            --port=4112 \
+            --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
+            --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
+            --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}" \
+            --set-env-vars="GOOGLE_VERTEX_PROJECT=${{ env.PROJECT_ID }}" \
+            --set-env-vars="GOOGLE_VERTEX_LOCATION=us-east5" \
+            --set-env-vars="PLAYWRIGHT_MCP_URL=http://${{ steps.browser.outputs.internal_ip }}:8931/mcp" \
+            --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
+            --set-env-vars="CORS_ORIGINS=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || '*' }}" \
+            --set-secrets="DATABASE_URL=${{ steps.services.outputs.database_secret }}:latest" \
+            --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
+            --set-secrets="EXA_API_KEY=exa-api-key:latest" \
+            --set-secrets="GOOGLE_GENERATIVE_AI_API_KEY=google-generative-ai-key:latest" \
+            --set-secrets="GROK_API_KEY=grok-api-key:latest" \
+            --set-secrets="XAI_API_KEY=xai-api-key:latest" \
+            --set-secrets="MASTRA_JWT_SECRET=mastra-jwt-secret:latest" \
+            --set-secrets="MASTRA_APP_PASSWORD=mastra-app-password:latest" \
+            --set-secrets="MASTRA_JWT_TOKEN=mastra-jwt-token:latest" \
+            --set-secrets="GOOGLE_VERTEX_CREDENTIALS=vertex-ai-credentials:latest"
 
-    - name: Get Mastra service URL
-      id: mastra_url
-      run: |
-        URL=$(gcloud run services describe ${{ steps.services.outputs.mastra_service }} \
-          --platform=managed \
-          --region=${{ env.REGION }} \
-          --format='value(status.url)')
-        echo "service_url=${URL}" >> $GITHUB_OUTPUT
+      - name: Get Mastra service URL
+        id: mastra_url
+        run: |
+          URL=$(gcloud run services describe ${{ steps.services.outputs.mastra_service }} \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "service_url=${URL}" >> $GITHUB_OUTPUT
 
-    - name: Deploy AI Chatbot Service
-      run: |
-        gcloud run deploy ${{ steps.services.outputs.chatbot_service }} \
-          --image=${{ needs.build.outputs.chatbot_image }} \
-          --platform=managed \
-          --region=${{ env.REGION }} \
-          --service-account=cloud-run-${{ needs.build.outputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-          --allow-unauthenticated \
-          --cpu=1 \
-          --memory=2Gi \
-          --timeout=60 \
-          --max-instances=5 \
-          --min-instances=0 \
-          --port=3000 \
-          --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
-          --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
-          --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
-          --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}" \
-          --set-env-vars="GOOGLE_VERTEX_PROJECT=${{ env.PROJECT_ID }}" \
-          --set-env-vars="GOOGLE_VERTEX_LOCATION=us-east5" \
-          --set-env-vars="GCS_BUCKET_NAME=labs-asp-artifacts-${{ needs.build.outputs.environment }}" \
-          --set-env-vars="NEXT_PUBLIC_MASTRA_SERVER_URL=${{ steps.mastra_url.outputs.service_url }}" \
-          --set-env-vars="PLAYWRIGHT_MCP_URL=http://${{ steps.browser.outputs.internal_ip }}:8931/mcp" \
-          --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
-          --set-env-vars="BROWSER_STREAMING_PORT=8933" \
-          --set-env-vars="BROWSER_STREAMING_HOST=${{ steps.browser.outputs.internal_ip }}" \
-          --set-env-vars="NEXTAUTH_URL=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || format('https://{0}.labs-asp.com', needs.build.outputs.environment) }}" \
-          --set-secrets="POSTGRES_URL=postgres-url:latest" \
-          --set-secrets="DATABASE_URL=${{ steps.services.outputs.database_secret }}:latest" \
-          --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
-          --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
-          --set-secrets="EXA_API_KEY=exa-api-key:latest" \
-          --set-secrets="GOOGLE_GENERATIVE_AI_API_KEY=google-generative-ai-key:latest" \
-          --set-secrets="XAI_API_KEY=xai-api-key:latest" \
-          --set-secrets="AUTH_SECRET=auth-secret:latest" \
-          --set-secrets="MASTRA_JWT_TOKEN=mastra-jwt-token:latest" \
-          --set-secrets="GOOGLE_APPLICATION_CREDENTIALS=vertex-ai-credentials:latest"
+      - name: Deploy AI Chatbot Service
+        run: |
+          gcloud run deploy ${{ steps.services.outputs.chatbot_service }} \
+            --image=${{ needs.build.outputs.chatbot_image }} \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --service-account=cloud-run-${{ needs.build.outputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --allow-unauthenticated \
+            --cpu=1 \
+            --memory=2Gi \
+            --timeout=60 \
+            --max-instances=5 \
+            --min-instances=0 \
+            --port=3000 \
+            --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
+            --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
+            --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}" \
+            --set-env-vars="GOOGLE_VERTEX_PROJECT=${{ env.PROJECT_ID }}" \
+            --set-env-vars="GOOGLE_VERTEX_LOCATION=us-east5" \
+            --set-env-vars="GCS_BUCKET_NAME=labs-asp-artifacts-${{ needs.build.outputs.environment }}" \
+            --set-env-vars="NEXT_PUBLIC_MASTRA_SERVER_URL=${{ steps.mastra_url.outputs.service_url }}" \
+            --set-env-vars="PLAYWRIGHT_MCP_URL=http://${{ steps.browser.outputs.internal_ip }}:8931/mcp" \
+            --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
+            --set-env-vars="BROWSER_STREAMING_PORT=8933" \
+            --set-env-vars="BROWSER_STREAMING_HOST=${{ steps.browser.outputs.internal_ip }}" \
+            --set-env-vars="NEXTAUTH_URL=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || format('https://{0}.labs-asp.com', needs.build.outputs.environment) }}" \
+            --set-secrets="POSTGRES_URL=postgres-url:latest" \
+            --set-secrets="DATABASE_URL=${{ steps.services.outputs.database_secret }}:latest" \
+            --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
+            --set-secrets="EXA_API_KEY=exa-api-key:latest" \
+            --set-secrets="GOOGLE_GENERATIVE_AI_API_KEY=google-generative-ai-key:latest" \
+            --set-secrets="XAI_API_KEY=xai-api-key:latest" \
+            --set-secrets="AUTH_SECRET=auth-secret:latest" \
+            --set-secrets="MASTRA_JWT_TOKEN=mastra-jwt-token:latest" \
+            --set-secrets="GOOGLE_APPLICATION_CREDENTIALS=vertex-ai-credentials:latest"
 
-    - name: Get Chatbot service URL
-      id: chatbot_url
-      run: |
-        URL=$(gcloud run services describe ${{ steps.services.outputs.chatbot_service }} \
-          --platform=managed \
-          --region=${{ env.REGION }} \
-          --format='value(status.url)')
-        echo "service_url=${URL}" >> $GITHUB_OUTPUT
+      - name: Get Chatbot service URL
+        id: chatbot_url
+        run: |
+          URL=$(gcloud run services describe ${{ steps.services.outputs.chatbot_service }} \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "service_url=${URL}" >> $GITHUB_OUTPUT
 
-    - name: Comment on PR
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const mastraUrl = '${{ steps.mastra_url.outputs.service_url }}';
-          const chatbotUrl = '${{ steps.chatbot_url.outputs.service_url }}';
-          const mastraService = '${{ steps.services.outputs.mastra_service }}';
-          const chatbotService = '${{ steps.services.outputs.chatbot_service }}';
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const mastraUrl = '${{ steps.mastra_url.outputs.service_url }}';
+            const chatbotUrl = '${{ steps.chatbot_url.outputs.service_url }}';
+            const mastraService = '${{ steps.services.outputs.mastra_service }}';
+            const chatbotService = '${{ steps.services.outputs.chatbot_service }}';
 
-          const body = `## 🚀 Client-Server Architecture Preview
+            const body = `## 🚀 Client-Server Architecture Preview
 
-          Your changes have been deployed with the new 3-service architecture:
+            Your changes have been deployed with the new 3-service architecture:
 
-          ### 🤖 **AI Chatbot** (Frontend)
-          **Service**: \`${chatbotService}\`
-          **URL**: ${chatbotUrl}
-          - 💬 [Chat Interface](${chatbotUrl})
-          - 🔐 [Login](${chatbotUrl}/auth/login)
+            ### 🤖 **AI Chatbot** (Frontend)
+            **Service**: \`${chatbotService}\`
+            **URL**: ${chatbotUrl}
+            - 💬 [Chat Interface](${chatbotUrl})
+            - 🔐 [Login](${chatbotUrl}/auth/login)
 
-          ### ⚙️ **Mastra Backend** (API)
-          **Service**: \`${mastraService}\`
-          **URL**: ${mastraUrl}
-          - 🤖 [Chat Route](${mastraUrl}/chat) (for web-automation-model)
-          - 📊 [Health Check](${mastraUrl}/health)
+            ### ⚙️ **Mastra Backend** (API)
+            **Service**: \`${mastraService}\`
+            **URL**: ${mastraUrl}
+            - 🤖 [Chat Route](${mastraUrl}/chat) (for web-automation-model)
+            - 📊 [Health Check](${mastraUrl}/health)
 
-          ### 🌐 **Browser Service** (VM)
-          - Running on dedicated VM with Playwright
-          - Internal MCP server for browser automation
-          - WebSocket streaming for real-time browser viewing
+            ### 🌐 **Browser Service** (VM)
+            - Running on dedicated VM with Playwright
+            - Internal MCP server for browser automation
+            - WebSocket streaming for real-time browser viewing
 
-          ### Architecture Flow
-          \`\`\`
-          User → AI Chatbot → Mastra Backend → Browser VM
-                     ↓              ↓
-                Chat Models    Web Automation
-          \`\`\`
+            ### Architecture Flow
+            \`\`\`
+            User → AI Chatbot → Mastra Backend → Browser VM
+                       ↓              ↓
+                  Chat Models    Web Automation
+            \`\`\`
 
-          The preview will be available until this PR is closed or merged.
-          `;
+            The preview will be available until this PR is closed or merged.
+            `;
 
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: body
-          });
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
 
   # Cleanup job for closed PRs
   cleanup:
@@ -308,28 +308,28 @@ jobs:
       id-token: write
 
     steps:
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
-        workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-    - name: Delete preview services
-      run: |
-        MASTRA_SERVICE="pr-${{ github.event.number }}-mastra-app"
-        CHATBOT_SERVICE="pr-${{ github.event.number }}-ai-chatbot"
+      - name: Delete preview services
+        run: |
+          MASTRA_SERVICE="pr-${{ github.event.number }}-mastra-app"
+          CHATBOT_SERVICE="pr-${{ github.event.number }}-ai-chatbot"
 
-        gcloud run services delete ${MASTRA_SERVICE} \
-          --platform=managed \
-          --region=${{ env.REGION }} \
-          --quiet || true
+          gcloud run services delete ${MASTRA_SERVICE} \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --quiet || true
 
-        gcloud run services delete ${CHATBOT_SERVICE} \
-          --platform=managed \
-          --region=${{ env.REGION }} \
-          --quiet || true
+          gcloud run services delete ${CHATBOT_SERVICE} \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --quiet || true
 
-        echo "Cleaned up preview deployments: ${MASTRA_SERVICE}, ${CHATBOT_SERVICE}"
+          echo "Cleaned up preview deployments: ${MASTRA_SERVICE}, ${CHATBOT_SERVICE}"
