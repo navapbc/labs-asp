@@ -196,6 +196,7 @@ jobs:
             --timeout=300 \
             --max-instances=10 \
             --min-instances=0 \
+            --add-cloudsql-instances=nava-labs:us-central1:app-${{ needs.build.outputs.environment }} \
             --port=4112 \
             --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
             --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
@@ -241,6 +242,7 @@ jobs:
             --timeout=60 \
             --max-instances=5 \
             --min-instances=0 \
+            --add-cloudsql-instances=nava-labs:us-central1:app-${{ needs.build.outputs.environment }} \
             --port=3000 \
             --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
             --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
