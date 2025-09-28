@@ -42,6 +42,12 @@ resource "google_project_iam_member" "github_actions_service_account_user" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+resource "google_project_iam_member" "github_actions_compute_viewer" {
+  project = local.project_id
+  role    = "roles/compute.viewer"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 # Workload Identity Pool for GitHub Actions
 resource "google_iam_workload_identity_pool" "github_actions" {
   workload_identity_pool_id = "github-actions-pool"
