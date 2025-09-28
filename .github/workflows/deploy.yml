@@ -92,10 +92,18 @@ jobs:
           docker tag ${{ steps.images.outputs.mastra_image }} ${ARTIFACT_REGISTRY}/mastra-app:latest
           docker push ${ARTIFACT_REGISTRY}/mastra-app:latest
 
+      - name: Get POSTGRES_URL for build
+        id: postgres_url
+        run: |
+          POSTGRES_URL=$(gcloud secrets versions access latest --secret="postgres-url")
+          echo "::add-mask::${POSTGRES_URL}"
+          echo "postgres_url=${POSTGRES_URL}" >> $GITHUB_OUTPUT
+
       - name: Build and push ai-chatbot image
         run: |
           docker build \
             --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
+            --build-arg POSTGRES_URL="${{ steps.postgres_url.outputs.postgres_url }}" \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .
