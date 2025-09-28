@@ -491,6 +491,11 @@ resource "google_service_account" "cloud_run" {
   account_id   = "cloud-run-${var.environment}"
   display_name = "Cloud Run Service Account (${var.environment})"
   description  = "Service account for Cloud Run services in ${var.environment} environment"
+
+  # Force recreation to fix deleted service account issues
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # IAM bindings for Cloud Run service account
@@ -498,28 +503,53 @@ resource "google_project_iam_member" "cloud_run_sql" {
   project = local.project_id
   role    = "roles/cloudsql.client"
   member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
 }
 
 resource "google_project_iam_member" "cloud_run_storage" {
   project = local.project_id
   role    = "roles/storage.objectAdmin"
   member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
 }
 
 resource "google_project_iam_member" "cloud_run_secrets" {
   project = local.project_id
   role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
 }
 
 resource "google_project_iam_member" "cloud_run_logging" {
   project = local.project_id
   role    = "roles/logging.logWriter"
   member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
 }
 
 resource "google_project_iam_member" "cloud_run_monitoring" {
   project = local.project_id
   role    = "roles/monitoring.metricWriter"
   member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
 }
