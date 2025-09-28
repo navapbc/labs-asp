@@ -2,10 +2,20 @@ name: Deploy Client-Server Architecture
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - main        # prod deployment
+      - develop     # dev deployment
   pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch:
+    branches: [ main, develop ]  # preview deployment
+  workflow_dispatch:  # manual dev deployment only
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
 
 env:
   PROJECT_ID: nava-labs
@@ -48,7 +58,9 @@ jobs:
       - name: Determine environment
         id: env
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             ENVIRONMENT="preview"
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             ENVIRONMENT="prod"
