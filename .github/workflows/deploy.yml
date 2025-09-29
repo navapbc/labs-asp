@@ -36,6 +36,7 @@ jobs:
       mastra_image: ${{ steps.images.outputs.mastra_image }}
       chatbot_image: ${{ steps.images.outputs.chatbot_image }}
       environment: ${{ steps.env.outputs.environment }}
+      build_required: ${{ steps.build_flags.outputs.build_required }}
 
     steps:
       - name: Checkout code
@@ -71,6 +72,44 @@ jobs:
           fi
           echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
 
+      - name: Detect project changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            browser:
+              - 'playwright-mcp/**'
+            mastra:
+              - 'Dockerfile'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'src/**'
+              - 'migrations/**'
+              - '.mastra/**'
+            chatbot:
+              - 'Dockerfile.ai-chatbot'
+              - 'client/**'
+
+      - name: Evaluate build requirement
+        id: build_flags
+        run: |
+          should_build=false
+          if [[ "${{ steps.changes.outputs.browser }}" == 'true' ]]; then
+            should_build=true
+          fi
+          if [[ "${{ steps.changes.outputs.mastra }}" == 'true' ]]; then
+            should_build=true
+          fi
+          if [[ "${{ steps.changes.outputs.chatbot }}" == 'true' ]]; then
+            should_build=true
+          fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            should_build=true
+          fi
+
+          echo "Build required: ${should_build}"
+          echo "build_required=${should_build}" >> $GITHUB_OUTPUT
+
       - name: Set image tags
         id: images
         run: |
@@ -80,6 +119,7 @@ jobs:
           echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
 
       - name: Build and push browser-streaming image
+        if: steps.changes.outputs.browser == 'true'
         run: |
           docker build \
             -f playwright-mcp/Dockerfile \
@@ -92,6 +132,7 @@ jobs:
           docker push ${ARTIFACT_REGISTRY}/browser-streaming:latest
 
       - name: Build and push mastra-app image
+        if: steps.changes.outputs.mastra == 'true'
         run: |
           docker build \
             --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
@@ -105,6 +146,7 @@ jobs:
           docker push ${ARTIFACT_REGISTRY}/mastra-app:latest
 
       - name: Get POSTGRES_URL for build
+        if: steps.changes.outputs.chatbot == 'true'
         id: postgres_url
         run: |
           POSTGRES_URL=$(gcloud secrets versions access latest --secret="postgres-url")
@@ -112,6 +154,7 @@ jobs:
           echo "postgres_url=${POSTGRES_URL}" >> $GITHUB_OUTPUT
 
       - name: Build and push ai-chatbot image
+        if: steps.changes.outputs.chatbot == 'true'
         run: |
           docker build \
             --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
@@ -127,6 +170,7 @@ jobs:
 
   # Deploy job for Cloud Run services
   deploy:
+    if: needs.build.outputs.build_required == 'true'
     needs: build
     runs-on: ubuntu-latest
 
