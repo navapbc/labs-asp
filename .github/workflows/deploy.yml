@@ -89,6 +89,8 @@ jobs:
             chatbot:
               - 'Dockerfile.ai-chatbot'
               - 'client/**'
+            terraform:
+              - 'terraform/**'
 
       - name: Evaluate build requirement
         id: build_flags
@@ -101,6 +103,9 @@ jobs:
             should_build=true
           fi
           if [[ "${{ steps.changes.outputs.chatbot }}" == 'true' ]]; then
+            should_build=true
+          fi
+          if [[ "${{ steps.changes.outputs.terraform }}" == 'true' ]]; then
             should_build=true
           fi
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
