@@ -67,8 +67,8 @@ export const serverMiddleware = [
         return;
       }
 
-      // Skip auth for login routes
-      if (url.pathname.startsWith('/auth/')) {
+      // Skip auth for login routes and chat API
+      if (url.pathname.startsWith('/auth/') || url.pathname.startsWith('/chat')) {
         await next();
         return;
       }
