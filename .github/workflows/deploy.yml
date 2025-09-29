@@ -251,6 +251,7 @@ jobs:
             --set-env-vars="GOOGLE_VERTEX_PROJECT=${{ env.PROJECT_ID }}" \
             --set-env-vars="GOOGLE_VERTEX_LOCATION=us-east5" \
             --set-env-vars="MASTRA_PORT=4112" \
+            --set-env-vars="CLOUD_SQL_INSTANCE=nava-labs:us-central1:app-${{ needs.build.outputs.environment }}" \
             --set-env-vars="PLAYWRIGHT_MCP_URL=http://${{ steps.browser.outputs.internal_ip }}:8931/mcp" \
             --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
             --set-env-vars="CORS_ORIGINS=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || '*' }}" \
@@ -302,6 +303,7 @@ jobs:
             --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
             --set-env-vars="BROWSER_STREAMING_PORT=8933" \
             --set-env-vars="BROWSER_STREAMING_HOST=${{ steps.browser.outputs.internal_ip }}" \
+            --set-env-vars="CLOUD_SQL_INSTANCE=nava-labs:us-central1:app-${{ needs.build.outputs.environment }}" \
             --set-env-vars="NEXTAUTH_URL=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || format('https://{0}.labs-asp.com', needs.build.outputs.environment) }}" \
             --set-secrets="POSTGRES_URL=postgres-url:latest" \
             --set-secrets="DATABASE_URL=${{ steps.services.outputs.database_secret }}:latest" \

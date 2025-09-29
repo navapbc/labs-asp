@@ -179,6 +179,11 @@ resource "google_cloud_run_v2_service" "mastra_app" {
         value = local.project_id
       }
 
+      env {
+        name  = "CLOUD_SQL_INSTANCE"
+        value = "nava-labs:us-central1:app-${var.environment}"
+      }
+
       # Port configuration - Mastra server port
       ports {
         container_port = 4112
@@ -420,6 +425,11 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       env {
         name  = "GCP_PROJECT_ID"
         value = local.project_id
+      }
+
+      env {
+        name  = "CLOUD_SQL_INSTANCE"
+        value = "nava-labs:us-central1:app-${var.environment}"
       }
 
       # Port configuration - Next.js port
