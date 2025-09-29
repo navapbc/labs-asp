@@ -51,6 +51,9 @@ services:
       args:
         PLAYWRIGHT_MCP_URL: http://host.docker.internal:8931/mcp
         BROWSER_STREAMING_URL: ws://host.docker.internal:8933
+        NEXT_PUBLIC_MASTRA_SERVER_URL: http://localhost:4111
+    env_file:
+      - client/.env.local
     ports:
       - "3000:3000"   # Next.js application
     environment:
@@ -59,8 +62,7 @@ services:
       - NODE_ENV=production
       - NEXTAUTH_URL=http://localhost:3000
       - NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
-    env_file:
-      - client/.env.local
+      - MASTRA_SERVER_URL=http://mastra-app:4112
     volumes:
       # Mount Google credentials if using local file
       - ./vertex-ai-credentials.json:/app/vertex-ai-credentials.json:ro
