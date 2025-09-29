@@ -227,9 +227,33 @@ jobs:
         run: |
           # Get internal IP of browser VM for this environment
           VM_NAME="browser-streaming-${{ needs.build.outputs.environment }}"
+          echo "Looking for browser VM: ${VM_NAME}"
+
+          # Check if VM exists and get internal IP
           INTERNAL_IP=$(gcloud compute instances describe ${VM_NAME} \
             --zone=us-central1-a \
-            --format='value(networkInterfaces[0].networkIP)' || echo "10.138.0.25")
+            --format='value(networkInterfaces[0].networkIP)' 2>/dev/null)
+
+          if [ -z "$INTERNAL_IP" ]; then
+            echo "ERROR: Browser VM ${VM_NAME} not found"
+            echo "Available browser VMs:"
+            gcloud compute instances list --filter="name~browser-streaming" --format="table(name,status,zone,internalIP)"
+            exit 1
+          fi
+
+          # Check if browser service is ready
+          READY=$(gcloud compute instances describe ${VM_NAME} \
+            --zone=us-central1-a \
+            --format='value(metadata.items[browser-service-ready])' 2>/dev/null)
+
+          if [ "$READY" != "true" ]; then
+            echo "Browser VM ${VM_NAME} exists but service not ready yet (ready=${READY})"
+            echo "VM Status:"
+            gcloud compute instances describe ${VM_NAME} --zone=us-central1-a --format="table(status,metadata.items[browser-service-ready])"
+            exit 1
+          fi
+
+          echo "Browser VM ${VM_NAME} ready at internal IP: ${INTERNAL_IP}"
           echo "internal_ip=${INTERNAL_IP}" >> $GITHUB_OUTPUT
 
       - name: Deploy Mastra Service

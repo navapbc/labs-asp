@@ -76,3 +76,16 @@ log "Setting up log forwarding..."
 docker logs -f browser-streaming &
 
 log "Browser service startup complete!"
+
+# Signal readiness to metadata for GitHub Actions
+log "Setting readiness signal..."
+ZONE=$(curl -H "Metadata-Flavor: Google" -s http://metadata.google.internal/computeMetadata/v1/instance/zone | cut -d/ -f4)
+INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" -s http://metadata.google.internal/computeMetadata/v1/instance/name)
+
+gcloud compute instances add-metadata "${INSTANCE_NAME}" \
+  --metadata browser-service-ready=true \
+  --zone="${ZONE}" || {
+  log "Warning: Could not set readiness metadata"
+}
+
+log "Browser service ready and signaled!"
