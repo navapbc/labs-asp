@@ -14,17 +14,23 @@ log "Starting browser service initialization..."
 
 # Configure Docker daemon for GCR access (COS compatible)
 log "Configuring Docker for Artifact Registry..."
-/usr/bin/docker-credential-gcr configure-docker --registries=us-central1-docker.pkg.dev
 
-# Alternative approach if the above fails
-if [ $? -ne 0 ]; then
-    log "Using gcloud auth configure-docker as fallback..."
+# Create Docker config directory in writable location
+export DOCKER_CONFIG=/tmp/.docker
+mkdir -p "$DOCKER_CONFIG"
+
+# Configure docker authentication
+if command -v docker-credential-gcr >/dev/null 2>&1; then
+    log "Using docker-credential-gcr..."
+    docker-credential-gcr configure-docker --registries=us-central1-docker.pkg.dev
+else
+    log "Using gcloud auth configure-docker..."
     gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 fi
 
 # Pull the browser streaming image
 log "Pulling browser streaming image: ${browser_image}"
-docker pull "${browser_image}" || {
+DOCKER_CONFIG="$DOCKER_CONFIG" docker pull "${browser_image}" || {
     log "Failed to pull image ${browser_image}"
     exit 1
 }
