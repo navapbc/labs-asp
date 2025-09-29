@@ -15,7 +15,7 @@ on:
         default: 'dev'
         type: choice
         options:
-        - dev
+          - dev
 
 env:
   PROJECT_ID: nava-labs
@@ -242,11 +242,8 @@ jobs:
             --min-instances=0 \
             --add-cloudsql-instances=nava-labs:us-central1:app-${{ needs.build.outputs.environment }} \
             --port=4112 \
-            --startup-probe-timeout=240s \
-            --startup-probe-period=5s \
-            --startup-probe-failure-threshold=3 \
-            --startup-probe-request-path="/health" \
-            --startup-cpu-boost \
+            --startup-probe="httpGet.path=/health,timeoutSeconds=240,periodSeconds=5,failureThreshold=3" \
+            --cpu-boost \
             --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
             --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
             --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
