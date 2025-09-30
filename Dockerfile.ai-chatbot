@@ -1,0 +1,68 @@
+# Dockerfile for AI Chatbot (Next.js client with embedded Mastra)
+FROM node:20-slim AS base
+
+# Install basic system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    ca-certificates \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Stage 1: Build stage
+FROM base AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy client directory
+COPY client/ ./client/
+
+# Go to client directory and install client dependencies
+WORKDIR /app/client
+RUN rm -rf node_modules && pnpm install --frozen-lockfile --ignore-scripts
+
+# Accept build args for MCP URLs
+ARG PLAYWRIGHT_MCP_URL=http://localhost:8931/mcp
+ARG BROWSER_STREAMING_URL=ws://localhost:8933
+ARG NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
+
+# Set environment variables for build time
+ENV PLAYWRIGHT_MCP_URL=${PLAYWRIGHT_MCP_URL}
+ENV BROWSER_STREAMING_URL=${BROWSER_STREAMING_URL}
+ENV NEXT_PUBLIC_MASTRA_SERVER_URL=${NEXT_PUBLIC_MASTRA_SERVER_URL}
+
+# Build Next.js client only
+RUN pnpm tsx lib/db/migrate && pnpm next build
+
+# Stage 2: Runtime stage
+FROM base AS runtime
+
+# Copy built application
+WORKDIR /app
+COPY --from=builder /app/client ./client
+
+# Create a non-root user for better security
+RUN groupadd -r nextjs && useradd -r -g nextjs -d /app -s /bin/bash nextjs
+
+# Change ownership of the app directory to the nextjs user
+RUN chown -R nextjs:nextjs /app
+
+# Switch to non-root user
+USER nextjs
+
+# Set working directory to client
+WORKDIR /app/client
+
+# Expose Next.js port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/health || curl -f http://localhost:3000 || exit 1
+
+# Start Next.js server
+CMD ["pnpm", "start"]

@@ -2,7 +2,7 @@ import { postgresStore } from './storage';
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
-import { serverMiddleware } from './middleware';
+import { chatRoute } from '@mastra/ai-sdk';
 
 export const mastra = new Mastra({
   agents: { 
@@ -29,16 +29,19 @@ export const mastra = new Mastra({
     host: '0.0.0.0', // Allow external connections
     port: parseInt(process.env.MASTRA_PORT || '4112'),
     cors: {
-      origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:4111', 'http://localhost:4112', '*'],
+      origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4111', 'http://localhost:4112'],
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization', 'x-mastra-dev-playground'],
-      credentials: true,
     },
     build: {
       swaggerUI: true,     // Enable Swagger UI in production
       openAPIDocs: true,   // Enable OpenAPI docs in production
     },
-
-    middleware: serverMiddleware,
+    apiRoutes: [
+      chatRoute({
+        path: '/chat',
+        agent: 'webAutomationAgent',
+      }),
+    ],
   },
 });
