@@ -50,7 +50,7 @@ EXPOSE 4112
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:4112/health || curl -f http://localhost:4112 || exit 1
+    CMD curl -f http://localhost:4112/health || exit 1
 
 # Start Mastra server
 WORKDIR /app

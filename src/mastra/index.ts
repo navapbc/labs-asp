@@ -38,10 +38,72 @@ export const mastra = new Mastra({
       openAPIDocs: true,   // Enable OpenAPI docs in production
     },
     apiRoutes: [
-      chatRoute({
+      {
+        method: 'GET',
+        path: '/health',
+        handler: async (c) => {
+          return c.json({ status: 'ok', service: 'mastra-app' }, 200);
+        },
+      },
+      {
+        method: 'POST',
         path: '/chat',
-        agent: 'webAutomationAgent',
-      }),
+        handler: async (c) => {
+          try {
+            const body = await c.req.json();
+            const { messages, threadId, resourceId } = body;
+
+            if (!messages || !Array.isArray(messages) || messages.length === 0) {
+              return c.json({ error: 'Messages array is required and must not be empty' }, 400);
+            }
+
+            console.log('Received chat request:', {
+              messageCount: messages.length,
+              threadId,
+              resourceId,
+              firstMessage: messages[0]
+            });
+
+            const agent = c.var.mastra.getAgent('webAutomationAgent');
+
+            try {
+              const stream = await agent.streamVNext(messages, {
+                format: 'aisdk',
+                memory: threadId && resourceId ? {
+                  thread: threadId,
+                  resource: resourceId,
+                } : undefined,
+                onError: ({ error }: { error: any }) => {
+                  console.error('Error during agent streaming:', error);
+                  // The error will be included in the stream
+                },
+              });
+
+              return stream.toUIMessageStreamResponse();
+            } catch (streamError: any) {
+              console.error('Error creating stream', streamError);
+
+              // Return a JSON error response instead of a broken stream
+              return c.json({
+                error: streamError.message || 'Failed to create response stream',
+                details: streamError.data || null,
+                isRetryable: streamError.isRetryable || false
+              }, streamError.statusCode || 500);
+            }
+          } catch (error: any) {
+            console.error('Error in chat handler:', error);
+
+            // Return a proper error response
+            const errorMessage = error.message || 'An error occurred while processing your request';
+            const statusCode = error.statusCode || 500;
+
+            return c.json({
+              error: errorMessage,
+              details: error.data || null
+            }, statusCode);
+          }
+        },
+      },
     ],
   },
 });
