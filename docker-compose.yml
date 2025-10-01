@@ -34,7 +34,7 @@ services:
     depends_on:
       - browser-streaming
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4111/health", "||", "curl", "-f", "http://localhost:4111"]
+      test: ["CMD-SHELL", "curl -f http://localhost:4112/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
