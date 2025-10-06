@@ -1,237 +1,5 @@
-# Mastra Application Service - AI Agent Backend
-resource "google_cloud_run_v2_service" "mastra_app" {
-  name     = local.environments[var.environment].mastra_service_name
-  location = local.region
-
-  template {
-    service_account = google_service_account.cloud_run.email
-
-    containers {
-      image = var.mastra_image_url
-
-      # Resource configuration for AI agent processing
-      resources {
-        limits = {
-          cpu    = var.mastra_cpu
-          memory = var.mastra_memory
-        }
-      }
-
-      # Database configuration
-      env {
-        name = "DATABASE_URL"
-        value_source {
-          secret_key_ref {
-            secret  = var.environment == "prod" ? "database-url-production" : "database-url-${var.environment}"
-            version = "latest"
-          }
-        }
-      }
-
-      # AI API Keys
-      env {
-        name = "OPENAI_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = "openai-api-key"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name = "ANTHROPIC_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = "anthropic-api-key"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name = "EXA_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = "exa-api-key"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name = "GOOGLE_GENERATIVE_AI_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = "google-generative-ai-key"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name = "GROK_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = "grok-api-key"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name = "XAI_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = "xai-api-key"
-            version = "latest"
-          }
-        }
-      }
-
-      # Mastra authentication
-      env {
-        name = "MASTRA_JWT_SECRET"
-        value_source {
-          secret_key_ref {
-            secret  = "mastra-jwt-secret"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name = "MASTRA_APP_PASSWORD"
-        value_source {
-          secret_key_ref {
-            secret  = "mastra-app-password"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name = "MASTRA_JWT_TOKEN"
-        value_source {
-          secret_key_ref {
-            secret  = "mastra-jwt-token"
-            version = "latest"
-          }
-        }
-      }
-
-      # Google Cloud configuration
-      env {
-        name = "GOOGLE_VERTEX_CREDENTIALS"
-        value_source {
-          secret_key_ref {
-            secret  = "vertex-ai-credentials"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name  = "GOOGLE_VERTEX_LOCATION"
-        value = "us-east5"
-      }
-
-      env {
-        name  = "GOOGLE_VERTEX_PROJECT"
-        value = local.project_id
-      }
-
-      env {
-        name  = "GOOGLE_CLOUD_PROJECT"
-        value = local.project_id
-      }
-
-      # Browser service connection
-      env {
-        name  = "PLAYWRIGHT_MCP_URL"
-        value = "http://${google_compute_instance.browser_service.network_interface[0].network_ip}:8931/mcp"
-      }
-
-      env {
-        name  = "BROWSER_STREAMING_URL"
-        value = "ws://${google_compute_instance.browser_service.network_interface[0].network_ip}:8933"
-      }
-
-      # CORS configuration for Mastra
-      env {
-        name  = "CORS_ORIGINS"
-        value = var.environment == "prod" ? "https://${var.domain_name}" : "*"
-      }
-
-      # Runtime configuration
-      env {
-        name  = "NODE_ENV"
-        value = var.environment == "prod" ? "production" : "development"
-      }
-
-      env {
-        name  = "ENVIRONMENT"
-        value = var.environment
-      }
-
-      env {
-        name  = "GCP_PROJECT_ID"
-        value = local.project_id
-      }
-
-      env {
-        name  = "CLOUD_SQL_INSTANCE"
-        value = "nava-labs:us-central1:app-${var.environment}"
-      }
-
-      # Port configuration - Mastra server port
-      ports {
-        container_port = 4112
-      }
-
-      # Volume mount for Cloud SQL proxy
-      volume_mounts {
-        name       = "cloudsql"
-        mount_path = "/cloudsql"
-      }
-
-    }
-
-    # Scaling configuration
-    scaling {
-      min_instance_count = var.mastra_min_instances
-      max_instance_count = var.mastra_max_instances
-    }
-
-    # Extended timeout for web automation tasks
-    timeout = "${var.mastra_timeout}s"
-
-    # Cloud SQL connection for database access
-    volumes {
-      name = "cloudsql"
-      cloud_sql_instance {
-        instances = ["nava-labs:us-central1:app-${var.environment}"]
-      }
-    }
-  }
-
-  # Traffic configuration
-  traffic {
-    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
-    percent = 100
-  }
-
-  labels = merge(local.common_labels, {
-    environment = var.environment
-    component   = "mastra-backend"
-  })
-
-  depends_on = [
-    google_project_service.required_apis,
-    google_service_account.cloud_run,
-    google_compute_instance.browser_service
-  ]
-}
+# Cloud Run Services
+# Note: mastra-app now runs on VM, only ai-chatbot frontend runs on Cloud Run
 
 # AI Chatbot Service - Next.js Frontend
 resource "google_cloud_run_v2_service" "ai_chatbot" {
@@ -373,21 +141,34 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
-      # Mastra server connection
+      # Mastra server connection (server-side env var, not NEXT_PUBLIC_*)
+      env {
+        name  = "MASTRA_SERVER_URL"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
+      }
+
+      # Keep NEXT_PUBLIC_ version for backwards compatibility
       env {
         name  = "NEXT_PUBLIC_MASTRA_SERVER_URL"
-        value = google_cloud_run_v2_service.mastra_app.uri
+        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
       }
 
       # Browser service connection (for direct client access if needed)
       env {
         name  = "PLAYWRIGHT_MCP_URL"
-        value = "http://${google_compute_instance.browser_service.network_interface[0].network_ip}:8931/mcp"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8931/mcp"
       }
 
+      # Browser WebSocket Proxy URL (server-side runtime config)
+      env {
+        name  = "BROWSER_WS_PROXY_URL"
+        value = google_cloud_run_v2_service.browser_ws_proxy.uri
+      }
+
+      # Legacy browser streaming env vars (keeping for backwards compatibility)
       env {
         name  = "BROWSER_STREAMING_URL"
-        value = "ws://${google_compute_instance.browser_service.network_interface[0].network_ip}:8933"
+        value = "ws://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8933"
       }
 
       env {
@@ -397,7 +178,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "BROWSER_STREAMING_HOST"
-        value = google_compute_instance.browser_service.network_interface[0].network_ip
+        value = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
       }
 
       # Runtime configuration
@@ -466,21 +247,90 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   depends_on = [
     google_project_service.required_apis,
     google_service_account.cloud_run,
-    google_cloud_run_v2_service.mastra_app
+    google_compute_instance.app_vm
+  ]
+}
+
+# Browser WebSocket Proxy Service
+resource "google_cloud_run_v2_service" "browser_ws_proxy" {
+  name     = "browser-ws-proxy-${var.environment}"
+  location = local.region
+
+  template {
+    service_account = google_service_account.cloud_run.email
+
+    containers {
+      image = var.browser_ws_proxy_image_url
+
+      # Lightweight proxy - minimal resources
+      resources {
+        limits = {
+          cpu    = "1"
+          memory = "512Mi"
+        }
+      }
+
+      # Backend browser-streaming configuration
+      env {
+        name  = "BROWSER_STREAMING_HOST"
+        value = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+      }
+
+      env {
+        name  = "BROWSER_STREAMING_PORT"
+        value = "8933"
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = var.environment == "prod" ? "production" : "development"
+      }
+
+      # Port configuration
+      ports {
+        container_port = 8080
+      }
+    }
+
+    # Scaling configuration - can scale to zero when not in use
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 10
+    }
+
+    # Timeout for WebSocket connections
+    timeout = "3600s" # 1 hour for long-lived WebSocket connections
+  }
+
+  # Traffic configuration
+  traffic {
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = 100
+  }
+
+  labels = merge(local.common_labels, {
+    environment = var.environment
+    component   = "browser-ws-proxy"
+  })
+
+  depends_on = [
+    google_project_service.required_apis,
+    google_service_account.cloud_run,
+    google_compute_instance.app_vm
   ]
 }
 
 # IAM policies for public access
-resource "google_cloud_run_v2_service_iam_member" "mastra_public_access" {
-  name     = google_cloud_run_v2_service.mastra_app.name
-  location = google_cloud_run_v2_service.mastra_app.location
+resource "google_cloud_run_v2_service_iam_member" "chatbot_public_access" {
+  name     = google_cloud_run_v2_service.ai_chatbot.name
+  location = google_cloud_run_v2_service.ai_chatbot.location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
-resource "google_cloud_run_v2_service_iam_member" "chatbot_public_access" {
-  name     = google_cloud_run_v2_service.ai_chatbot.name
-  location = google_cloud_run_v2_service.ai_chatbot.location
+resource "google_cloud_run_v2_service_iam_member" "browser_ws_proxy_public_access" {
+  name     = google_cloud_run_v2_service.browser_ws_proxy.name
+  location = google_cloud_run_v2_service.browser_ws_proxy.location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }

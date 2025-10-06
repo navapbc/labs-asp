@@ -24,17 +24,17 @@ variable "domain_name" {
   default     = "labs-asp.com"
 }
 
-# Browser VM configuration
-variable "browser_vm_machine_type" {
-  description = "Machine type for browser automation VM"
+# VM configuration (runs browser-streaming + mastra-app)
+variable "vm_machine_type" {
+  description = "Machine type for application VM"
   type        = string
-  default     = "e2-standard-2"  # 2 vCPUs, 8GB RAM - sufficient for Playwright
+  default     = "e2-standard-4"  # 4 vCPUs, 16GB RAM - runs both containers
 }
 
-variable "browser_vm_disk_size" {
-  description = "Boot disk size for browser VM in GB"
+variable "vm_disk_size" {
+  description = "Boot disk size for VM in GB"
   type        = number
-  default     = 20
+  default     = 30
 }
 
 variable "browser_image_url" {
@@ -43,41 +43,16 @@ variable "browser_image_url" {
   default     = "us-central1-docker.pkg.dev/nava-labs/labs-asp/browser-streaming:latest"
 }
 
-# Mastra Cloud Run configuration
 variable "mastra_image_url" {
-  description = "Container image URL for Mastra service"
+  description = "Container image URL for mastra-app service"
   type        = string
   default     = "us-central1-docker.pkg.dev/nava-labs/labs-asp/mastra-app:latest"
 }
 
-variable "mastra_cpu" {
-  description = "CPU allocation for Mastra Cloud Run service"
+variable "browser_ws_proxy_image_url" {
+  description = "Container image URL for browser WebSocket proxy service"
   type        = string
-  default     = "2"  # 2 vCPUs for agent processing
-}
-
-variable "mastra_memory" {
-  description = "Memory allocation for Mastra Cloud Run service"
-  type        = string
-  default     = "4Gi"  # 4GB RAM for agent processing
-}
-
-variable "mastra_min_instances" {
-  description = "Minimum instances for Mastra service"
-  type        = number
-  default     = 0  # Scale to zero when not used
-}
-
-variable "mastra_max_instances" {
-  description = "Maximum instances for Mastra service"
-  type        = number
-  default     = 10
-}
-
-variable "mastra_timeout" {
-  description = "Request timeout for Mastra service in seconds"
-  type        = number
-  default     = 300  # 5 minutes for web automation tasks
+  default     = "us-central1-docker.pkg.dev/nava-labs/labs-asp/browser-ws-proxy:latest"
 }
 
 # AI Chatbot Cloud Run configuration

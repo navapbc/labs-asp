@@ -1,43 +1,37 @@
-# Browser VM outputs
-output "browser_vm_name" {
-  description = "Name of the browser service VM"
-  value       = google_compute_instance.browser_service.name
+# VM outputs
+output "vm_name" {
+  description = "Name of the application VM"
+  value       = google_compute_instance.app_vm.name
 }
 
-output "browser_vm_external_ip" {
-  description = "External IP address of the browser service VM"
-  value       = google_compute_instance.browser_service.network_interface[0].access_config[0].nat_ip
+output "vm_external_ip" {
+  description = "External IP address of the application VM"
+  value       = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
 }
 
-output "browser_vm_internal_ip" {
-  description = "Internal IP address of the browser service VM"
-  value       = google_compute_instance.browser_service.network_interface[0].network_ip
+output "vm_internal_ip" {
+  description = "Internal IP address of the application VM"
+  value       = google_compute_instance.app_vm.network_interface[0].network_ip
 }
 
 output "browser_mcp_url" {
   description = "MCP server URL for browser automation"
-  value       = "http://${google_compute_instance.browser_service.network_interface[0].network_ip}:8931/mcp"
+  value       = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8931/mcp"
 }
 
 output "browser_streaming_url" {
   description = "WebSocket URL for browser streaming"
-  value       = "ws://${google_compute_instance.browser_service.network_interface[0].network_ip}:8933"
-}
-
-# Mastra service outputs
-output "mastra_service_name" {
-  description = "Name of the Mastra Cloud Run service"
-  value       = google_cloud_run_v2_service.mastra_app.name
+  value       = "ws://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8933"
 }
 
 output "mastra_service_url" {
-  description = "URL of the Mastra Cloud Run service"
-  value       = google_cloud_run_v2_service.mastra_app.uri
+  description = "URL of the Mastra service (running on VM)"
+  value       = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
 }
 
 output "mastra_chat_endpoint" {
   description = "Chat endpoint for Mastra service"
-  value       = "${google_cloud_run_v2_service.mastra_app.uri}/chat"
+  value       = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112/chat"
 }
 
 # AI Chatbot service outputs
@@ -56,10 +50,15 @@ output "chatbot_public_url" {
   value       = google_cloud_run_v2_service.ai_chatbot.uri
 }
 
+output "browser_ws_proxy_url" {
+  description = "URL of the browser WebSocket proxy service"
+  value       = google_cloud_run_v2_service.browser_ws_proxy.uri
+}
+
 # Service account outputs
-output "browser_vm_service_account" {
-  description = "Service account email for browser VM"
-  value       = google_service_account.browser_vm.email
+output "vm_service_account" {
+  description = "Service account email for VM"
+  value       = google_service_account.vm.email
 }
 
 output "cloud_run_service_account" {
@@ -87,19 +86,14 @@ output "region" {
 output "architecture_summary" {
   description = "Summary of the deployed architecture"
   value = {
-    browser_service = {
-      type        = "Compute Engine VM"
-      machine_type = var.browser_vm_machine_type
-      internal_ip  = google_compute_instance.browser_service.network_interface[0].network_ip
-      mcp_port     = 8931
-      streaming_port = 8933
-    }
-    mastra_service = {
-      type         = "Cloud Run"
-      url          = google_cloud_run_v2_service.mastra_app.uri
-      chat_endpoint = "${google_cloud_run_v2_service.mastra_app.uri}/chat"
-      cpu          = var.mastra_cpu
-      memory       = var.mastra_memory
+    app_vm = {
+      type         = "Compute Engine VM"
+      machine_type = var.vm_machine_type
+      external_ip  = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+      services     = "browser-streaming + mastra-app"
+      browser_mcp_port = 8931
+      browser_ws_port  = 8933
+      mastra_port      = 4112
     }
     chatbot_service = {
       type       = "Cloud Run"
@@ -108,9 +102,9 @@ output "architecture_summary" {
       memory     = var.chatbot_memory
     }
     networking = {
-      browser_to_mastra = "VM internal IP → Cloud Run"
-      browser_to_chatbot = "VM internal IP → Cloud Run"
-      public_access = "Cloud Run → Internet"
+      vm_services      = "Both containers on same Docker network"
+      chatbot_to_vm    = "Cloud Run → VM external IP"
+      public_access    = "Cloud Run → Internet"
     }
   }
 }

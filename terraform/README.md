@@ -49,30 +49,102 @@ This Terraform configuration deploys the Labs ASP application using a **client-s
 
 ## Deployment
 
-### 1. Configure Variables
+### Important: Build vs Deploy Separation
+
+**Terraform manages infrastructure, NOT Docker builds.** You must build and push Docker images before deploying.
+
+#### Why This Separation?
+
+- **Terraform** = Infrastructure as Code (VMs, Cloud Run, IAM, networking)
+- **Docker Builds** = Application packaging (done by CI/CD or locally)
+- Terraform references pre-built images from Artifact Registry
+
+### Development Deployment (Local Build)
+
+#### 1. Build and Push Docker Images
+
+**IMPORTANT:** Build fresh images before deploying to ensure latest code changes are included.
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your values
+# Build order matters: browser-streaming first, then others in parallel
+
+# Step 1: Build and push browser-streaming
+docker build -f playwright-mcp/Dockerfile \
+  -t us-central1-docker.pkg.dev/nava-labs/labs-asp/browser-streaming:latest \
+  ./playwright-mcp
+docker push us-central1-docker.pkg.dev/nava-labs/labs-asp/browser-streaming:latest
+
+# Step 2: Build mastra-app and ai-chatbot (can run in parallel)
+docker build -f Dockerfile \
+  -t us-central1-docker.pkg.dev/nava-labs/labs-asp/mastra-app:latest .
+docker build -f Dockerfile.ai-chatbot \
+  -t us-central1-docker.pkg.dev/nava-labs/labs-asp/ai-chatbot:latest .
+
+# Step 3: Push both images (can run in parallel)
+docker push us-central1-docker.pkg.dev/nava-labs/labs-asp/mastra-app:latest
+docker push us-central1-docker.pkg.dev/nava-labs/labs-asp/ai-chatbot:latest
 ```
 
-### 2. Initialize Terraform
+**Authentication:** If you get "Unauthenticated" errors:
+```bash
+gcloud auth configure-docker us-central1-docker.pkg.dev
+```
+
+#### 2. Configure Variables
+
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars if needed (defaults should work for dev)
+```
+
+#### 3. Initialize Terraform
 
 ```bash
 terraform init
 ```
 
-### 3. Plan Deployment
+#### 4. Plan Deployment
 
 ```bash
 terraform plan -var="environment=dev"
 ```
 
-### 4. Deploy Infrastructure
+Review the plan to ensure:
+- Browser VM will be created
+- Both Cloud Run services will be created
+- Workload Identity Pool will be created (for GitHub Actions)
+
+#### 5. Deploy Infrastructure
 
 ```bash
 terraform apply -var="environment=dev"
 ```
+
+This will:
+- Create browser VM and pull `:latest` image
+- Deploy mastra-app Cloud Run service
+- Deploy ai-chatbot Cloud Run service
+- Configure networking and IAM
+
+### Production Deployment (GitHub Actions)
+
+For preview/prod environments, use the automated GitHub Actions workflow:
+
+1. **Push your branch to GitHub**
+   ```bash
+   git push origin feat/your-branch
+   ```
+
+2. **Create a Pull Request**
+   - GitHub Actions automatically builds images
+   - Deploys preview environment
+   - Posts preview URL in PR comment
+
+3. **Merge to deploy to prod**
+   - Merging to `main` triggers prod deployment
+   - Images are built and tagged with commit SHA
+   - Terraform applies infrastructure changes
 
 ## Environment Variables
 
