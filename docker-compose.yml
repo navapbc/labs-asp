@@ -11,6 +11,28 @@ services:
     networks:
       - mastra-network
 
+  # Browser WebSocket Proxy (optional - for testing production setup locally)
+  # In production, this runs on Cloud Run to upgrade ws:// to wss://
+  # In local dev, client connects directly to ws://localhost:8933 (no proxy needed)
+  browser-ws-proxy:
+    build:
+      context: ./browser-ws-proxy
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"   # Proxy port
+    environment:
+      - BROWSER_STREAMING_HOST=browser-streaming
+      - BROWSER_STREAMING_PORT=8933
+      - PORT=8080
+      - NODE_ENV=development
+    depends_on:
+      - browser-streaming
+    restart: unless-stopped
+    networks:
+      - mastra-network
+    profiles:
+      - proxy-test  # Only start with: docker-compose --profile proxy-test up
+
 
   # Main Mastra Application
   mastra-app:
@@ -60,6 +82,9 @@ services:
       - NODE_ENV=production
       - NEXTAUTH_URL=http://localhost:3000
       - NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
+      - MASTRA_SERVER_URL=http://mastra-app:4112
+      - BROWSER_STREAMING_HOST=browser-streaming
+      - BROWSER_STREAMING_PORT=8933
     env_file:
       - client/.env.local
     volumes:
