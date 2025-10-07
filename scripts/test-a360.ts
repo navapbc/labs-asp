@@ -122,7 +122,8 @@ async function preprocessA360CSV(csvPath: string, outputPath: string): Promise<v
  * Run A360 tests for a specific scorer type
  */
 async function runA360Tests(scorerType?: string): Promise<void> {
-  const csvPath = path.join(__dirname, '../test-cases/a360-test-cases.csv');
+  // Allow override via environment variable for CI (e.g., when using Google Sheets)
+  const csvPath = process.env.A360_CSV_PATH || path.join(__dirname, '../test-cases/a360-test-cases.csv');
   const processedCsvPath = path.join(__dirname, '../test-cases/a360-test-cases-processed.csv');
   
   // Preprocess the CSV with template substitution
