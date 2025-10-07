@@ -47,6 +47,38 @@ const transformParticipant = (row: any) => ({
   monthlyIncome: row.monthly_income,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  // Apricot360 CSV fields
+  fileOpenDate: row.file_open_date,
+  dpssReferralDate: row.dpss_referral_date,
+  consentProvided: row.consent_provided,
+  consentDate: row.consent_date,
+  consentExpirationDate: row.consent_expiration_date,
+  isFarmWorker: row.is_farm_worker,
+  specialNeeds: row.special_needs,
+  specialNeedsNotes: row.special_needs_notes,
+  doNotContact: row.do_not_contact,
+  homePhone: row.home_phone,
+  workPhone: row.work_phone,
+  mainPhone: row.main_phone,
+  participantNotes: row.participant_notes,
+  fundingSource: row.funding_source,
+  ageAtFileOpen: row.age_at_file_open,
+  yearOfBirth: row.year_of_birth,
+  // Structured address fields
+  addressLine2: row.address_line2,
+  addressCity: row.address_city,
+  addressState: row.address_state,
+  addressZip: row.address_zip,
+  addressCounty: row.address_county,
+  addressCountry: row.address_country,
+  // Structured mailing address fields
+  mailingAddressLine1: row.mailing_address_line1,
+  mailingAddressLine2: row.mailing_address_line2,
+  mailingAddressCity: row.mailing_address_city,
+  mailingAddressState: row.mailing_address_state,
+  mailingAddressZip: row.mailing_address_zip,
+  mailingAddressCounty: row.mailing_address_county,
+  mailingAddressCountry: row.mailing_address_country,
 });
 
 const transformDependent = (row: any) => ({
@@ -59,6 +91,7 @@ const transformDependent = (row: any) => ({
   genderIdentity: row.gender_identity,
   isInfant: row.is_infant,
   isChild0to5: row.is_child0to5,
+  associatedFamily: row.associated_family,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -80,6 +113,55 @@ const transformDependent = (row: any) => ({
  * For HouseholdDependent:
  * - isInfant: null = unknown, true = is infant, false = not infant
  * - isChild0to5: null = unknown, true = is child 0-5, false = not child 0-5
+ * 
+ * APRICOT360 CSV FIELDS (Read-Only, imported from Apricot360):
+ * These fields are populated by seed-apricot360-csv.ts and provide additional context:
+ * 
+ * File & Referral Tracking:
+ * - fileOpenDate: Date when participant file was opened in Apricot360
+ * - dpssReferralDate: Date when participant was referred by DPSS
+ * - ageAtFileOpen: Participant's age when file was opened
+ * 
+ * Consent & Compliance:
+ * - consentProvided: Whether participant provided verbal consent to complete intake
+ * - consentDate: Date when consent form was signed
+ * - consentExpirationDate: Date when consent expires (typically 10 years from consent)
+ * 
+ * Employment & Special Needs:
+ * - isFarmWorker: Whether participant is a farm worker
+ * - specialNeeds: Whether participant has special needs requiring accommodation
+ * - specialNeedsNotes: Details about special needs
+ * 
+ * Contact Information:
+ * - doNotContact: Flag indicating participant does not want to be contacted
+ * - homePhone: Home phone number
+ * - workPhone: Work phone number
+ * - mainPhone: Primary/main phone number
+ * 
+ * Notes & Metadata:
+ * - participantNotes: General notes about the participant from Apricot360
+ * - fundingSource: Funding source for services
+ * - yearOfBirth: Year of birth (may be approximate if full DOB unknown)
+ * 
+ * Structured Address Fields (home address):
+ * - addressLine2: Second line of home address
+ * - addressCity: City
+ * - addressState: State
+ * - addressZip: ZIP code
+ * - addressCounty: County
+ * - addressCountry: Country
+ * 
+ * Structured Mailing Address:
+ * - mailingAddressLine1: First line of mailing address
+ * - mailingAddressLine2: Second line of mailing address
+ * - mailingAddressCity: City
+ * - mailingAddressState: State
+ * - mailingAddressZip: ZIP code
+ * - mailingAddressCounty: County
+ * - mailingAddressCountry: Country
+ * 
+ * Household Dependent Fields:
+ * - associatedFamily: Family role from Apricot360 (e.g., Mother, Son, Daughter)
  */
 
 // Get participant by ID
@@ -108,6 +190,7 @@ export const getParticipantById = createTool({
                      'race', h.race,
                      'isInfant', h.is_infant,
                      'isChild0to5', h.is_child0to5,
+                     'associatedFamily', h.associated_family,
                      'createdAt', h.created_at,
                      'updatedAt', h.updated_at
                    ) ORDER BY h.date_of_birth ASC
@@ -231,6 +314,7 @@ export const getParticipantWithHousehold = createTool({
                      'race', h.race,
                      'isInfant', h.is_infant,
                      'isChild0to5', h.is_child0to5,
+                     'associatedFamily', h.associated_family,
                      'createdAt', h.created_at,
                      'updatedAt', h.updated_at
                    ) ORDER BY h.date_of_birth ASC

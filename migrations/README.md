@@ -4,7 +4,12 @@ This directory contains SQL migration scripts that replace the Prisma migrations
 
 ## Files
 
+- `000_convert_camelcase_to_snake_case.sql` - Converts existing Prisma camelCase columns to snake_case (if needed)
 - `001_create_tables.sql` - Creates all tables, indexes, and triggers
+- `002_add_datasourcetype_field.sql` - Adds datasourcetype field to track data source (START vs APRICOT360)
+- `003_add_apricot360_fields.sql` - Adds APRICOT360-specific fields (calworks_id, preferred_contact_method, etc.)
+- `004_fix_mastra_artifacts_uuid.sql` - Fixes UUID generation for mastra_artifacts table
+- `005_add_apricot360_csv_fields.sql` - Adds comprehensive APRICOT360 CSV fields (consent tracking, additional phones, addresses, etc.)
 - `run-migrations.js` - Simple migration runner script
 - `README.md` - This file
 
