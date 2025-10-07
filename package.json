@@ -4,10 +4,6 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:scorer": "tsx scripts/run-scorer-tests.ts",
-    "test:scorer:language": "tsx scripts/run-scorer-tests.ts languagePreference",
-    "test:experiment": "tsx scripts/test-language-preference.ts",
-    "test:experiment:language": "tsx scripts/test-language-preference.ts",
     "test:a360": "tsx scripts/test-a360.ts",
     "test:a360:language": "tsx scripts/test-a360.ts languagePreference",
     "test:a360:progression": "tsx scripts/test-a360.ts autonomousProgression",
