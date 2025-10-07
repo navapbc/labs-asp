@@ -63,7 +63,7 @@ The workflow can fetch test cases from Google Sheets. To enable this:
    - Open your Google Sheet
    - Click "Share"
    - Add `github-actions-deploy@nava-labs.iam.gserviceaccount.com`
-   - Set permission to "Viewer"
+   - Set permission to "Editor" (required for writing results back to the sheet)
 
 ## Testing the Workflow
 

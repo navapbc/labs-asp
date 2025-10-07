@@ -11,7 +11,9 @@ A flexible workflow for running scorer evaluation tests with multiple data sourc
   - Local CSV file (from repo)
   - Google Sheets (dynamically fetched)
 - **Parallel Execution**: Configure concurrency for faster test runs
-- **Results Artifacts**: Automatically uploads test results as artifacts
+- **Results Export**:
+  - Automatically uploads test results as GitHub artifacts
+  - When using Google Sheets: Writes results back to a new timestamped sheet in the same workbook
 - **PR Integration**: Posts test summaries as comments on pull requests
 
 ### Usage
@@ -42,16 +44,19 @@ google_sheet_id: 1ABC123XYZ...
 concurrency: 5
 ```
 
+This will download the Google Sheet, run tests, upload artifacts, and write results back to a new sheet in the same workbook.
+
 ### Google Sheets Setup
 
 To use Google Sheets as a data source:
 
-1. **Share the Sheet**: Make the Google Sheet viewable by the service account
+1. **Share the Sheet**: Make the Google Sheet editable by the service account (required for write-back)
 2. **Sheet Format**: Must match the A360 CSV format with columns:
    ```
    scorer_type,id,database,applicant-name,DOB,application-name,application-url,description,input,expected_output,expected_compliance,expected_score_min,expected_score_max
    ```
 3. **Get Sheet ID**: From the URL `https://docs.google.com/spreadsheets/d/SHEET_ID/edit`
+4. **Results Write-back**: A new sheet will be automatically created in the workbook with timestamp
 
 ### Required Secrets
 
@@ -69,6 +74,12 @@ Set these in GitHub repository settings:
 - Contains: JSON files with detailed test results
 - Retention: 30 days
 
+**Google Sheets Results (when using google_sheet data source):**
+- New sheet created in the same workbook
+- Sheet name: `Results_YYYYMMDD_HHMMSS`
+- Contains: Test case ID, description, score, expected range, status, reason, tags, and scorer type
+- Format: CSV-style table ready for stakeholder review
+
 **PR Comment (if triggered from PR):**
 - Test summary with pass/fail counts
 - Success rate
@@ -81,7 +92,9 @@ Set these in GitHub repository settings:
 1. Download/copy test cases to `test-cases/a360-test-cases-ci.csv`
 2. Set `A360_CSV_PATH` environment variable to point to CI CSV
 3. Run test script with configured concurrency
-4. Upload results and post summary
+4. Upload results as GitHub artifacts
+5. (If using Google Sheets) Write results back to a new sheet in the workbook
+6. Post summary comment on PR (if applicable)
 
 **Environment Variables:**
 - `A360_CSV_PATH`: Overrides the default CSV path in test scripts

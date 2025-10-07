@@ -111,6 +111,66 @@ jobs:
           path: test-results/*.json
           retention-days: 30
       
+      - name: Write results back to Google Sheet
+        if: always() && inputs.data_source == 'google_sheet' && inputs.google_sheet_id != ''
+        run: |
+          echo "Writing test results back to Google Sheet..."
+          
+          # Create a new sheet name with timestamp
+          SHEET_NAME="Results_$(date +%Y%m%d_%H%M%S)"
+          
+          # Convert JSON results to CSV format
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Find all result JSON files
+          const resultsDir = 'test-results';
+          const resultFiles = fs.readdirSync(resultsDir).filter(f => f.endsWith('.json'));
+          
+          if (resultFiles.length === 0) {
+            console.log('No results to write');
+            process.exit(0);
+          }
+          
+          // Combine all results
+          const allResults = [];
+          resultFiles.forEach(file => {
+            const data = JSON.parse(fs.readFileSync(path.join(resultsDir, file), 'utf8'));
+            data.results.forEach(result => {
+              allResults.push({
+                testCase: result.testCase,
+                description: result.description || '',
+                score: result.score !== null ? result.score.toFixed(3) : 'ERROR',
+                expectedRange: result.expectedRange,
+                passed: result.passed ? 'PASS' : 'FAIL',
+                reason: (result.reason || '').replace(/\n/g, ' ').replace(/,/g, ';'),
+                tags: (result.tags || []).join('; '),
+                scorerType: data.testRun.split('_').pop().replace('.json', '')
+              });
+            });
+          });
+          
+          // Write CSV header
+          const csv = ['Test Case,Description,Score,Expected Range,Status,Reason,Tags,Scorer Type'];
+          
+          // Write data rows
+          allResults.forEach(r => {
+            csv.push(\`\${r.testCase},\"\${r.description}\",\${r.score},\${r.expectedRange},\${r.passed},\"\${r.reason}\",\"\${r.tags}\",\${r.scorerType}\`);
+          });
+          
+          fs.writeFileSync('test-results-output.csv', csv.join('\n'));
+          console.log(\`Wrote \${allResults.length} results to CSV\`);
+          "
+          
+          # Upload to Google Sheets as new sheet
+          gcloud sheets import \
+            --spreadsheet-id="${{ inputs.google_sheet_id }}" \
+            --sheet-name="$SHEET_NAME" \
+            test-results-output.csv
+          
+          echo "Results written to sheet: $SHEET_NAME"
+      
       - name: Comment test summary on PR
         if: github.event_name == 'pull_request' && always()
         uses: actions/github-script@v7
@@ -172,4 +232,3 @@ jobs:
             } else {
               console.log(comment);
             }
-

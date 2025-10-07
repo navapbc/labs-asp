@@ -45,11 +45,16 @@ resource "google_service_account_iam_member" "github_actions_workload_identity" 
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/${local.repo_owner}/${local.repo_name}"
 }
 
-# Grant the service account access to Google Sheets API
-resource "google_project_iam_member" "github_actions_sheets_viewer" {
+# Grant the service account access to Google Sheets API (read and write)
+resource "google_project_iam_member" "github_actions_sheets_editor" {
   project = local.project_id
-  role    = "roles/browser"
+  role    = "roles/editor"
   member  = "serviceAccount:${local.service_account_email}"
+  
+  # Note: This grants broad permissions. For production, consider:
+  # - Creating a custom role with only sheets.spreadsheets.* permissions
+  # - Using Domain-Wide Delegation for more granular control
+  # - Limiting to specific sheets via resource-level IAM
 }
 
 # Output the values needed for GitHub Secrets
