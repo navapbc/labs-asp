@@ -23,7 +23,9 @@ export function createLanguagePreferenceScorer({
       participantLanguage: z.string().nullable(),
       languageChangeActions: z.array(z.string()),
       websiteLanguageSet: z.boolean(),
-      targetLanguage: z.string().nullable()
+      targetLanguage: z.string().nullable(),
+      userInput: z.string(),
+      agentOutput: z.string()
     }),
     createPrompt: ({ run }) => {
       // For web automation agent, the output contains the agent's actions and reasoning
@@ -76,7 +78,7 @@ export function createLanguagePreferenceScorer({
     description: 'Generate a reason for the language preference compliance score',
     createPrompt: ({ results, score }) => {
       const { compliance, languageMatch, actionsTaken } = results.analyzeStepResult;
-      const { participantLanguage, targetLanguage } = results.preprocessStepResult;
+      const { participantLanguage, targetLanguage, userInput, agentOutput } = results.preprocessStepResult;
       
       return createReasonPrompt({
         score,
@@ -84,7 +86,9 @@ export function createLanguagePreferenceScorer({
         languageMatch,
         actionsTaken,
         participantLanguage,
-        targetLanguage
+        targetLanguage,
+        userInput,
+        agentOutput
       });
     },
   });

@@ -21,6 +21,8 @@ Benefits-Cal-Walkthrough.md
 
 /src/generated/prisma
 test-results/
+test-cases/*-processed.csv
+test-cases/*-ci.csv
 
 # FuseBox cache
 .fusebox/
@@ -33,3 +35,17 @@ mastra-memory.db-*
 
 # Google Vertex AI
 vertex-ai-credentials.json
+
+# macOS
+.DS_Store
+
+# Editor-specific
+.cursor/commands/
+
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/tfplan
+terraform/*.tfvars

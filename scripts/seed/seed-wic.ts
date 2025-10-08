@@ -1,4 +1,4 @@
-import { query, pgPool } from './lib/db';
+import { query, pgPool } from '../../src/lib/db.js';
 import { config } from 'dotenv';
 
 // Load environment variables

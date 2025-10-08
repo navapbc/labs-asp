@@ -1,0 +1,234 @@
+name: Run Experiment Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      scorer_type:
+        description: 'Scorer type to run (or "all")'
+        required: true
+        type: choice
+        options:
+          - languagePreference
+          - autonomousProgression
+          - deduction
+          - askQuestions
+          - all
+      data_source:
+        description: 'Data source for test cases'
+        required: true
+        type: choice
+        options:
+          - csv
+          - google_sheet
+        default: csv
+      google_sheet_id:
+        description: 'Google Sheet ID (required if data_source is google_sheet)'
+        required: false
+        type: string
+      concurrency:
+        description: 'Number of tests to run in parallel'
+        required: false
+        type: number
+        default: 1
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Authenticate to Google Cloud
+        if: inputs.data_source == 'google_sheet'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      
+      - name: Setup Google Cloud SDK
+        if: inputs.data_source == 'google_sheet'
+        uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Download Google Sheet as CSV
+        if: inputs.data_source == 'google_sheet'
+        run: |
+          if [ -z "${{ inputs.google_sheet_id }}" ]; then
+            echo "Error: google_sheet_id is required when data_source is google_sheet"
+            exit 1
+          fi
+          
+          # Download Google Sheet as CSV using the Sheets API
+          # Format: https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=0
+          curl -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+            "https://docs.google.com/spreadsheets/d/${{ inputs.google_sheet_id }}/export?format=csv&gid=0" \
+            -o test-cases/a360-test-cases-ci.csv
+          
+          echo "Downloaded test cases from Google Sheet"
+          head -n 3 test-cases/a360-test-cases-ci.csv
+      
+      - name: Use local CSV file
+        if: inputs.data_source == 'csv'
+        run: |
+          cp test-cases/a360-test-cases.csv test-cases/a360-test-cases-ci.csv
+          echo "Using local CSV file"
+      
+      - name: Run experiment tests
+        env:
+          CONCURRENCY: ${{ inputs.concurrency }}
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          A360_CSV_PATH: test-cases/a360-test-cases-ci.csv
+        run: |
+          if [ "${{ inputs.scorer_type }}" = "all" ]; then
+            pnpm test:a360:all
+          else
+            pnpm test:a360 ${{ inputs.scorer_type }}
+          fi
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ inputs.scorer_type }}-${{ github.run_number }}
+          path: test-results/*.json
+          retention-days: 30
+      
+      - name: Write results back to Google Sheet
+        if: always() && inputs.data_source == 'google_sheet' && inputs.google_sheet_id != ''
+        run: |
+          echo "Writing test results back to Google Sheet..."
+          
+          # Create a new sheet name with timestamp
+          SHEET_NAME="Results_$(date +%Y%m%d_%H%M%S)"
+          
+          # Convert JSON results to CSV format
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Find all result JSON files
+          const resultsDir = 'test-results';
+          const resultFiles = fs.readdirSync(resultsDir).filter(f => f.endsWith('.json'));
+          
+          if (resultFiles.length === 0) {
+            console.log('No results to write');
+            process.exit(0);
+          }
+          
+          // Combine all results
+          const allResults = [];
+          resultFiles.forEach(file => {
+            const data = JSON.parse(fs.readFileSync(path.join(resultsDir, file), 'utf8'));
+            data.results.forEach(result => {
+              allResults.push({
+                testCase: result.testCase,
+                description: result.description || '',
+                score: result.score !== null ? result.score.toFixed(3) : 'ERROR',
+                expectedRange: result.expectedRange,
+                passed: result.passed ? 'PASS' : 'FAIL',
+                reason: (result.reason || '').replace(/\n/g, ' ').replace(/,/g, ';'),
+                tags: (result.tags || []).join('; '),
+                scorerType: data.testRun.split('_').pop().replace('.json', '')
+              });
+            });
+          });
+          
+          // Write CSV header
+          const csv = ['Test Case,Description,Score,Expected Range,Status,Reason,Tags,Scorer Type'];
+          
+          // Write data rows
+          allResults.forEach(r => {
+            csv.push(\`\${r.testCase},\"\${r.description}\",\${r.score},\${r.expectedRange},\${r.passed},\"\${r.reason}\",\"\${r.tags}\",\${r.scorerType}\`);
+          });
+          
+          fs.writeFileSync('test-results-output.csv', csv.join('\n'));
+          console.log(\`Wrote \${allResults.length} results to CSV\`);
+          "
+          
+          # Upload to Google Sheets as new sheet
+          gcloud sheets import \
+            --spreadsheet-id="${{ inputs.google_sheet_id }}" \
+            --sheet-name="$SHEET_NAME" \
+            test-results-output.csv
+          
+          echo "Results written to sheet: $SHEET_NAME"
+      
+      - name: Comment test summary on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Find the most recent test result file
+            const resultsDir = 'test-results';
+            const files = fs.readdirSync(resultsDir)
+              .filter(f => f.endsWith('.json'))
+              .map(f => ({
+                name: f,
+                path: path.join(resultsDir, f),
+                time: fs.statSync(path.join(resultsDir, f)).mtime.getTime()
+              }))
+              .sort((a, b) => b.time - a.time);
+            
+            if (files.length === 0) {
+              console.log('No test results found');
+              return;
+            }
+            
+            const resultFile = files[0];
+            const results = JSON.parse(fs.readFileSync(resultFile.path, 'utf-8'));
+            
+            // Create comment body
+            const summary = results.summary || {};
+            const emoji = summary.failed === 0 ? '✅' : '❌';
+            
+            let comment = `## ${emoji} A360 Scorer Test Results\n\n`;
+            comment += `**Scorer:** \`${{ inputs.scorer_type }}\`\n`;
+            comment += `**Data Source:** \`${{ inputs.data_source }}\`\n`;
+            comment += `**Concurrency:** ${inputs.concurrency || 1}\n\n`;
+            comment += `### Summary\n`;
+            comment += `- Total: ${summary.totalTests || 0}\n`;
+            comment += `- Passed: ${summary.passed || 0}\n`;
+            comment += `- Failed: ${summary.failed || 0}\n`;
+            comment += `- Success Rate: ${summary.successRate?.toFixed(1) || 0}%\n\n`;
+            
+            if (summary.byMetadata && summary.byMetadata.expected_compliance) {
+              comment += `### Results by Expected Compliance\n`;
+              Object.entries(summary.byMetadata.expected_compliance).forEach(([level, stats]) => {
+                comment += `- ${level}: ${stats.passed}/${stats.total} (${stats.rate}%)\n`;
+              });
+            }
+            
+            comment += `\n[View full results artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n`;
+            
+            // Post comment if this is a PR
+            if (context.payload.pull_request) {
+              github.rest.issues.createComment({
+                issue_number: context.payload.pull_request.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            } else {
+              console.log(comment);
+            }
