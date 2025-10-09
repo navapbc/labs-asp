@@ -221,11 +221,17 @@ class BrowserStreamingService extends EventEmitter {
     }
 
     try {
-      // Stop screencast
-      await session.client.Page.stopScreencast();
+      // ONLY stop screencast, don't close the page or browser
+      // This allows the Chrome process to stay alive for agent control
+      if (session.client && session.client.Page) {
+        await session.client.Page.stopScreencast();
+      }
       
-      // Close CDP connection
-      await session.client.close();
+      // Close our CDP connection to the target
+      // This disconnects our stream but leaves Chrome running
+      if (session.client) {
+        await session.client.close();
+      }
       
       // Remove from active sessions
       this.activeSessions.delete(sessionId);
@@ -238,7 +244,7 @@ class BrowserStreamingService extends EventEmitter {
         }));
       }
 
-      console.log(`Browser capture stopped for session: ${sessionId}`);
+      console.log(`Browser capture stopped for session: ${sessionId} (Chrome process remains alive)`);
       
     } catch (error) {
       console.error('Error stopping browser capture:', error);
