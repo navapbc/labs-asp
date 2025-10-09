@@ -1,4 +1,4 @@
-import { mastra } from "./mastra/index.js";
+import { mastra } from "../../src/mastra/index.js";
 
 console.log("👶 WIC Application Assistant\n");
 console.log(
