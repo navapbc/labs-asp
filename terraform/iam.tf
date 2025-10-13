@@ -62,6 +62,20 @@ resource "google_project_iam_member" "github_actions_security_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Workload Identity Pool Admin for managing workload identity
+resource "google_project_iam_member" "github_actions_workload_identity_admin" {
+  project = local.project_id
+  role    = "roles/iam.workloadIdentityPoolAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# Secret Manager Admin for reading secrets during terraform plan
+resource "google_project_iam_member" "github_actions_secret_manager_admin" {
+  project = local.project_id
+  role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 # Workload Identity Pool for GitHub Actions
 # NOTE: These are GLOBAL resources, not environment-specific
 # They should only be created once, typically in preview environment
