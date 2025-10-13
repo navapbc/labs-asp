@@ -76,6 +76,13 @@ resource "google_project_iam_member" "github_actions_secret_manager_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Service Account Admin for creating/deleting service accounts
+resource "google_project_iam_member" "github_actions_service_account_admin" {
+  project = local.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 # Workload Identity Pool for GitHub Actions
 # NOTE: These are GLOBAL resources, not environment-specific
 # They should only be created once, typically in preview environment
