@@ -214,31 +214,6 @@ export const webAutomationAgent = new Agent({
     maxSteps: 50,
     maxRetries: 3,
     temperature: 0.1,
-    telemetry: {
-      isEnabled: true,
-      functionId: 'webAutomationAgent.generate',
-      recordInputs: true,
-      recordOutputs: true,
-      metadata: {
-        agentId: 'webAutomationAgent',
-        agentName: 'Web Automation Agent',
-      },
-    },
-  },
-  defaultVNextStreamOptions: {
-    stopWhen: stepCountIs(50),
-    modelSettings: {
-      temperature: 0.1,
-    },
-    telemetry: {
-      isEnabled: true,
-      functionId: 'webAutomationAgent.streamVNext',
-      recordInputs: true,
-      recordOutputs: true,
-      metadata: {
-        agentId: 'webAutomationAgent',
-        agentName: 'Web Automation Agent',
-      },
-    },
-  },
+    // Telemetry removed - using AI Tracing instead (configured in mastra/index.ts)
+  }
 });

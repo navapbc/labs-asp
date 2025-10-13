@@ -73,7 +73,10 @@ resource "google_compute_instance" "app_vm" {
   }
 
   # Startup script to run both containers
+  # IMPORTANT: Image version metadata triggers VM restart when images change
   metadata = {
+    browser-image-version = var.browser_image_url
+    mastra-image-version  = var.mastra_image_url
     startup-script = templatefile("${path.module}/scripts/startup.sh", {
       browser_image        = var.browser_image_url
       mastra_image         = var.mastra_image_url

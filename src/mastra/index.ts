@@ -11,18 +11,12 @@ export const mastra = new Mastra({
   storage: postgresStore,
   logger: new PinoLogger({
     name: 'Mastra',
-    level: 'info', // Change from 'info' to 'debug' to capture more error details
+    level: 'debug', // Change from 'info' to 'debug' to capture more error details
   }),
 
-  telemetry: {
-    serviceName: 'mastra-test-app',
-    enabled: true,
-    sampling: {
-      type: 'always_on',
-    },
-    export: {
-      type: 'console', // Use console for development; switch to 'otlp' for production
-    },
+  // AI Tracing (replaces deprecated telemetry)
+  observability: {
+    default: { enabled: true }, // Enables DefaultExporter for Playground access
   },
 
   server: {
@@ -69,7 +63,7 @@ export const mastra = new Mastra({
             const agent = c.var.mastra.getAgent('webAutomationAgent');
 
             try {
-              const stream = await agent.streamVNext(messages, {
+              const stream = await agent.stream(messages, {
                 format: 'aisdk',
                 memory: threadId && resourceId ? {
                   thread: threadId,

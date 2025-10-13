@@ -1,13 +1,13 @@
-name: Deploy Client-Server Architecture
+name: Deploy Infrastructure
 
 on:
   push:
     branches:
-      - main        # prod deployment
-      - develop     # dev deployment
+      - develop  # Deploy to dev environment
+      - main     # Deploy to prod environment (uses dev DB for now)
   pull_request:
-    branches: [ main, develop ]  # preview deployment
-  workflow_dispatch:  # manual dev deployment only
+    branches: [develop, main]  # Preview deployment
+  workflow_dispatch:  # Manual trigger
     inputs:
       environment:
         description: 'Environment to deploy'
@@ -16,6 +16,7 @@ on:
         type: choice
         options:
           - dev
+          - prod
 
 env:
   PROJECT_ID: nava-labs
@@ -23,9 +24,42 @@ env:
   ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/nava-labs/labs-asp
 
 jobs:
-  # Build job for all container images
+  # Determine environment based on branch/trigger
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      should_deploy: ${{ steps.env.outputs.should_deploy }}
+
+    steps:
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+            SHOULD_DEPLOY="true"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ENVIRONMENT="preview"
+            SHOULD_DEPLOY="false"  # Preview = plan only
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            ENVIRONMENT="prod"
+            SHOULD_DEPLOY="true"
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            ENVIRONMENT="dev"
+            SHOULD_DEPLOY="true"
+          else
+            ENVIRONMENT="dev"
+            SHOULD_DEPLOY="false"
+          fi
+
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+          echo "should_deploy=${SHOULD_DEPLOY}" >> $GITHUB_OUTPUT
+          echo "Environment: ${ENVIRONMENT} (deploy: ${SHOULD_DEPLOY})"
+
+  # Build and push Docker images
   build:
     runs-on: ubuntu-latest
+    needs: setup
 
     permissions:
       contents: read
@@ -36,8 +70,6 @@ jobs:
       browser_ws_proxy_image: ${{ steps.images.outputs.browser_ws_proxy_image }}
       mastra_image: ${{ steps.images.outputs.mastra_image }}
       chatbot_image: ${{ steps.images.outputs.chatbot_image }}
-      environment: ${{ steps.env.outputs.environment }}
-      build_required: ${{ steps.build_flags.outputs.build_required }}
 
     steps:
       - name: Checkout code
@@ -56,22 +88,6 @@ jobs:
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker us-central1-docker.pkg.dev
-
-      - name: Determine environment
-        id: env
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            ENVIRONMENT="${{ github.event.inputs.environment }}"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            ENVIRONMENT="preview"
-          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            ENVIRONMENT="prod"
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            ENVIRONMENT="dev"
-          else
-            ENVIRONMENT="preview"
-          fi
-          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
 
       - name: Detect project changes
         id: changes
@@ -95,43 +111,17 @@ jobs:
             terraform:
               - 'terraform/**'
 
-      - name: Evaluate build requirement
-        id: build_flags
-        run: |
-          should_build=false
-          if [[ "${{ steps.changes.outputs.browser }}" == 'true' ]]; then
-            should_build=true
-          fi
-          if [[ "${{ steps.changes.outputs.proxy }}" == 'true' ]]; then
-            should_build=true
-          fi
-          if [[ "${{ steps.changes.outputs.mastra }}" == 'true' ]]; then
-            should_build=true
-          fi
-          if [[ "${{ steps.changes.outputs.chatbot }}" == 'true' ]]; then
-            should_build=true
-          fi
-          if [[ "${{ steps.changes.outputs.terraform }}" == 'true' ]]; then
-            should_build=true
-          fi
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            should_build=true
-          fi
-
-          echo "Build required: ${should_build}"
-          echo "build_required=${should_build}" >> $GITHUB_OUTPUT
-
       - name: Set image tags
         id: images
         run: |
           TAG=${GITHUB_SHA:0:7}
-          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:${TAG}" >> $GITHUB_OUTPUT
-          echo "browser_ws_proxy_image=${ARTIFACT_REGISTRY}/browser-ws-proxy:${TAG}" >> $GITHUB_OUTPUT
-          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
-          echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
+          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:latest" >> $GITHUB_OUTPUT
+          echo "browser_ws_proxy_image=${ARTIFACT_REGISTRY}/browser-ws-proxy:latest" >> $GITHUB_OUTPUT
+          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:latest" >> $GITHUB_OUTPUT
+          echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:latest" >> $GITHUB_OUTPUT
 
       - name: Build and push browser-streaming image
-        if: steps.changes.outputs.browser == 'true'
+        if: steps.changes.outputs.browser == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             -f playwright-mcp/Dockerfile \
@@ -139,12 +129,8 @@ jobs:
             ./playwright-mcp
           docker push ${{ steps.images.outputs.browser_image }}
 
-          # Also tag as latest for Terraform
-          docker tag ${{ steps.images.outputs.browser_image }} ${ARTIFACT_REGISTRY}/browser-streaming:latest
-          docker push ${ARTIFACT_REGISTRY}/browser-streaming:latest
-
       - name: Build and push browser-ws-proxy image
-        if: steps.changes.outputs.proxy == 'true'
+        if: steps.changes.outputs.proxy == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             -f browser-ws-proxy/Dockerfile \
@@ -152,43 +138,31 @@ jobs:
             ./browser-ws-proxy
           docker push ${{ steps.images.outputs.browser_ws_proxy_image }}
 
-          # Also tag as latest for Terraform
-          docker tag ${{ steps.images.outputs.browser_ws_proxy_image }} ${ARTIFACT_REGISTRY}/browser-ws-proxy:latest
-          docker push ${ARTIFACT_REGISTRY}/browser-ws-proxy:latest
-
       - name: Build and push mastra-app image
-        if: steps.changes.outputs.mastra == 'true'
+        if: steps.changes.outputs.mastra == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
-            --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
+            --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
             -f Dockerfile \
             -t ${{ steps.images.outputs.mastra_image }} \
             .
           docker push ${{ steps.images.outputs.mastra_image }}
 
-          # Also tag as latest for Terraform
-          docker tag ${{ steps.images.outputs.mastra_image }} ${ARTIFACT_REGISTRY}/mastra-app:latest
-          docker push ${ARTIFACT_REGISTRY}/mastra-app:latest
-
       - name: Build and push ai-chatbot image
-        if: steps.changes.outputs.chatbot == 'true'
+        if: steps.changes.outputs.chatbot == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
-            --build-arg NODE_ENV=${{ steps.env.outputs.environment }} \
+            --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .
           docker push ${{ steps.images.outputs.chatbot_image }}
 
-          # Also tag as latest for Terraform
-          docker tag ${{ steps.images.outputs.chatbot_image }} ${ARTIFACT_REGISTRY}/ai-chatbot:latest
-          docker push ${ARTIFACT_REGISTRY}/ai-chatbot:latest
-
-  # Deploy job for Cloud Run services
-  deploy:
-    if: needs.build.outputs.build_required == 'true'
-    needs: build
+  # Deploy infrastructure with Terraform
+  terraform:
     runs-on: ubuntu-latest
+    needs: [setup, build]
+    if: needs.setup.outputs.should_deploy == 'true' || github.event_name == 'pull_request'
 
     permissions:
       contents: read
@@ -198,8 +172,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -210,231 +182,54 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Determine service names
-        id: services
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ./terraform
         run: |
-          ENV=${{ needs.build.outputs.environment }}
+          terraform plan \
+            -var="environment=${{ needs.setup.outputs.environment }}" \
+            -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
+            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
+            -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
+            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
+            -out=tfplan
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            MASTRA_SERVICE="pr-${{ github.event.number }}-mastra-app"
-            CHATBOT_SERVICE="pr-${{ github.event.number }}-ai-chatbot"
-            PROXY_SERVICE="pr-${{ github.event.number }}-browser-ws-proxy"
-          else
-            MASTRA_SERVICE="mastra-app-${ENV}"
-            CHATBOT_SERVICE="ai-chatbot-${ENV}"
-            PROXY_SERVICE="browser-ws-proxy-${ENV}"
-          fi
+      - name: Terraform Apply
+        if: needs.setup.outputs.should_deploy == 'true'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
 
-          echo "mastra_service=${MASTRA_SERVICE}" >> $GITHUB_OUTPUT
-          echo "chatbot_service=${CHATBOT_SERVICE}" >> $GITHUB_OUTPUT
-          echo "proxy_service=${PROXY_SERVICE}" >> $GITHUB_OUTPUT
-
-          # Database secret based on environment
-          if [[ "${ENV}" == "prod" ]]; then
-            echo "database_secret=database-url-production" >> $GITHUB_OUTPUT
-          else
-            echo "database_secret=database-url-${ENV}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Get browser VM internal IP
-        id: browser
+      - name: Get Terraform Outputs
+        if: needs.setup.outputs.should_deploy == 'true'
+        working-directory: ./terraform
+        id: tf_outputs
         run: |
-          # Get internal IP of browser VM for this environment
-          VM_NAME="browser-streaming-${{ needs.build.outputs.environment }}"
-          echo "Looking for browser VM: ${VM_NAME}"
+          echo "chatbot_url=$(terraform output -raw chatbot_public_url)" >> $GITHUB_OUTPUT
+          echo "vm_ip=$(terraform output -raw vm_external_ip)" >> $GITHUB_OUTPUT
 
-          # Check if VM exists and get internal IP
-          INTERNAL_IP=$(gcloud compute instances describe ${VM_NAME} \
-            --zone=us-central1-a \
-            --format='value(networkInterfaces[0].networkIP)' 2>/dev/null)
-
-          if [ -z "$INTERNAL_IP" ]; then
-            echo "ERROR: Browser VM ${VM_NAME} not found"
-            echo "Available browser VMs:"
-            gcloud compute instances list --filter="name~browser-streaming" --format="table(name,status,zone,internalIP)"
-            exit 1
-          fi
-
-          # Check if browser service is ready
-          READY=$(gcloud compute instances describe ${VM_NAME} \
-            --zone=us-central1-a \
-            --format='value(metadata.items[browser-service-ready])' 2>/dev/null)
-
-          if [ "$READY" != "true" ]; then
-            echo "Browser VM ${VM_NAME} exists but service not ready yet (ready=${READY})"
-            echo "VM Status:"
-            gcloud compute instances describe ${VM_NAME} --zone=us-central1-a --format="table(status,metadata.items[browser-service-ready])"
-            exit 1
-          fi
-
-          echo "Browser VM ${VM_NAME} ready at internal IP: ${INTERNAL_IP}"
-          echo "internal_ip=${INTERNAL_IP}" >> $GITHUB_OUTPUT
-
-      - name: Deploy Mastra Service
-        run: |
-          gcloud run deploy ${{ steps.services.outputs.mastra_service }} \
-            --image=${{ needs.build.outputs.mastra_image }} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --service-account=cloud-run-${{ needs.build.outputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --allow-unauthenticated \
-            --cpu=2 \
-            --memory=4Gi \
-            --timeout=300 \
-            --max-instances=10 \
-            --min-instances=0 \
-            --add-cloudsql-instances=nava-labs:us-central1:app-${{ needs.build.outputs.environment }} \
-            --port=4112 \
-            --startup-probe="httpGet.path=/health,timeoutSeconds=10,periodSeconds=15,failureThreshold=20" \
-            --cpu-boost \
-            --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
-            --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
-            --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}" \
-            --set-env-vars="GOOGLE_VERTEX_PROJECT=${{ env.PROJECT_ID }}" \
-            --set-env-vars="GOOGLE_VERTEX_LOCATION=us-east5" \
-            --set-env-vars="MASTRA_PORT=4112" \
-            --set-env-vars="CLOUD_SQL_INSTANCE=nava-labs:us-central1:app-${{ needs.build.outputs.environment }}" \
-            --set-env-vars="PLAYWRIGHT_MCP_URL=http://${{ steps.browser.outputs.internal_ip }}:8931/mcp" \
-            --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
-            --set-env-vars="CORS_ORIGINS=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || '*' }}" \
-            --set-secrets="DATABASE_URL=${{ steps.services.outputs.database_secret }}:latest" \
-            --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
-            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
-            --set-secrets="EXA_API_KEY=exa-api-key:latest" \
-            --set-secrets="GOOGLE_GENERATIVE_AI_API_KEY=google-generative-ai-key:latest" \
-            --set-secrets="GROK_API_KEY=grok-api-key:latest" \
-            --set-secrets="XAI_API_KEY=xai-api-key:latest" \
-            --set-secrets="MASTRA_JWT_SECRET=mastra-jwt-secret:latest" \
-            --set-secrets="MASTRA_APP_PASSWORD=mastra-app-password:latest" \
-            --set-secrets="MASTRA_JWT_TOKEN=mastra-jwt-token:latest" \
-            --set-secrets="GOOGLE_VERTEX_CREDENTIALS=vertex-ai-credentials:latest"
-
-      - name: Get Mastra service URL
-        id: mastra_url
-        run: |
-          URL=$(gcloud run services describe ${{ steps.services.outputs.mastra_service }} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --format='value(status.url)')
-          echo "service_url=${URL}" >> $GITHUB_OUTPUT
-
-      - name: Deploy Browser WebSocket Proxy
-        run: |
-          gcloud run deploy ${{ steps.services.outputs.proxy_service }} \
-            --image=${{ needs.build.outputs.browser_ws_proxy_image }} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --service-account=cloud-run-${{ needs.build.outputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --allow-unauthenticated \
-            --cpu=1 \
-            --memory=512Mi \
-            --timeout=3600 \
-            --max-instances=10 \
-            --min-instances=0 \
-            --port=8080 \
-            --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
-            --set-env-vars="BROWSER_STREAMING_HOST=${{ steps.browser.outputs.internal_ip }}" \
-            --set-env-vars="BROWSER_STREAMING_PORT=8933"
-
-      - name: Get Browser WebSocket Proxy URL
-        id: proxy_url
-        run: |
-          URL=$(gcloud run services describe ${{ steps.services.outputs.proxy_service }} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --format='value(status.url)')
-          echo "service_url=${URL}" >> $GITHUB_OUTPUT
-
-      - name: Deploy AI Chatbot Service
-        run: |
-          gcloud run deploy ${{ steps.services.outputs.chatbot_service }} \
-            --image=${{ needs.build.outputs.chatbot_image }} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --service-account=cloud-run-${{ needs.build.outputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --allow-unauthenticated \
-            --cpu=1 \
-            --memory=2Gi \
-            --timeout=60 \
-            --max-instances=5 \
-            --min-instances=0 \
-            --add-cloudsql-instances=nava-labs:us-central1:app-${{ needs.build.outputs.environment }} \
-            --port=3000 \
-            --set-env-vars="NODE_ENV=${{ needs.build.outputs.environment == 'prod' && 'production' || 'development' }}" \
-            --set-env-vars="ENVIRONMENT=${{ needs.build.outputs.environment }}" \
-            --set-env-vars="GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}" \
-            --set-env-vars="GOOGLE_VERTEX_PROJECT=${{ env.PROJECT_ID }}" \
-            --set-env-vars="GOOGLE_VERTEX_LOCATION=us-east5" \
-            --set-env-vars="GCS_BUCKET_NAME=labs-asp-artifacts-${{ needs.build.outputs.environment }}" \
-            --set-env-vars="NEXT_PUBLIC_MASTRA_SERVER_URL=${{ steps.mastra_url.outputs.service_url }}" \
-            --set-env-vars="PLAYWRIGHT_MCP_URL=http://${{ steps.browser.outputs.internal_ip }}:8931/mcp" \
-            --set-env-vars="BROWSER_STREAMING_URL=ws://${{ steps.browser.outputs.internal_ip }}:8933" \
-            --set-env-vars="BROWSER_STREAMING_PORT=8933" \
-            --set-env-vars="BROWSER_STREAMING_HOST=${{ steps.browser.outputs.internal_ip }}" \
-            --set-env-vars="BROWSER_WS_PROXY_URL=${{ steps.proxy_url.outputs.service_url }}" \
-            --set-env-vars="CLOUD_SQL_INSTANCE=nava-labs:us-central1:app-${{ needs.build.outputs.environment }}" \
-            --set-env-vars="NEXTAUTH_URL=${{ needs.build.outputs.environment == 'prod' && 'https://labs-asp.com' || format('https://{0}.labs-asp.com', needs.build.outputs.environment) }}" \
-            --set-secrets="DATABASE_URL=${{ steps.services.outputs.database_secret }}:latest" \
-            --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
-            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
-            --set-secrets="EXA_API_KEY=exa-api-key:latest" \
-            --set-secrets="GOOGLE_GENERATIVE_AI_API_KEY=google-generative-ai-key:latest" \
-            --set-secrets="XAI_API_KEY=xai-api-key:latest" \
-            --set-secrets="AUTH_SECRET=auth-secret:latest" \
-            --set-secrets="MASTRA_JWT_TOKEN=mastra-jwt-token:latest" \
-            --set-secrets="GOOGLE_APPLICATION_CREDENTIALS=vertex-ai-credentials:latest"
-
-      - name: Get Chatbot service URL
-        id: chatbot_url
-        run: |
-          URL=$(gcloud run services describe ${{ steps.services.outputs.chatbot_service }} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --format='value(status.url)')
-          echo "service_url=${URL}" >> $GITHUB_OUTPUT
-
-      - name: Comment on PR
+      - name: Comment on PR with deployment info
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const mastraUrl = '${{ steps.mastra_url.outputs.service_url }}';
-            const chatbotUrl = '${{ steps.chatbot_url.outputs.service_url }}';
-            const mastraService = '${{ steps.services.outputs.mastra_service }}';
-            const chatbotService = '${{ steps.services.outputs.chatbot_service }}';
+            const body = `## Terraform Plan Complete
 
-            const body = `## 🚀 Client-Server Architecture Preview
+            Infrastructure changes have been planned for **${{ needs.setup.outputs.environment }}** environment.
 
-            Your changes have been deployed with the new 3-service architecture:
+            ### Changes
+            - VM will run: browser-streaming + mastra-app containers
+            - Cloud Run services: ai-chatbot, browser-ws-proxy
+            - All services connect to **dev database** and **dev GCS bucket**
 
-            ### 🤖 **AI Chatbot** (Frontend)
-            **Service**: \`${chatbotService}\`
-            **URL**: ${chatbotUrl}
-            - 💬 [Chat Interface](${chatbotUrl})
-            - 🔐 [Login](${chatbotUrl}/auth/login)
-
-            ### ⚙️ **Mastra Backend** (API)
-            **Service**: \`${mastraService}\`
-            **URL**: ${mastraUrl}
-            - 🤖 [Chat Route](${mastraUrl}/chat) (for web-automation-model)
-            - 📊 [Health Check](${mastraUrl}/health)
-
-            ### 🌐 **Browser Service** (VM)
-            - Running on dedicated VM with Playwright
-            - Internal MCP server for browser automation
-            - WebSocket streaming for real-time browser viewing
-
-            ### Architecture Flow
-            \`\`\`
-            User → AI Chatbot → Mastra Backend → Browser VM
-                       ↓              ↓
-                  Chat Models    Web Automation
-            \`\`\`
-
-            The preview will be available until this PR is closed or merged.
-            `;
+            **Note:** This is a plan only. Merge to deploy.`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -443,44 +238,11 @@ jobs:
               body: body
             });
 
-  # Cleanup job for closed PRs
-  cleanup:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
-          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Delete preview services
+      - name: Deployment Summary
+        if: needs.setup.outputs.should_deploy == 'true'
         run: |
-          MASTRA_SERVICE="pr-${{ github.event.number }}-mastra-app"
-          CHATBOT_SERVICE="pr-${{ github.event.number }}-ai-chatbot"
-          PROXY_SERVICE="pr-${{ github.event.number }}-browser-ws-proxy"
-
-          gcloud run services delete ${MASTRA_SERVICE} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --quiet || true
-
-          gcloud run services delete ${CHATBOT_SERVICE} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --quiet || true
-
-          gcloud run services delete ${PROXY_SERVICE} \
-            --platform=managed \
-            --region=${{ env.REGION }} \
-            --quiet || true
-
-          echo "Cleaned up preview deployments: ${MASTRA_SERVICE}, ${CHATBOT_SERVICE}, ${PROXY_SERVICE}"
+          echo "Deployment to ${{ needs.setup.outputs.environment }} complete"
+          echo "Chatbot URL: ${{ steps.tf_outputs.outputs.chatbot_url }}"
+          echo "VM IP: ${{ steps.tf_outputs.outputs.vm_ip }}"
+          echo "Mastra API: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112"
+          echo "Browser MCP: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp"

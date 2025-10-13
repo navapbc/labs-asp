@@ -42,9 +42,16 @@ resource "google_project_iam_member" "github_actions_service_account_user" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
-resource "google_project_iam_member" "github_actions_compute_viewer" {
+resource "google_project_iam_member" "github_actions_compute_admin" {
   project = local.project_id
-  role    = "roles/compute.viewer"
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# Compute network admin for firewall rules
+resource "google_project_iam_member" "github_actions_compute_network_admin" {
+  project = local.project_id
+  role    = "roles/compute.networkAdmin"
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
