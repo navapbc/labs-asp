@@ -116,10 +116,10 @@ jobs:
         id: images
         run: |
           TAG=${GITHUB_SHA:0:7}
-          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:latest" >> $GITHUB_OUTPUT
-          echo "browser_ws_proxy_image=${ARTIFACT_REGISTRY}/browser-ws-proxy:latest" >> $GITHUB_OUTPUT
-          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:latest" >> $GITHUB_OUTPUT
-          echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:latest" >> $GITHUB_OUTPUT
+          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:${TAG}" >> $GITHUB_OUTPUT
+          echo "browser_ws_proxy_image=${ARTIFACT_REGISTRY}/browser-ws-proxy:${TAG}" >> $GITHUB_OUTPUT
+          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
+          echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
 
       - name: Build and push browser-streaming image
         if: steps.changes.outputs.browser == 'true' || github.event_name == 'workflow_dispatch'
