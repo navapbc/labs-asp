@@ -55,6 +55,13 @@ resource "google_project_iam_member" "github_actions_compute_network_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Compute security admin for firewall management
+resource "google_project_iam_member" "github_actions_compute_security_admin" {
+  project = local.project_id
+  role    = "roles/compute.securityAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 # Security Admin for managing IAM policies
 resource "google_project_iam_member" "github_actions_security_admin" {
   project = local.project_id
