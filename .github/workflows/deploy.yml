@@ -3,19 +3,19 @@ name: Deploy Infrastructure
 on:
   push:
     branches:
-      - develop  # Deploy to dev environment
-      - main     # Deploy to prod environment (uses dev DB for now)
+      - '**'  # Deploy preview on any branch push
   pull_request:
-    branches: [develop, main]  # Preview deployment
+    branches: [develop, main]  # Preview deployment on PRs
   workflow_dispatch:  # Manual trigger
     inputs:
       environment:
         description: 'Environment to deploy'
         required: true
-        default: 'dev'
+        default: 'preview'
         type: choice
         options:
           - dev
+          - preview
           - prod
 
 env:
@@ -48,8 +48,9 @@ jobs:
             ENVIRONMENT="dev"
             SHOULD_DEPLOY="true"
           else
-            ENVIRONMENT="dev"
-            SHOULD_DEPLOY="false"
+            # Any other branch = preview environment with actual deployment
+            ENVIRONMENT="preview"
+            SHOULD_DEPLOY="true"
           fi
 
           echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
