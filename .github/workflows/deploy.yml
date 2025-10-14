@@ -220,17 +220,9 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
 
-      - name: Rollback on failure
-        if: failure() && needs.setup.outputs.should_deploy == 'true'
-        working-directory: ./terraform
-        run: |
-          echo "Deployment failed, destroying failed resources"
-          terraform destroy -auto-approve \
-            -var="environment=${{ needs.setup.outputs.environment }}" \
-            -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
-            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
-            -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
-            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}"
+      # REMOVED: Automatic rollback with terraform destroy is too dangerous
+      # It can destroy global resources like IAM bindings and workload identity pools
+      # Manual cleanup should be done if deployment fails
 
       - name: Get Terraform Outputs
         if: needs.setup.outputs.should_deploy == 'true'
