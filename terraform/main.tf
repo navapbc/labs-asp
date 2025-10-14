@@ -13,9 +13,9 @@ terraform {
   }
 
   # Use existing GCS backend for state storage
+  # Note: prefix should be set per-environment via terraform init -backend-config
   backend "gcs" {
     bucket = "labs-asp-terraform-state"
-    prefix = "terraform/state"
   }
 }
 
