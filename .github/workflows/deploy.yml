@@ -40,7 +40,7 @@ jobs:
             SHOULD_DEPLOY="true"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             ENVIRONMENT="preview"
-            SHOULD_DEPLOY="false"  # Preview = plan only
+            SHOULD_DEPLOY="true"  # PRs deploy to preview
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             ENVIRONMENT="prod"
             SHOULD_DEPLOY="true"
@@ -245,7 +245,18 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const body = `## Terraform Plan Complete
+            const shouldDeploy = '${{ needs.setup.outputs.should_deploy }}' === 'true';
+            const body = shouldDeploy
+              ? `## Preview Deployment Complete
+
+            Infrastructure deployed to **${{ needs.setup.outputs.environment }}** environment.
+
+            ### Service URLs
+            - **AI Chatbot**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+            - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
+            - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
+            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933`
+              : `## Terraform Plan Complete
 
             Infrastructure changes have been planned for **${{ needs.setup.outputs.environment }}** environment.
 
