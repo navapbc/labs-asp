@@ -121,8 +121,34 @@ jobs:
           echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
           echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
 
+      - name: Check if images exist (force rebuild if missing)
+        id: image_check
+        run: |
+          TAG=${GITHUB_SHA:0:7}
+          FORCE_BUILD="false"
+
+          # Check if any required image is missing
+          if ! gcloud artifacts docker images describe ${ARTIFACT_REGISTRY}/browser-streaming:${TAG} &>/dev/null; then
+            echo "browser-streaming:${TAG} not found, forcing rebuild"
+            FORCE_BUILD="true"
+          fi
+          if ! gcloud artifacts docker images describe ${ARTIFACT_REGISTRY}/browser-ws-proxy:${TAG} &>/dev/null; then
+            echo "browser-ws-proxy:${TAG} not found, forcing rebuild"
+            FORCE_BUILD="true"
+          fi
+          if ! gcloud artifacts docker images describe ${ARTIFACT_REGISTRY}/mastra-app:${TAG} &>/dev/null; then
+            echo "mastra-app:${TAG} not found, forcing rebuild"
+            FORCE_BUILD="true"
+          fi
+          if ! gcloud artifacts docker images describe ${ARTIFACT_REGISTRY}/ai-chatbot:${TAG} &>/dev/null; then
+            echo "ai-chatbot:${TAG} not found, forcing rebuild"
+            FORCE_BUILD="true"
+          fi
+
+          echo "force_build=${FORCE_BUILD}" >> $GITHUB_OUTPUT
+
       - name: Build and push browser-streaming image
-        if: steps.changes.outputs.browser == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.changes.outputs.browser == 'true' || github.event_name == 'workflow_dispatch' || steps.image_check.outputs.force_build == 'true'
         run: |
           docker build \
             -f playwright-mcp/Dockerfile \
@@ -131,7 +157,7 @@ jobs:
           docker push ${{ steps.images.outputs.browser_image }}
 
       - name: Build and push browser-ws-proxy image
-        if: steps.changes.outputs.proxy == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.changes.outputs.proxy == 'true' || github.event_name == 'workflow_dispatch' || steps.image_check.outputs.force_build == 'true'
         run: |
           docker build \
             -f browser-ws-proxy/Dockerfile \
@@ -140,7 +166,7 @@ jobs:
           docker push ${{ steps.images.outputs.browser_ws_proxy_image }}
 
       - name: Build and push mastra-app image
-        if: steps.changes.outputs.mastra == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.changes.outputs.mastra == 'true' || github.event_name == 'workflow_dispatch' || steps.image_check.outputs.force_build == 'true'
         run: |
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
@@ -150,7 +176,7 @@ jobs:
           docker push ${{ steps.images.outputs.mastra_image }}
 
       - name: Build and push ai-chatbot image
-        if: steps.changes.outputs.chatbot == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.changes.outputs.chatbot == 'true' || github.event_name == 'workflow_dispatch' || steps.image_check.outputs.force_build == 'true'
         run: |
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
