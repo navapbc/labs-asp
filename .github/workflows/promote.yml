@@ -1,0 +1,148 @@
+name: Promote to Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to promote to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      version:
+        description: 'Git tag/version to promote (e.g., v1.2.3)'
+        required: true
+        type: string
+
+env:
+  PROJECT_ID: nava-labs
+  REGION: us-central1
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/nava-labs/labs-asp
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code at specified version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version }}
+          submodules: recursive
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Get commit SHA from tag
+        id: sha
+        run: |
+          FULL_SHA=$(git rev-parse HEAD)
+          SHORT_SHA=${FULL_SHA:0:7}
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "full_sha=${FULL_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Set image tags
+        id: images
+        run: |
+          TAG=${{ steps.sha.outputs.short_sha }}
+          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:${TAG}" >> $GITHUB_OUTPUT
+          echo "browser_ws_proxy_image=${ARTIFACT_REGISTRY}/browser-ws-proxy:${TAG}" >> $GITHUB_OUTPUT
+          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
+          echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Verify images exist
+        run: |
+          echo "Verifying images exist in Artifact Registry..."
+          gcloud artifacts docker images describe ${{ steps.images.outputs.browser_image }} || echo "Warning: browser image not found"
+          gcloud artifacts docker images describe ${{ steps.images.outputs.browser_ws_proxy_image }} || echo "Warning: proxy image not found"
+          gcloud artifacts docker images describe ${{ steps.images.outputs.mastra_image }} || echo "Warning: mastra image not found"
+          gcloud artifacts docker images describe ${{ steps.images.outputs.chatbot_image }} || echo "Warning: chatbot image not found"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Migrate state to environment-specific path
+        run: |
+          echo "Migrating shared state to environment-specific path"
+          gsutil cp gs://labs-asp-terraform-state/terraform/state/default.tfstate \
+                    gs://labs-asp-terraform-state/terraform/state/${{ github.event.inputs.environment }}/default.tfstate 2>/dev/null || \
+          echo "State already exists at environment-specific path or no shared state to migrate"
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: |
+          terraform init \
+            -backend-config="prefix=terraform/state/${{ github.event.inputs.environment }}"
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: |
+          terraform plan \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="browser_image_url=${{ steps.images.outputs.browser_image }}" \
+            -var="mastra_image_url=${{ steps.images.outputs.mastra_image }}" \
+            -var="chatbot_image_url=${{ steps.images.outputs.chatbot_image }}" \
+            -var="browser_ws_proxy_image_url=${{ steps.images.outputs.browser_ws_proxy_image }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Rollback on failure
+        if: failure()
+        working-directory: ./terraform
+        run: |
+          echo "Deployment failed, destroying failed resources"
+          terraform destroy -auto-approve \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="browser_image_url=${{ steps.images.outputs.browser_image }}" \
+            -var="mastra_image_url=${{ steps.images.outputs.mastra_image }}" \
+            -var="chatbot_image_url=${{ steps.images.outputs.chatbot_image }}" \
+            -var="browser_ws_proxy_image_url=${{ steps.images.outputs.browser_ws_proxy_image }}"
+
+      - name: Get Terraform Outputs
+        working-directory: ./terraform
+        id: tf_outputs
+        run: |
+          echo "chatbot_url=$(terraform output -raw chatbot_public_url)" >> $GITHUB_OUTPUT
+          echo "vm_ip=$(terraform output -raw vm_external_ip)" >> $GITHUB_OUTPUT
+
+      - name: Deployment Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Promotion Complete: ${{ github.event.inputs.version }} → ${{ github.event.inputs.environment }}
+
+          ### Service URLs
+          - **AI Chatbot**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
+          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
+          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+
+          ### Deployment Info
+          - **Version**: ${{ github.event.inputs.version }}
+          - **Commit**: ${{ steps.sha.outputs.full_sha }}
+          - **Environment**: ${{ github.event.inputs.environment }}
+          EOF
+
+          echo "Promotion to ${{ github.event.inputs.environment }} complete"
+          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Chatbot URL: ${{ steps.tf_outputs.outputs.chatbot_url }}"
