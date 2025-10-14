@@ -239,7 +239,25 @@ jobs:
               body: body
             });
 
-      - name: Deployment Summary
+      - name: Create deployment summary
+        if: needs.setup.outputs.should_deploy == 'true'
+        id: summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Deployment Complete: ${{ needs.setup.outputs.environment }}
+
+          ### Service URLs
+          - **AI Chatbot**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
+          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
+          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+
+          ### VM Information
+          - **External IP**: ${{ steps.tf_outputs.outputs.vm_ip }}
+          - **Environment**: ${{ needs.setup.outputs.environment }}
+          EOF
+
+      - name: Deployment Summary (console)
         if: needs.setup.outputs.should_deploy == 'true'
         run: |
           echo "Deployment to ${{ needs.setup.outputs.environment }} complete"
