@@ -164,6 +164,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup, build]
     if: needs.setup.outputs.should_deploy == 'true' || github.event_name == 'pull_request'
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+      url: ${{ steps.tf_outputs.outputs.chatbot_url }}
 
     permissions:
       contents: read
