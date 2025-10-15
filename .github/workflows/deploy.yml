@@ -231,6 +231,27 @@ jobs:
           terraform init \
             -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
 
+      - name: Import existing resources (ignore errors if resources don't exist)
+        working-directory: ./terraform
+        run: |
+          ENV="${{ needs.setup.outputs.environment }}"
+
+          # Import service accounts (continue on error if they don't exist)
+          terraform import "google_service_account.cloud_run" "projects/${{ env.PROJECT_ID }}/serviceAccounts/cloud-run-${ENV}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com" 2>/dev/null || echo "cloud_run service account doesn't exist or already imported"
+          terraform import "google_service_account.vm" "projects/${{ env.PROJECT_ID }}/serviceAccounts/app-vm-${ENV}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com" 2>/dev/null || echo "vm service account doesn't exist or already imported"
+
+          # Import firewall rules (continue on error if they don't exist)
+          terraform import "google_compute_firewall.browser_mcp" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-browser-mcp-${ENV}" 2>/dev/null || echo "browser_mcp firewall doesn't exist or already imported"
+          terraform import "google_compute_firewall.browser_streaming" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-browser-streaming-${ENV}" 2>/dev/null || echo "browser_streaming firewall doesn't exist or already imported"
+          terraform import "google_compute_firewall.mastra_app" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-mastra-app-${ENV}" 2>/dev/null || echo "mastra_app firewall doesn't exist or already imported"
+
+          # Import VM instance (continue on error if it doesn't exist)
+          terraform import "google_compute_instance.app_vm" "projects/${{ env.PROJECT_ID }}/zones/${{ env.REGION }}-a/instances/app-vm-${ENV}" 2>/dev/null || echo "VM doesn't exist or already imported"
+
+          # Import Cloud Run services (continue on error if they don't exist)
+          terraform import "google_cloud_run_v2_service.ai_chatbot" "projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/services/ai-chatbot-${ENV}" 2>/dev/null || echo "ai_chatbot service doesn't exist or already imported"
+          terraform import "google_cloud_run_v2_service.browser_ws_proxy" "projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/services/browser-ws-proxy-${ENV}" 2>/dev/null || echo "browser_ws_proxy service doesn't exist or already imported"
+
       - name: Terraform Plan
         working-directory: ./terraform
         run: |
