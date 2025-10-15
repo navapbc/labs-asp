@@ -36,27 +36,34 @@ locals {
   region     = var.region
   zone       = var.zone
 
+  # Determine base environment (dev, preview, prod) from environment name
+  # For preview-pr-123, base_environment = "preview"
+  base_environment = startswith(var.environment, "preview-pr-") ? "preview" : var.environment
+
   # Environment configurations - reuse existing pattern
   environments = {
     dev = {
       mastra_service_name = "mastra-app-dev"
       chatbot_service_name = "ai-chatbot-dev"
-      sql_instance_name = "app-dev"  # Reuse existing
+      sql_instance_name = "app-dev"  # dev database
       domain_prefix = "dev"
     }
     preview = {
-      mastra_service_name = "mastra-app-preview"
-      chatbot_service_name = "ai-chatbot-preview"
-      sql_instance_name = "app-preview"  # Reuse existing
-      domain_prefix = "preview"
+      mastra_service_name = "mastra-app-${var.environment}"  # Use full env name for unique resources
+      chatbot_service_name = "ai-chatbot-${var.environment}"
+      sql_instance_name = "app-dev"  # ALL preview environments use dev database
+      domain_prefix = var.environment  # preview-pr-123 gets preview-pr-123.labs-asp.com
     }
     prod = {
       mastra_service_name = "mastra-app-prod"
       chatbot_service_name = "ai-chatbot-prod"
-      sql_instance_name = "app-prod"  # Reuse existing
+      sql_instance_name = "app-prod"  # prod database
       domain_prefix = "app"
     }
   }
+
+  # Get current environment config using base_environment as key
+  env_config = local.environments[local.base_environment]
 
   # Common labels
   common_labels = {

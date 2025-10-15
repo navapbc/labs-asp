@@ -1,6 +1,6 @@
 # Secret data sources for VM startup script
 data "google_secret_manager_secret_version" "database_url" {
-  secret = var.environment == "prod" ? "database-url-production" : "database-url-${var.environment}"
+  secret = var.environment == "prod" ? "database-url-production" : "database-url-dev"
 }
 
 data "google_secret_manager_secret_version" "openai_api_key" {

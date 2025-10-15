@@ -40,8 +40,8 @@ jobs:
             ENVIRONMENT="${{ github.event.inputs.environment }}"
             SHOULD_DEPLOY="true"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            ENVIRONMENT="preview"
-            SHOULD_DEPLOY="true"  # PRs deploy to preview
+            ENVIRONMENT="preview-pr-${{ github.event.pull_request.number }}"
+            SHOULD_DEPLOY="true"  # PRs deploy to isolated preview environment
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             ENVIRONMENT="prod"
             SHOULD_DEPLOY="true"

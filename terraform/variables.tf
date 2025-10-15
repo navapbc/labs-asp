@@ -94,11 +94,11 @@ variable "chatbot_timeout" {
 
 # Environment selection
 variable "environment" {
-  description = "Environment to deploy (dev, preview, prod)"
+  description = "Environment to deploy (dev, preview-pr-N, prod)"
   type        = string
   default     = "dev"
   validation {
-    condition     = contains(["dev", "preview", "prod"], var.environment)
-    error_message = "Environment must be one of: dev, preview, prod"
+    condition     = can(regex("^(dev|prod|preview(-pr-[0-9]+)?)$", var.environment))
+    error_message = "Environment must be one of: dev, prod, preview, or preview-pr-NUMBER"
   }
 }
