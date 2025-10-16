@@ -275,27 +275,46 @@ jobs:
 
       - name: Import existing environment resources (if they exist)
         working-directory: ./terraform
-        continue-on-error: true
         run: |
           ENV="${{ needs.setup.outputs.environment }}"
 
           echo "Attempting to import existing resources for ${ENV}..."
 
+          # Function to safely import if resource exists in GCP but not in state
+          safe_import() {
+            local resource_type=$1
+            local resource_name=$2
+            local resource_id=$3
+
+            # Check if already in state
+            if terraform state show "${resource_type}.${resource_name}" &>/dev/null; then
+              echo "✓ ${resource_name} already in state, skipping"
+              return 0
+            fi
+
+            # Try to import
+            if terraform import "${resource_type}.${resource_name}" "${resource_id}" 2>&1; then
+              echo "✓ Imported ${resource_name}"
+            else
+              echo "✗ Could not import ${resource_name} (may not exist in GCP yet)"
+            fi
+          }
+
           # Import service accounts
-          terraform import "google_service_account.cloud_run" "projects/${{ env.PROJECT_ID }}/serviceAccounts/cloud-run-${ENV}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com" || echo "Skipped: cloud_run SA"
-          terraform import "google_service_account.vm" "projects/${{ env.PROJECT_ID }}/serviceAccounts/app-vm-${ENV}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com" || echo "Skipped: vm SA"
+          safe_import "google_service_account" "cloud_run" "projects/${{ env.PROJECT_ID }}/serviceAccounts/cloud-run-${ENV}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com"
+          safe_import "google_service_account" "vm" "projects/${{ env.PROJECT_ID }}/serviceAccounts/app-vm-${ENV}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com"
 
           # Import firewall rules
-          terraform import "google_compute_firewall.browser_mcp" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-browser-mcp-${ENV}" || echo "Skipped: browser_mcp firewall"
-          terraform import "google_compute_firewall.browser_streaming" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-browser-streaming-${ENV}" || echo "Skipped: browser_streaming firewall"
-          terraform import "google_compute_firewall.mastra_app" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-mastra-app-${ENV}" || echo "Skipped: mastra_app firewall"
+          safe_import "google_compute_firewall" "browser_mcp" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-browser-mcp-${ENV}"
+          safe_import "google_compute_firewall" "browser_streaming" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-browser-streaming-${ENV}"
+          safe_import "google_compute_firewall" "mastra_app" "projects/${{ env.PROJECT_ID }}/global/firewalls/allow-mastra-app-${ENV}"
 
           # Import VM (if exists)
-          terraform import "google_compute_instance.app_vm" "projects/${{ env.PROJECT_ID }}/zones/${{ env.REGION }}-a/instances/app-vm-${ENV}" || echo "Skipped: VM"
+          safe_import "google_compute_instance" "app_vm" "projects/${{ env.PROJECT_ID }}/zones/${{ env.REGION }}-a/instances/app-vm-${ENV}"
 
           # Import Cloud Run services (if exist)
-          terraform import "google_cloud_run_v2_service.ai_chatbot" "projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/services/ai-chatbot-${ENV}" || echo "Skipped: ai_chatbot"
-          terraform import "google_cloud_run_v2_service.browser_ws_proxy" "projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/services/browser-ws-proxy-${ENV}" || echo "Skipped: browser_ws_proxy"
+          safe_import "google_cloud_run_v2_service" "ai_chatbot" "projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/services/ai-chatbot-${ENV}"
+          safe_import "google_cloud_run_v2_service" "browser_ws_proxy" "projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/services/browser-ws-proxy-${ENV}"
 
           echo "Import complete"
 
@@ -307,13 +326,18 @@ jobs:
             -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
             -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
             -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
-            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
-            -out=tfplan
+            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}"
 
       - name: Terraform Apply
         if: needs.setup.outputs.should_deploy == 'true'
         working-directory: ./terraform
-        run: terraform apply -auto-approve tfplan
+        run: |
+          terraform apply -auto-approve \
+            -var="environment=${{ needs.setup.outputs.environment }}" \
+            -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
+            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
+            -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
+            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}"
 
       # REMOVED: Automatic rollback with terraform destroy is too dangerous
       # It can destroy global resources like IAM bindings and workload identity pools
