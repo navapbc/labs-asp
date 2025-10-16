@@ -79,17 +79,10 @@ jobs:
         with:
           terraform_version: "1.9.0"
 
-      - name: Migrate state to environment-specific path
-        run: |
-          echo "Migrating shared state to environment-specific path"
-          gsutil cp gs://labs-asp-terraform-state/terraform/state/default.tfstate \
-                    gs://labs-asp-terraform-state/terraform/state/${{ github.event.inputs.environment }}/default.tfstate 2>/dev/null || \
-          echo "State already exists at environment-specific path or no shared state to migrate"
-
       - name: Terraform Init
         working-directory: ./terraform
         run: |
-          terraform init \
+          terraform init -reconfigure \
             -backend-config="prefix=terraform/state/${{ github.event.inputs.environment }}"
 
       - name: Terraform Plan
