@@ -3,7 +3,8 @@ name: Deploy Infrastructure
 on:
   push:
     branches:
-      - '**'  # Deploy preview on any branch push
+      - develop
+      - main
   pull_request:
     branches: [develop, main]  # Preview deployment on PRs
   workflow_dispatch:  # Manual trigger
