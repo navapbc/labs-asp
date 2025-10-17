@@ -3,7 +3,7 @@
 
 # AI Chatbot Service - Next.js Frontend
 resource "google_cloud_run_v2_service" "ai_chatbot" {
-  name     = local.environments[var.environment].chatbot_service_name
+  name     = local.env_config.chatbot_service_name
   location = local.region
 
   template {
@@ -25,7 +25,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         name = "DATABASE_URL"
         value_source {
           secret_key_ref {
-            secret  = var.environment == "prod" ? "database-url-production" : "database-url-${var.environment}"
+            secret  = var.environment == "prod" ? "database-url-production" : "database-url-dev"
             version = "latest"
           }
         }
@@ -85,7 +85,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Next.js Auth configuration
       env {
         name  = "NEXTAUTH_URL"
-        value = var.environment == "prod" ? "https://${var.domain_name}" : "https://${local.environments[var.environment].domain_prefix}.${var.domain_name}"
+        value = var.environment == "prod" ? "https://${var.domain_name}" : "https://${local.env_config.domain_prefix}.${var.domain_name}"
       }
 
       env {
@@ -127,7 +127,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Google Cloud Storage
       env {
         name  = "GCS_BUCKET_NAME"
-        value = "labs-asp-artifacts-${var.environment}"
+        value = var.environment == "prod" ? "labs-asp-artifacts-prod" : "labs-asp-artifacts-dev"
       }
 
       # Mastra authentication
@@ -199,7 +199,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "CLOUD_SQL_INSTANCE"
-        value = "nava-labs:us-central1:app-${var.environment}"
+        value = var.environment == "prod" ? "nava-labs:us-central1:app-prod" : "nava-labs:us-central1:app-dev"
       }
 
       # Port configuration - Next.js port
@@ -228,7 +228,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     volumes {
       name = "cloudsql"
       cloud_sql_instance {
-        instances = ["nava-labs:us-central1:app-${var.environment}"]
+        instances = [var.environment == "prod" ? "nava-labs:us-central1:app-prod" : "nava-labs:us-central1:app-dev"]
       }
     }
   }

@@ -1,6 +1,8 @@
 # Google Cloud Storage buckets for artifacts
+# IMPORTANT: GLOBAL resources managed ONLY by 'dev' environment
+# These buckets are shared across ALL environments (dev, preview-*, prod)
 resource "google_storage_bucket" "artifacts" {
-  for_each = local.environments
+  for_each = local.is_managing_globals ? local.environments : {}
 
   name          = "labs-asp-artifacts-${each.key}"
   location      = local.region
@@ -32,9 +34,26 @@ resource "google_storage_bucket" "artifacts" {
   depends_on = [google_project_service.required_apis]
 }
 
+# Data sources for storage buckets (used in preview/prod environments)
+data "google_storage_bucket" "artifacts" {
+  for_each = local.is_managing_globals ? {} : local.environments
+
+  name = "labs-asp-artifacts-${each.key}"
+}
+
+# Unified local for bucket references
+locals {
+  artifact_buckets = local.is_managing_globals ? {
+    for k, v in google_storage_bucket.artifacts : k => v.name
+  } : {
+    for k, v in data.google_storage_bucket.artifacts : k => v.name
+  }
+}
+
 # IAM binding for Cloud Run services to access storage
+# Only manage in dev environment
 resource "google_storage_bucket_iam_member" "cloud_run_storage_access" {
-  for_each = local.environments
+  for_each = local.is_managing_globals ? local.environments : {}
 
   bucket = google_storage_bucket.artifacts[each.key].name
   role   = "roles/storage.objectAdmin"

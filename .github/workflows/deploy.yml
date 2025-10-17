@@ -3,7 +3,8 @@ name: Deploy Infrastructure
 on:
   push:
     branches:
-      - '**'  # Deploy preview on any branch push
+      - develop
+      - main
   pull_request:
     branches: [develop, main]  # Preview deployment on PRs
   workflow_dispatch:  # Manual trigger
@@ -39,8 +40,8 @@ jobs:
             ENVIRONMENT="${{ github.event.inputs.environment }}"
             SHOULD_DEPLOY="true"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            ENVIRONMENT="preview"
-            SHOULD_DEPLOY="false"  # Preview = plan only
+            ENVIRONMENT="preview-pr-${{ github.event.pull_request.number }}"
+            SHOULD_DEPLOY="true"  # PRs deploy to isolated preview environment
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             ENVIRONMENT="prod"
             SHOULD_DEPLOY="true"
@@ -122,7 +123,6 @@ jobs:
           echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
 
       - name: Build and push browser-streaming image
-        if: steps.changes.outputs.browser == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             -f playwright-mcp/Dockerfile \
@@ -191,18 +191,17 @@ jobs:
         with:
           terraform_version: "1.9.0"
 
-      - name: Migrate state to environment-specific path
-        run: |
-          echo "Migrating shared state to environment-specific path"
-          gsutil cp gs://labs-asp-terraform-state/terraform/state/default.tfstate \
-                    gs://labs-asp-terraform-state/terraform/state/${{ needs.setup.outputs.environment }}/default.tfstate 2>/dev/null || \
-          echo "State already exists at environment-specific path or no shared state to migrate"
-
       - name: Terraform Init
         working-directory: ./terraform
         run: |
           terraform init \
             -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
+
+      - name: Verify Terraform State
+        working-directory: ./terraform
+        run: |
+          echo "Checking Terraform state for environment: ${{ needs.setup.outputs.environment }}"
+          terraform state list || echo "No existing state found (expected for first deployment)"
 
       - name: Terraform Plan
         working-directory: ./terraform
@@ -220,17 +219,9 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
 
-      - name: Rollback on failure
-        if: failure() && needs.setup.outputs.should_deploy == 'true'
-        working-directory: ./terraform
-        run: |
-          echo "Deployment failed, destroying failed resources"
-          terraform destroy -auto-approve \
-            -var="environment=${{ needs.setup.outputs.environment }}" \
-            -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
-            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
-            -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
-            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}"
+      # REMOVED: Automatic rollback with terraform destroy is too dangerous
+      # It can destroy global resources like IAM bindings and workload identity pools
+      # Manual cleanup should be done if deployment fails
 
       - name: Get Terraform Outputs
         if: needs.setup.outputs.should_deploy == 'true'
@@ -245,7 +236,18 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const body = `## Terraform Plan Complete
+            const shouldDeploy = '${{ needs.setup.outputs.should_deploy }}' === 'true';
+            const body = shouldDeploy
+              ? `## Preview Deployment Complete
+
+            Infrastructure deployed to **${{ needs.setup.outputs.environment }}** environment.
+
+            ### Service URLs
+            - **AI Chatbot**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+            - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
+            - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
+            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933`
+              : `## Terraform Plan Complete
 
             Infrastructure changes have been planned for **${{ needs.setup.outputs.environment }}** environment.
 
