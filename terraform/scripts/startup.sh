@@ -53,6 +53,7 @@ chmod 755 /tmp/artifacts
 
 # Write vertex credentials to file
 mkdir -p /tmp/credentials
+rm -rf /tmp/credentials/vertex-ai-credentials.json
 cat > /tmp/credentials/vertex-ai-credentials.json <<'VERTEX_CREDS_EOF'
 ${vertex_credentials}
 VERTEX_CREDS_EOF
