@@ -123,7 +123,6 @@ jobs:
           echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
 
       - name: Build and push browser-streaming image
-        if: steps.changes.outputs.browser == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             -f playwright-mcp/Dockerfile \
