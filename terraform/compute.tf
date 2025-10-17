@@ -39,10 +39,6 @@ data "google_secret_manager_secret_version" "mastra_jwt_token" {
   secret = "mastra-jwt-token"
 }
 
-data "google_secret_manager_secret_version" "vertex_credentials" {
-  secret = "vertex-ai-credentials"
-}
-
 # Compute VM - Runs browser-streaming and mastra-app containers
 resource "google_compute_instance" "app_vm" {
   name         = "app-vm-${var.environment}"
@@ -78,21 +74,20 @@ resource "google_compute_instance" "app_vm" {
     browser-image-version = var.browser_image_url
     mastra-image-version  = var.mastra_image_url
     startup-script = templatefile("${path.module}/scripts/startup.sh", {
-      browser_image        = var.browser_image_url
-      mastra_image         = var.mastra_image_url
-      project_id           = local.project_id
-      environment          = var.environment
-      database_url         = data.google_secret_manager_secret_version.database_url.secret_data
-      openai_api_key       = data.google_secret_manager_secret_version.openai_api_key.secret_data
-      anthropic_api_key    = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
-      exa_api_key          = data.google_secret_manager_secret_version.exa_api_key.secret_data
-      google_ai_key        = data.google_secret_manager_secret_version.google_ai_key.secret_data
-      grok_api_key         = data.google_secret_manager_secret_version.grok_api_key.secret_data
-      xai_api_key          = data.google_secret_manager_secret_version.xai_api_key.secret_data
-      mastra_jwt_secret    = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
-      mastra_app_password  = data.google_secret_manager_secret_version.mastra_app_password.secret_data
-      mastra_jwt_token     = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
-      vertex_credentials   = data.google_secret_manager_secret_version.vertex_credentials.secret_data
+      browser_image       = var.browser_image_url
+      mastra_image        = var.mastra_image_url
+      project_id          = local.project_id
+      environment         = var.environment
+      database_url        = data.google_secret_manager_secret_version.database_url.secret_data
+      openai_api_key      = data.google_secret_manager_secret_version.openai_api_key.secret_data
+      anthropic_api_key   = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
+      exa_api_key         = data.google_secret_manager_secret_version.exa_api_key.secret_data
+      google_ai_key       = data.google_secret_manager_secret_version.google_ai_key.secret_data
+      grok_api_key        = data.google_secret_manager_secret_version.grok_api_key.secret_data
+      xai_api_key         = data.google_secret_manager_secret_version.xai_api_key.secret_data
+      mastra_jwt_secret   = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
+      mastra_app_password = data.google_secret_manager_secret_version.mastra_app_password.secret_data
+      mastra_jwt_token    = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
     })
   }
 
@@ -194,5 +189,11 @@ resource "google_project_iam_member" "vm_artifact_registry" {
 resource "google_project_iam_member" "vm_secret_accessor" {
   project = local.project_id
   role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.vm.email}"
+}
+
+resource "google_project_iam_member" "vm_vertex_ai_user" {
+  project = local.project_id
+  role    = "roles/aiplatform.user"
   member  = "serviceAccount:${google_service_account.vm.email}"
 }

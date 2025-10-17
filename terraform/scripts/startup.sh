@@ -51,14 +51,6 @@ docker rm browser-streaming mastra-app 2>/dev/null || true
 mkdir -p /tmp/artifacts
 chmod 755 /tmp/artifacts
 
-# Write vertex credentials to file
-mkdir -p /tmp/credentials
-rm -rf /tmp/credentials/vertex-ai-credentials.json
-cat > /tmp/credentials/vertex-ai-credentials.json <<'VERTEX_CREDS_EOF'
-${vertex_credentials}
-VERTEX_CREDS_EOF
-chmod 644 /tmp/credentials/vertex-ai-credentials.json
-
 # Start browser-streaming container
 log "Starting browser-streaming container..."
 docker run -d \
@@ -90,7 +82,6 @@ docker run -d \
     --network mastra-network \
     -p 4112:4112 \
     -v /tmp/artifacts:/app/artifacts \
-    -v /tmp/credentials/vertex-ai-credentials.json:/app/vertex-ai-credentials.json:ro \
     -e PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp \
     -e BROWSER_STREAMING_URL=ws://browser-streaming:8933 \
     -e NODE_ENV=production \
@@ -106,7 +97,6 @@ docker run -d \
     -e MASTRA_JWT_SECRET="${mastra_jwt_secret}" \
     -e MASTRA_APP_PASSWORD="${mastra_app_password}" \
     -e MASTRA_JWT_TOKEN="${mastra_jwt_token}" \
-    -e GOOGLE_APPLICATION_CREDENTIALS=/app/vertex-ai-credentials.json \
     -e GOOGLE_VERTEX_LOCATION=us-east5 \
     -e GOOGLE_VERTEX_PROJECT="${project_id}" \
     -e GOOGLE_CLOUD_PROJECT="${project_id}" \
