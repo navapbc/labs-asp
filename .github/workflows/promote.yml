@@ -82,7 +82,7 @@ jobs:
       - name: Terraform Init
         working-directory: ./terraform
         run: |
-          terraform init -reconfigure \
+          terraform init \
             -backend-config="prefix=terraform/state/${{ github.event.inputs.environment }}"
 
       - name: Terraform Plan

@@ -195,7 +195,7 @@ jobs:
       - name: Terraform Init
         working-directory: ./terraform
         run: |
-          terraform init -reconfigure \
+          terraform init \
             -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
 
       - name: Verify Terraform State
