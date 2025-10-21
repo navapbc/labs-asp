@@ -325,6 +325,7 @@ All secrets stored in Google Secret Manager:
 - `database-url-dev` / `database-url-production`
 - API keys (OpenAI, Anthropic, Exa, etc.)
 - `mastra-jwt-secret`, `mastra-app-password`, `mastra-jwt-token`
+- `posthog-api-key` - Analytics and user behavior tracking
 
 Accessed via:
 - Terraform data sources (for startup script)
@@ -353,7 +354,58 @@ Firewall rules allow public access to:
 | `terraform/variables.tf` | Input variables and defaults |
 | `terraform/outputs.tf` | Output values (URLs, IPs) |
 
+## Analytics and User Tracking
+
+### PostHog Setup
+
+PostHog is integrated for analytics and user behavior tracking across all environments (dev, prod, preview).
+
+**Configuration:**
+- Single PostHog Cloud project shared across all environments
+- Events are tagged with `environment` property (dev/prod/preview-pr-{number})
+- Client-side tracking using `posthog-js` in Next.js app
+- Automatic pageview tracking and session recording
+
+**Environment Variables:**
+- `NEXT_PUBLIC_POSTHOG_KEY` - Project API key (from Secret Manager)
+- `NEXT_PUBLIC_POSTHOG_HOST` - `https://us.i.posthog.com`
+
+**Files:**
+- `client/app/providers.tsx` - PostHog provider and pageview tracking
+- `client/app/layout.tsx` - Provider integration
+- `terraform/cloud_run.tf` - Environment variable configuration
+
+**Managing the PostHog API Key:**
+```bash
+# View current secret
+gcloud secrets versions access latest --secret=posthog-api-key --project=nava-labs
+
+# Update secret with new API key
+echo -n "phc_YOUR_NEW_KEY" | gcloud secrets versions add posthog-api-key --data-file=-
+```
+
+**Viewing Analytics:**
+- Dashboard: https://app.posthog.com
+- Filter by environment using the `environment` property
+- Session recordings available for debugging user issues
+
 ## Recent Fixes
+
+### Fix: PostHog Analytics Integration
+
+**Added:** PostHog Cloud integration for user behavior tracking
+
+**Changes:**
+- Created `posthog-api-key` secret in Secret Manager
+- Added PostHog environment variables to Cloud Run service
+- Implemented PostHog provider in Next.js app with automatic pageview tracking
+- All environments use the same PostHog project with environment tagging
+
+**Files modified:**
+- `terraform/cloud_run.tf` (added PostHog env vars)
+- `client/app/providers.tsx` (created PostHog provider)
+- `client/app/layout.tsx` (integrated provider)
+- `client/package.json` (added posthog-js dependency)
 
 ### Fix: Vertex AI Claude Sonnet 4.5 Authentication
 

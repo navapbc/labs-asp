@@ -82,6 +82,22 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # PostHog Analytics
+      env {
+        name = "NEXT_PUBLIC_POSTHOG_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = "posthog-api-key"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_POSTHOG_HOST"
+        value = "https://us.i.posthog.com"
+      }
+
       # Next.js Auth configuration
       env {
         name  = "NEXTAUTH_URL"
