@@ -6,6 +6,9 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   name     = local.env_config.chatbot_service_name
   location = local.region
 
+  # Disable deletion protection for preview environments to allow easy cleanup
+  deletion_protection = startswith(var.environment, "preview-") ? false : true
+
   template {
     service_account = google_service_account.cloud_run.email
 
@@ -292,6 +295,9 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 resource "google_cloud_run_v2_service" "browser_ws_proxy" {
   name     = "browser-ws-proxy-${var.environment}"
   location = local.region
+
+  # Disable deletion protection for preview environments to allow easy cleanup
+  deletion_protection = startswith(var.environment, "preview-") ? false : true
 
   template {
     service_account = google_service_account.cloud_run.email
