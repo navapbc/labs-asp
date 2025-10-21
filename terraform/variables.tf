@@ -24,6 +24,12 @@ variable "domain_name" {
   default     = "labs-asp.navateam.com"
 }
 
+variable "enable_custom_domain" {
+  description = "Enable custom domain mapping (requires domain verification via Google Search Console)"
+  type        = bool
+  default     = false  # Default to false to avoid verification issues
+}
+
 # VM configuration (runs browser-streaming + mastra-app)
 variable "vm_machine_type" {
   description = "Machine type for application VM"

@@ -206,12 +206,19 @@ jobs:
       - name: Terraform Plan
         working-directory: ./terraform
         run: |
+          # Enable custom domain only for dev and prod environments
+          ENABLE_DOMAIN="false"
+          if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]] || [[ "${{ needs.setup.outputs.environment }}" == "prod" ]]; then
+            ENABLE_DOMAIN="true"
+          fi
+
           terraform plan \
             -var="environment=${{ needs.setup.outputs.environment }}" \
             -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
             -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
             -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
             -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
+            -var="enable_custom_domain=${ENABLE_DOMAIN}" \
             -out=tfplan
 
       - name: Terraform Apply
@@ -238,21 +245,21 @@ jobs:
         with:
           script: |
             const shouldDeploy = '${{ needs.setup.outputs.should_deploy }}' === 'true';
+            const customDomain = '${{ steps.tf_outputs.outputs.custom_domain }}';
+            const hasCustomDomain = customDomain && customDomain.length > 0;
+
             const body = shouldDeploy
               ? `## Preview Deployment Complete
 
             Infrastructure deployed to **${{ needs.setup.outputs.environment }}** environment.
 
-            ### Custom Domain (Primary Access)
-            - **AI Chatbot**: https://${{ steps.tf_outputs.outputs.custom_domain }}
-
-            ### Direct Cloud Run URLs
+            ### Access URLs
             - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
             - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
             - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
             - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
 
-            **Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.`
+            ${hasCustomDomain ? `**Custom Domain**: https://${customDomain}\n\n**Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.` : '**Note:** Custom domain not configured for preview environments. Use Cloud Run URL to access the application.'}`
               : `## Terraform Plan Complete
 
             Infrastructure changes have been planned for **${{ needs.setup.outputs.environment }}** environment.
@@ -275,17 +282,29 @@ jobs:
         if: needs.setup.outputs.should_deploy == 'true'
         id: summary
         run: |
+          CUSTOM_DOMAIN="${{ steps.tf_outputs.outputs.custom_domain }}"
+
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Deployment Complete: ${{ needs.setup.outputs.environment }}
 
-          ### Custom Domain (Primary Access)
-          - **AI Chatbot**: https://${{ steps.tf_outputs.outputs.custom_domain }}
-
-          ### Direct Cloud Run URLs
+          ### Access URLs
           - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
           - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
           - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
           - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+          EOF
+
+          if [ -n "$CUSTOM_DOMAIN" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Custom Domain
+          - **AI Chatbot**: https://$CUSTOM_DOMAIN
+
+          **Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.
+          EOF
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
 
           ### VM Information
           - **External IP**: ${{ steps.tf_outputs.outputs.vm_ip }}
@@ -295,9 +314,14 @@ jobs:
       - name: Deployment Summary (console)
         if: needs.setup.outputs.should_deploy == 'true'
         run: |
+          CUSTOM_DOMAIN="${{ steps.tf_outputs.outputs.custom_domain }}"
+
           echo "Deployment to ${{ needs.setup.outputs.environment }} complete"
-          echo "Custom Domain: https://${{ steps.tf_outputs.outputs.custom_domain }}"
           echo "Cloud Run URL: ${{ steps.tf_outputs.outputs.chatbot_url }}"
           echo "VM IP: ${{ steps.tf_outputs.outputs.vm_ip }}"
           echo "Mastra API: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112"
           echo "Browser MCP: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp"
+
+          if [ -n "$CUSTOM_DOMAIN" ]; then
+            echo "Custom Domain: https://$CUSTOM_DOMAIN"
+          fi
