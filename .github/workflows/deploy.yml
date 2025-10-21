@@ -229,6 +229,7 @@ jobs:
         id: tf_outputs
         run: |
           echo "chatbot_url=$(terraform output -raw chatbot_public_url)" >> $GITHUB_OUTPUT
+          echo "custom_domain=$(terraform output -raw custom_domain)" >> $GITHUB_OUTPUT
           echo "vm_ip=$(terraform output -raw vm_external_ip)" >> $GITHUB_OUTPUT
 
       - name: Comment on PR with deployment info
@@ -242,11 +243,16 @@ jobs:
 
             Infrastructure deployed to **${{ needs.setup.outputs.environment }}** environment.
 
-            ### Service URLs
-            - **AI Chatbot**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+            ### Custom Domain (Primary Access)
+            - **AI Chatbot**: https://${{ steps.tf_outputs.outputs.custom_domain }}
+
+            ### Direct Cloud Run URLs
+            - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
             - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
             - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
-            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933`
+            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+
+            **Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.`
               : `## Terraform Plan Complete
 
             Infrastructure changes have been planned for **${{ needs.setup.outputs.environment }}** environment.
@@ -272,8 +278,11 @@ jobs:
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Deployment Complete: ${{ needs.setup.outputs.environment }}
 
-          ### Service URLs
-          - **AI Chatbot**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+          ### Custom Domain (Primary Access)
+          - **AI Chatbot**: https://${{ steps.tf_outputs.outputs.custom_domain }}
+
+          ### Direct Cloud Run URLs
+          - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
           - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
           - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
           - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
@@ -287,7 +296,8 @@ jobs:
         if: needs.setup.outputs.should_deploy == 'true'
         run: |
           echo "Deployment to ${{ needs.setup.outputs.environment }} complete"
-          echo "Chatbot URL: ${{ steps.tf_outputs.outputs.chatbot_url }}"
+          echo "Custom Domain: https://${{ steps.tf_outputs.outputs.custom_domain }}"
+          echo "Cloud Run URL: ${{ steps.tf_outputs.outputs.chatbot_url }}"
           echo "VM IP: ${{ steps.tf_outputs.outputs.vm_ip }}"
           echo "Mastra API: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112"
           echo "Browser MCP: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp"

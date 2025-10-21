@@ -21,7 +21,7 @@ variable "zone" {
 variable "domain_name" {
   description = "Base domain name for the application"
   type        = string
-  default     = "labs-asp.com"
+  default     = "labs-asp.navateam.com"
 }
 
 # VM configuration (runs browser-streaming + mastra-app)

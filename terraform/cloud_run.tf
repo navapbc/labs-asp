@@ -98,6 +98,27 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # Google OAuth configuration
+      env {
+        name = "GOOGLE_CLIENT_ID"
+        value_source {
+          secret_key_ref {
+            secret  = "google-oauth-client-id"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "GOOGLE_CLIENT_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = "google-oauth-client-secret"
+            version = "latest"
+          }
+        }
+      }
+
       # Google Cloud configuration
       env {
         name = "GOOGLE_APPLICATION_CREDENTIALS"
