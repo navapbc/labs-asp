@@ -147,10 +147,19 @@ jobs:
             .
           docker push ${{ steps.images.outputs.mastra_image }}
 
+      - name: Get PostHog API key
+        id: posthog_key
+        run: |
+          POSTHOG_KEY=$(gcloud secrets versions access latest --secret=posthog-api-key)
+          echo "::add-mask::$POSTHOG_KEY"
+          echo "key=$POSTHOG_KEY" >> $GITHUB_OUTPUT
+
       - name: Build and push ai-chatbot image
         run: |
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
+            --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ steps.posthog_key.outputs.key }} \
+            --build-arg NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .
