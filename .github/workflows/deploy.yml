@@ -131,7 +131,6 @@ jobs:
           docker push ${{ steps.images.outputs.browser_image }}
 
       - name: Build and push browser-ws-proxy image
-        if: steps.changes.outputs.proxy == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             -f browser-ws-proxy/Dockerfile \
@@ -140,7 +139,6 @@ jobs:
           docker push ${{ steps.images.outputs.browser_ws_proxy_image }}
 
       - name: Build and push mastra-app image
-        if: steps.changes.outputs.mastra == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
@@ -150,7 +148,6 @@ jobs:
           docker push ${{ steps.images.outputs.mastra_image }}
 
       - name: Build and push ai-chatbot image
-        if: steps.changes.outputs.chatbot == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
