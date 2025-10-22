@@ -21,7 +21,13 @@ variable "zone" {
 variable "domain_name" {
   description = "Base domain name for the application"
   type        = string
-  default     = "labs-asp.com"
+  default     = "labs-asp.navateam.com"
+}
+
+variable "enable_custom_domain" {
+  description = "Enable custom domain mapping (requires domain verification via Google Search Console)"
+  type        = bool
+  default     = false  # Default to false to avoid verification issues
 }
 
 # VM configuration (runs browser-streaming + mastra-app)
