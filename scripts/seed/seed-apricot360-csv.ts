@@ -189,8 +189,7 @@ async function seedFromApricot360CSV(csvFilePath: string) {
         const addressZip = toStringOrNull(record['Address (Zip)']);
         const addressCounty = toStringOrNull(record['Address (County)']);
         const addressCountry = toStringOrNull(record['Address (Country)']);
-        const homeAddress = buildFullAddress(addressLine1 || '', addressLine2 || '', addressCity || '', addressState || '', addressZip || '');
-        
+
         // Mailing address
         const mailingLine1 = toStringOrNull(record['Mailing Address (Line 1)']);
         const mailingLine2 = toStringOrNull(record['Mailing Address (Line 2)']);
@@ -199,14 +198,14 @@ async function seedFromApricot360CSV(csvFilePath: string) {
         const mailingZip = toStringOrNull(record['Mailing Address (Zip)']);
         const mailingCounty = toStringOrNull(record['Mailing Address (County)']);
         const mailingCountry = toStringOrNull(record['Mailing Address (Country)']);
-        const mailingAddressFull = buildFullAddress(mailingLine1 || '', mailingLine2 || '', mailingCity || '', mailingState || '', mailingZip || '');
-        
+
         // Demographics
-        const preferredLanguage = toStringOrNull(record['Primary language spoken at home']) || 'English';
+        const primaryLanguage = toStringOrNull(record['Primary language spoken at home']) || 'English';
         const ethnicity = toStringOrNull(record['Ethnicity']);
-        const genderIdentity = toStringOrNull(record['Gender']);
+        const gender = toStringOrNull(record['Gender']);
+        const genderIdentity = toStringOrNull(record['Gender']); // Keep for backward compatibility if needed
         const relationshipStatus = toStringOrNull(record['Marital status (as of today)']);
-        
+
         // Special fields
         const calWorksId = toStringOrNull(record['CalWorks ID']);
         const participantType = toStringOrNull(record['Participant type']);
@@ -218,31 +217,33 @@ async function seedFromApricot360CSV(csvFilePath: string) {
         const specialNeedsNotes = toStringOrNull(record['Notes on special needs']);
         const participantNotes = toStringOrNull(record['Participant notes']);
         const consentProvided = parseBoolean(record['Participant provided verbal consent to complete intake']);
-        
-        // Determine if can receive texts
-        const canReceiveTexts = preferredContactMethod?.toLowerCase().includes('text') || false;
+
+        // Primary family member fields (from CSV)
+        const primaryFamilyNameFirst = toStringOrNull(record['Name of primary family member (First)']);
+        const primaryFamilyNameLast = toStringOrNull(record['Name of primary family member (Last)']);
+        const primaryFamilyNameMiddle = toStringOrNull(record['Name of primary family member (Middle)']);
         
         // Create participant data
         const insertQuery = `
           INSERT INTO participants (
-            participant_id, first_name, last_name, date_of_birth, home_address, mailing_address,
-            mobile_number, home_phone, work_phone, main_phone, can_receive_texts, 
-            preferred_language, email, preferred_contact_method, do_not_contact,
-            ethnicity, gender_identity, relationship_status,
+            participant_id, first_name, last_name, date_of_birth,
+            mobile_number, home_phone, work_phone, main_phone,
+            primary_language, email, preferred_contact_method, do_not_contact,
+            ethnicity, gender, gender_identity, relationship_status,
             calworks_id, participant_type, funding_source,
             file_open_date, dpss_referral_date, consent_provided, consent_date, consent_expiration_date,
             age_at_file_open, year_of_birth, is_farm_worker, special_needs, special_needs_notes,
-            participant_notes, address_line2, address_city, address_state, address_zip, 
+            participant_notes, address_line1, address_line2, address_city, address_state, address_zip,
             address_county, address_country,
-            mailing_address_line1, mailing_address_line2, mailing_address_city, 
+            mailing_address_line1, mailing_address_line2, mailing_address_city,
             mailing_address_state, mailing_address_zip, mailing_address_county, mailing_address_country,
+            primary_family_name_first, primary_family_name_last, primary_family_name_middle,
             datasourcetype,
-            is_pregnant, is_post_partum, is_infant_breastfeeding, is_infant_formula,
-            has_children0to5, has_dependents, has_medi_cal
+            has_dependents
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
             $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
-            $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53
+            $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49
           )
           RETURNING *
         `;
@@ -254,18 +255,16 @@ async function seedFromApricot360CSV(csvFilePath: string) {
             firstName,
             lastName,
             dateOfBirth,
-            homeAddress,
-            mailingAddressFull,
             mobileNumber,
             homePhone,
             workPhone,
             mainPhone,
-            canReceiveTexts,
-            preferredLanguage,
+            primaryLanguage,
             email,
             preferredContactMethod,
             doNotContact,
             ethnicity,
+            gender,
             genderIdentity,
             relationshipStatus,
             calWorksId,
@@ -282,6 +281,7 @@ async function seedFromApricot360CSV(csvFilePath: string) {
             specialNeeds,
             specialNeedsNotes,
             participantNotes,
+            addressLine1,
             addressLine2,
             addressCity,
             addressState,
@@ -295,14 +295,11 @@ async function seedFromApricot360CSV(csvFilePath: string) {
             mailingZip,
             mailingCounty,
             mailingCountry,
+            primaryFamilyNameFirst,
+            primaryFamilyNameLast,
+            primaryFamilyNameMiddle,
             'APRICOT360',
-            null, // is_pregnant - to be determined by agent
-            null, // is_post_partum - to be determined by agent
-            null, // is_infant_breastfeeding - to be determined by agent
-            null, // is_infant_formula - to be determined by agent
-            null, // has_children0to5 - to be determined by agent
             null, // has_dependents - to be determined by agent
-            false, // has_medi_cal - default to false
           ]);
           
           createdParticipant = result.rows[0];
@@ -344,6 +341,7 @@ async function seedFromApricot360CSV(csvFilePath: string) {
         const dateOfBirth = parseDateMinimal(record['Date of birth']);
         const ageAtFileOpen = parseInteger(record['Age at File open date']);
         const ethnicity = toStringOrNull(record['Ethnicity']);
+        const gender = toStringOrNull(record['Gender']);
         const genderIdentity = toStringOrNull(record['Gender']);
         const associatedFamily = toStringOrNull(record['Associated Family']);
         
@@ -371,10 +369,10 @@ async function seedFromApricot360CSV(csvFilePath: string) {
         const insertDependentQuery = `
           INSERT INTO household_dependents (
             participant_id, first_name, last_name, age, date_of_birth,
-            relationship, gender_identity, ethnicity,
+            relationship, gender, gender_identity, ethnicity,
             associated_family, datasourcetype,
             is_infant, is_child0to5
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
           RETURNING *
         `;
         
@@ -385,6 +383,7 @@ async function seedFromApricot360CSV(csvFilePath: string) {
           ageAtFileOpen,
           dateOfBirth,
           associatedFamily || 'Child',
+          gender,
           genderIdentity,
           ethnicity,
           associatedFamily,
