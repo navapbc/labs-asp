@@ -48,7 +48,8 @@ jobs:
             -var="browser_image_url=placeholder" \
             -var="mastra_image_url=placeholder" \
             -var="chatbot_image_url=placeholder" \
-            -var="browser_ws_proxy_image_url=placeholder"
+            -var="browser_ws_proxy_image_url=placeholder" \
+            -var="enable_custom_domain=false"
 
       - name: Delete Terraform State
         run: |
