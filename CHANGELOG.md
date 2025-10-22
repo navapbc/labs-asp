@@ -1,3 +1,10 @@
+# [1.0.0-dev.2](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2025-10-22)
+
+
+### Features
+
+* update APRICOT360 schema to include relevant fieldnames ([3ed934e](https://github.com/navapbc/labs-asp/commit/3ed934e74605f47b5e8d849c2e5310f38ce62ef0))
+
 # 1.0.0-dev.1 (2025-10-22)
 
 
