@@ -1,3 +1,11 @@
+# [1.0.0-dev.3](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.2...v1.0.0-dev.3) (2025-10-23)
+
+
+### Bug Fixes
+
+* add hono override to resolve security vulnerability ([999abd5](https://github.com/navapbc/labs-asp/commit/999abd5d21e9a5302f21d10dc84b9d3d7aea8ea0))
+* update participant types schema misalignment with database tools ([685e2f9](https://github.com/navapbc/labs-asp/commit/685e2f94a77f2139f5c1fd28b15ae0b6f1223b95))
+
 # [1.0.0-dev.2](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2025-10-22)
 
 
