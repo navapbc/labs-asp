@@ -1,3 +1,10 @@
+# [1.0.0-dev.5](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.4...v1.0.0-dev.5) (2025-10-23)
+
+
+### Features
+
+* add terraform_data resource with triggers_replace and local-exec provisioner ([250c7e2](https://github.com/navapbc/labs-asp/commit/250c7e2ccaa9cbd4d622c865b5481dbff1480456))
+
 # [1.0.0-dev.4](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.3...v1.0.0-dev.4) (2025-10-23)
 
 
