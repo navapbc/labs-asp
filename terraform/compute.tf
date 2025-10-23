@@ -105,6 +105,31 @@ resource "google_compute_instance" "app_vm" {
   ]
 }
 
+# Track image versions to trigger VM restart when they change
+resource "terraform_data" "image_versions" {
+  input = {
+    browser_image = var.browser_image_url
+    mastra_image  = var.mastra_image_url
+  }
+}
+
+# Restart VM when image versions change to apply new containers
+resource "terraform_data" "vm_restart" {
+  # This resource is replaced whenever image versions change
+  triggers_replace = [
+    terraform_data.image_versions.output
+  ]
+
+  # Restart the VM after metadata is updated
+  provisioner "local-exec" {
+    command = "gcloud compute instances reset ${google_compute_instance.app_vm.name} --zone=${local.zone} --project=${local.project_id}"
+  }
+
+  depends_on = [
+    google_compute_instance.app_vm
+  ]
+}
+
 # Firewall rules for browser service
 resource "google_compute_firewall" "browser_mcp" {
   name    = "allow-browser-mcp-${var.environment}"
