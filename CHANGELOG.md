@@ -1,3 +1,10 @@
+# [1.0.0-dev.4](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.3...v1.0.0-dev.4) (2025-10-23)
+
+
+### Features
+
+* enable custom domain for dev and prod environments ([c464375](https://github.com/navapbc/labs-asp/commit/c4643759cd21d0862377fc22ca8b9b250288283f))
+
 # [1.0.0-dev.3](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.2...v1.0.0-dev.3) (2025-10-23)
 
 
