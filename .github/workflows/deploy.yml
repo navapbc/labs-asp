@@ -213,12 +213,10 @@ jobs:
         working-directory: ./terraform
         run: |
           # Enable custom domain only for dev and prod environments
-          # NOTE: Disabled until domain is verified in Google Search Console
-          # To enable: Verify ownership of labs-asp.navateam.com at https://www.google.com/webmasters/verification/
           ENABLE_DOMAIN="false"
-          # if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]] || [[ "${{ needs.setup.outputs.environment }}" == "prod" ]]; then
-          #   ENABLE_DOMAIN="true"
-          # fi
+          if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]] || [[ "${{ needs.setup.outputs.environment }}" == "prod" ]]; then
+            ENABLE_DOMAIN="true"
+          fi
 
           terraform plan \
             -var="environment=${{ needs.setup.outputs.environment }}" \
