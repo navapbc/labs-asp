@@ -1,3 +1,10 @@
+# [1.0.0-dev.6](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.5...v1.0.0-dev.6) (2025-10-24)
+
+
+### Features
+
+* client update ([6366572](https://github.com/navapbc/labs-asp/commit/6366572a7a6920b0d907f7e29b677cd6364620dd))
+
 # [1.0.0-dev.5](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.4...v1.0.0-dev.5) (2025-10-23)
 
 
