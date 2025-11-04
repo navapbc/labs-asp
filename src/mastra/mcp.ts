@@ -3,16 +3,16 @@ import { MCPClient } from "@mastra/mcp";
 import { startArtifactWatcher } from './artifact-watcher';
 import path from 'path';
 
-// ---------- Denylist Policy ----------
-const DEFAULT_DENY = [
+// ---------- Excluded Tools ----------
+const EXCLUDED_TOOLS = [
   "playwright_browser_evaluate",
   "playwright_browser_network_requests",
   "playwright_browser_take_screenshot",
   "playwright_browser_snapshot",
 ];
 
-const deniedTools = new Set(
-  (process.env.MCP_TOOL_DENYLIST ?? DEFAULT_DENY.join(","))
+const excludedTools = new Set(
+  EXCLUDED_TOOLS.join(",")
     .split(",")
     .map(s => s.trim())
     .filter(Boolean)
@@ -23,8 +23,8 @@ function guardTool<T extends { name: string; execute: Function }>(tool: T): T {
   return {
     ...tool,
     async execute(input: unknown) {
-      if (deniedTools.has(tool.name)) {
-        throw new Error(`Tool "${tool.name}" is denied by policy`);
+      if (excludedTools.has(tool.name)) {
+        throw new Error(`Tool "${tool.name}" is excluded by policy`);
       }
       return tool.execute(input);
     },
@@ -65,11 +65,8 @@ export const exaMCP = new MCPClient({
 });
 
 /**
- * Fetch tools from the Playwright MCP client, apply the denylist, and return a filtered set.
+ * Fetch tools from the Playwright MCP client, apply the excluded tools, and return a filtered set.
  *
- * Usage:
- *   const tools = await getFilteredPlaywrightTools();
- *   createAgent({ tools, ... });
  */
 export async function getFilteredPlaywrightTools() {
   const allTools = await playwrightMCP.getTools();
@@ -83,12 +80,12 @@ export async function getFilteredPlaywrightTools() {
   const filtered = toolsArray
     .filter(t => {
       // Check if tool name matches any denied tool (handle both prefixed and non-prefixed)
-      const isDenied = Array.from(deniedTools).some(deniedTool => 
-        t.name === deniedTool || 
-        t.name.endsWith(`_${deniedTool}`) ||
-        t.name.includes(`_${deniedTool}`)
+      const isExcluded = Array.from(excludedTools).some(excludedTool => 
+        t.name === excludedTool || 
+        t.name.endsWith(`_${excludedTool}`) ||
+        t.name.includes(`_${excludedTool}`)
       );
-      return !isDenied;
+      return !isExcluded;
     })
     .map(guardTool);
 
@@ -96,9 +93,9 @@ export async function getFilteredPlaywrightTools() {
     const names = toolsArray.map(t => t.name);
     const kept = filtered.map(t => t.name);
     const blocked = names.filter(n => !kept.includes(n));
-    console.log("[MCP] discovered:", names);
-    console.log("[MCP] allowed:", kept);
-    console.log("[MCP] blocked:", blocked);
+    // console.log("[MCP] discovered:", names);
+    // console.log("[MCP] allowed:", kept);
+    // console.log("[MCP] blocked:", blocked);
   }
 
   // Convert back to Record format for Mastra agent compatibility
