@@ -1,4 +1,4 @@
-import { exaMCP, getFilteredPlaywrightTools, playwrightMCP } from '../mcp';
+import { exaMCP, playwrightMCP } from '../mcp';
 import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
@@ -9,6 +9,7 @@ import { createAutonomousProgressionScorer } from "../scorers/autonomousProgress
 import { createDeductionScorer } from "../scorers/deduction";
 import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
+import { getFilteredPlaywrightTools } from '../tools/playwright-tools';
 
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
