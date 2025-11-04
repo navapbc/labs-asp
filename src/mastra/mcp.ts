@@ -41,7 +41,7 @@ const createOutputDir = () => {
 
 const { outputDir } = createOutputDir();
 
-// ---------- MCP Clients (unchanged) ----------
+// Environment-based MCP URL configuration
 const playwrightMCPUrl = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/mcp';
 
 export const playwrightMCP = new MCPClient({
