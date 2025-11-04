@@ -1,4 +1,4 @@
-import { exaMCP, playwrightMCP } from '../mcp';
+import { exaMCP, getFilteredPlaywrightTools, playwrightMCP } from '../mcp';
 import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
@@ -159,7 +159,7 @@ export const webAutomationAgent = new Agent({
   // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
   tools: { 
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
-    ...(await playwrightMCP.getTools()),
+    ...(await getFilteredPlaywrightTools()),
   },
   memory: memory,
   scorers: {
