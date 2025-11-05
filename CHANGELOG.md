@@ -1,3 +1,10 @@
+# [1.0.0-dev.7](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.6...v1.0.0-dev.7) (2025-11-05)
+
+
+### Features
+
+* implement browser session isolation with dynamically initialized mcpclient ([d2551c4](https://github.com/navapbc/labs-asp/commit/d2551c4c0ef2e3d41368abb64bb2a07bcd58dd81))
+
 # [1.0.0-dev.6](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.5...v1.0.0-dev.6) (2025-10-24)
 
 
