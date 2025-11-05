@@ -3,6 +3,7 @@ import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
 import { chatRoute } from '@mastra/ai-sdk';
+import { createSessionPlaywrightMCP } from './mcp';
 
 export const mastra = new Mastra({
   agents: { 
@@ -63,12 +64,25 @@ export const mastra = new Mastra({
             const agent = c.var.mastra.getAgent('webAutomationAgent');
 
             try {
+              // Create session-specific Playwright MCP client for browser context isolation
+              // Each chat session (thread + resource) gets its own browser context
+              const sessionId = threadId && resourceId ? `${threadId}-${resourceId}` : `default-${Date.now()}`;
+              const sessionPlaywrightMCP = createSessionPlaywrightMCP(sessionId);
+
+              // Get Playwright tools for this session
+              const playwrightToolsets = await sessionPlaywrightMCP.getToolsets();
+
+              console.log(`[Chat] Streaming for session: ${sessionId}`);
+              console.log(`[Chat] Playwright toolsets:`, JSON.stringify(playwrightToolsets, null, 2));
+
               const stream = await agent.stream(messages, {
                 format: 'aisdk',
                 memory: threadId && resourceId ? {
                   thread: threadId,
                   resource: resourceId,
                 } : undefined,
+                // Add session-specific Playwright tools dynamically
+                toolsets: playwrightToolsets,
                 onError: ({ error }: { error: any }) => {
                   console.error('Error during agent streaming:', error);
                   // The error will be included in the stream
