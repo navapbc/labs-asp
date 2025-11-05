@@ -9,7 +9,6 @@ import { createAutonomousProgressionScorer } from "../scorers/autonomousProgress
 import { createDeductionScorer } from "../scorers/deduction";
 import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
-import { getFilteredPlaywrightTools } from '../tools/playwright-tools';
 
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
@@ -192,7 +191,7 @@ export const webAutomationAgent = new Agent({
     },
   },
   defaultStreamOptions: {
-    maxSteps: 100,
+    maxSteps: 50,
     maxRetries: 3,
     temperature: 0.1,
     telemetry: {
