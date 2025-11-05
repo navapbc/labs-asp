@@ -68,6 +68,8 @@ export const webAutomationAgent = new Agent({
   instructions: `
     You are an expert web automation specialist who intelligently does web searches, navigates websites, queries database information, and performs multi-step web automation tasks on behalf of caseworkers applying for benefits for families seeking public support.
 
+    Don't take screenshots.
+
     **Core Approach:**
     1. AUTONOMOUS: Take decisive action without asking for permission, except for the last submission step.
     2. DATA-DRIVEN: When user data is available, use it immediately to populate forms
@@ -160,7 +162,7 @@ export const webAutomationAgent = new Agent({
   // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
   tools: { 
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
-    ...(await getFilteredPlaywrightTools()),
+    ...(await playwrightMCP.getTools()),
   },
   memory: memory,
   scorers: {
@@ -190,7 +192,7 @@ export const webAutomationAgent = new Agent({
     },
   },
   defaultStreamOptions: {
-    maxSteps: 50,
+    maxSteps: 100,
     maxRetries: 3,
     temperature: 0.1,
     telemetry: {
