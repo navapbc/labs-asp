@@ -3,11 +3,14 @@ import { MCPClient } from "@mastra/mcp";
 import { startArtifactWatcher } from './artifact-watcher';
 import path from 'path';
 
-// ---------- Artifact Session Setup ----------
+// Create a unique session-based output directory
 const createOutputDir = () => {
   const sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   const outputDir = path.join(process.cwd(), 'artifacts', sessionId);
+
+  // Start the artifact watcher for this session
   startArtifactWatcher(outputDir, sessionId);
+  
   return { outputDir, sessionId };
 };
 
