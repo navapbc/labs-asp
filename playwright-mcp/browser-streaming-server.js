@@ -43,7 +43,8 @@ class BrowserStreamingService extends EventEmitter {
     this.port = port;
     this.cdpPort = cdpPort; // Chrome DevTools Protocol port (fallback)
     this.wss = new WebSocketServer({ port });
-    this.activeSessions = new Map(); // Map<sessionId, {ws, client, cdpEndpoint, controlMode}>
+    this.activeSessions = new Map(); // Map<sessionId, {ws, client, cdpEndpoint, controlMode, targetId}>
+    this.sessionToTarget = new Map(); // Map<sessionId, targetId> - tracks which session owns which CDP target
   }
 
   async start() {
@@ -120,18 +121,18 @@ class BrowserStreamingService extends EventEmitter {
       let cdpEndpoint = null;
       let retries = 0;
       const maxRetries = 15; // Increased retries for better reliability
-      
+
       while (!cdpEndpoint && retries < maxRetries) {
-        cdpEndpoint = await this.getCDPEndpoint();
+        cdpEndpoint = await this.getCDPEndpoint(sessionId); // Pass sessionId to get correct target
         if (!cdpEndpoint) {
-          console.log(`Attempt ${retries + 1}/${maxRetries}: Waiting for Playwright browser to be available...`);
+          console.log(`Attempt ${retries + 1}/${maxRetries}: Waiting for Playwright browser to be available for session ${sessionId}...`);
           await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly faster retry
           retries++;
         }
       }
-      
+
       if (!cdpEndpoint) {
-        const errorMsg = 'Could not get CDP endpoint from Playwright MCP server after multiple attempts';
+        const errorMsg = `Could not get CDP endpoint from Playwright MCP server after multiple attempts for session ${sessionId}`;
         console.error(errorMsg);
         ws.send(JSON.stringify({
           type: 'error',
@@ -143,9 +144,9 @@ class BrowserStreamingService extends EventEmitter {
       // Connect to CDP and start screencast
       const CDP = require('chrome-remote-interface');
       const client = await CDP({ target: cdpEndpoint });
-      
+
       const { Page, Runtime } = client;
-      
+
       await Page.enable();
       await Runtime.enable();
 
@@ -186,22 +187,27 @@ class BrowserStreamingService extends EventEmitter {
         }
       });
 
-      // Store session info
+      // Extract target ID from the CDP endpoint
+      const targetId = this.sessionToTarget.get(sessionId);
+
+      // Store session info including the target ID
       this.activeSessions.set(sessionId, {
         ws,
         client,
         cdpEndpoint,
         controlMode: 'agent', // Default to agent control
+        targetId, // Store the target ID for this session
       });
 
       // Notify client that streaming started
       ws.send(JSON.stringify({
         type: 'streaming-started',
         sessionId,
-        cdpEndpoint
+        cdpEndpoint,
+        targetId
       }));
 
-      console.log(`Browser capture started for session: ${sessionId}`);
+      console.log(`Browser capture started for session: ${sessionId} (target: ${targetId})`);
       
     } catch (error) {
       console.error('Error starting browser capture:', error);
@@ -226,16 +232,24 @@ class BrowserStreamingService extends EventEmitter {
       if (session.client && session.client.Page) {
         await session.client.Page.stopScreencast();
       }
-      
+
       // Close our CDP connection to the target
       // This disconnects our stream but leaves Chrome running
       if (session.client) {
         await session.client.close();
       }
-      
+
       // Remove from active sessions
       this.activeSessions.delete(sessionId);
-      
+
+      // Clean up session-to-target mapping
+      // NOTE: We keep the target alive for agent control, but release the claim
+      if (this.sessionToTarget.has(sessionId)) {
+        const targetId = this.sessionToTarget.get(sessionId);
+        console.log(`Releasing target ${targetId} from session ${sessionId}`);
+        this.sessionToTarget.delete(sessionId);
+      }
+
       // Notify client that streaming stopped
       if (session.ws.readyState === 1) { // WebSocket.OPEN
         session.ws.send(JSON.stringify({
@@ -245,7 +259,7 @@ class BrowserStreamingService extends EventEmitter {
       }
 
       console.log(`Browser capture stopped for session: ${sessionId} (Chrome process remains alive)`);
-      
+
     } catch (error) {
       console.error('Error stopping browser capture:', error);
     }
@@ -373,40 +387,101 @@ class BrowserStreamingService extends EventEmitter {
     }
   }
 
-  async getCDPEndpoint() {
+  async getCDPEndpoint(sessionId) {
     try {
+      // Check if this session already has a mapped target
+      if (this.sessionToTarget.has(sessionId)) {
+        const targetId = this.sessionToTarget.get(sessionId);
+        console.log(`Session ${sessionId} already mapped to target ${targetId}`);
+
+        // Re-fetch targets to get current WebSocket URL
+        const detectedPort = await this.findChromePort();
+        if (!detectedPort) {
+          console.log('No Playwright Chrome process detected yet');
+          return null;
+        }
+
+        const CDP = require('chrome-remote-interface');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const targets = await CDP.List({ port: detectedPort });
+        const existingTarget = targets.find(t => t.id === targetId && t.type === 'page');
+
+        if (existingTarget) {
+          console.log(`Reconnecting to existing target ${targetId} for session ${sessionId}`);
+          this.cdpPort = detectedPort;
+          return existingTarget.webSocketDebuggerUrl;
+        } else {
+          console.warn(`Previously mapped target ${targetId} no longer exists, will select new target`);
+          this.sessionToTarget.delete(sessionId);
+        }
+      }
+
       // First try to find the actual Chrome port used by Playwright MCP
       const detectedPort = await this.findChromePort();
-      
+
       if (!detectedPort) {
         console.log('No Playwright Chrome process detected yet');
         return null;
       }
-      
+
       const portToTry = detectedPort;
-      console.log(`Attempting to connect to Chrome CDP on port ${portToTry}`);
-      
+      console.log(`Attempting to connect to Chrome CDP on port ${portToTry} for session ${sessionId}`);
+
       // Connect directly to Chrome's CDP port
       const CDP = require('chrome-remote-interface');
-      
+
       // Wait for Chrome to be ready
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const targets = await CDP.List({ port: portToTry });
-      console.log('Available CDP targets:', targets.map(t => ({ type: t.type, url: t.url, title: t.title })));
-      
-      // Find the first page target
-      const pageTarget = targets.find(target => target.type === 'page');
-      
-      if (pageTarget) {
-        console.log('Found page target:', pageTarget.webSocketDebuggerUrl);
-        this.cdpPort = portToTry; // Update our port reference
-        return pageTarget.webSocketDebuggerUrl;
+      console.log('Available CDP targets:', targets.map(t => ({ type: t.type, url: t.url, title: t.title, id: t.id })));
+
+      // Get all page targets
+      const pageTargets = targets.filter(target => target.type === 'page');
+
+      if (pageTargets.length === 0) {
+        console.warn('No page targets found');
+        return null;
       }
-      
-      console.warn('No page target found, available targets:', targets.map(t => t.type));
-      return null;
-      
+
+      // Get target IDs already claimed by other active sessions
+      const claimedTargetIds = new Set(
+        Array.from(this.activeSessions.values())
+          .map(session => session.targetId)
+          .filter(Boolean)
+      );
+
+      console.log(`Claimed target IDs by other sessions:`, Array.from(claimedTargetIds));
+
+      // Find the newest unclaimed target
+      // CDP returns targets in newest-to-oldest order, so iterate from index 0 (newest) forward
+      let availableTarget = null;
+      for (let i = 0; i < pageTargets.length; i++) {
+        if (!claimedTargetIds.has(pageTargets[i].id)) {
+          availableTarget = pageTargets[i];
+          break;
+        }
+      }
+
+      if (!availableTarget) {
+        console.warn('All page targets are already claimed by other sessions');
+        // Fall back to the newest target (index 0 since CDP returns newest-first)
+        const newestTarget = pageTargets[0];
+        console.log(`Falling back to newest target: ${newestTarget.id}`);
+        this.sessionToTarget.set(sessionId, newestTarget.id);
+        this.cdpPort = portToTry;
+        return newestTarget.webSocketDebuggerUrl;
+      }
+
+      console.log(`Assigning unclaimed target ${availableTarget.id} to session ${sessionId}`);
+
+      // Store the session-to-target mapping
+      this.sessionToTarget.set(sessionId, availableTarget.id);
+      this.cdpPort = portToTry; // Update our port reference
+
+      return availableTarget.webSocketDebuggerUrl;
+
     } catch (error) {
       console.log('Error connecting to CDP (this is normal if browser not ready yet):', error.message);
       return null;

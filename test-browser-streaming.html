@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Browser Streaming Test - Port 8933</title>
+    <title>Browser Streaming Test - Session Isolation Verification</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         button { margin: 5px; padding: 10px 15px; }
@@ -10,23 +10,56 @@
         .connected { color: green; }
         .disconnected { color: red; }
         .connecting { color: orange; }
+        #metadata {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        #metadata h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        #metadata .field {
+            margin: 5px 0;
+        }
+        #metadata .label {
+            font-weight: bold;
+            color: #666;
+        }
+        #metadata .value {
+            color: #0066cc;
+        }
     </style>
 </head>
 <body>
-    <h1>Browser Streaming WebSocket Test</h1>
-    <p>Direct connection to <code>ws://localhost:8933</code></p>
-    
+    <h1>Browser Streaming Session Isolation Test</h1>
+    <p>Testing session-to-target mapping on <code>ws://localhost:8933</code></p>
+
     <div>
         <button onclick="connect()">Connect</button>
-        <button onclick="startStreaming()">Start Streaming</button>
+        <button onclick="startStreaming()">Start Streaming (New Session)</button>
         <button onclick="stopStreaming()">Stop Streaming</button>
         <button onclick="disconnect()">Disconnect</button>
     </div>
-    
+
     <div id="status" class="disconnected">Not connected</div>
-    
+
+    <!-- Session/Target Metadata Display -->
+    <div id="metadata">
+        <h3>Session Metadata</h3>
+        <div class="field"><span class="label">Session ID:</span> <span id="sessionId" class="value">-</span></div>
+        <div class="field"><span class="label">Target ID:</span> <span id="targetId" class="value">-</span></div>
+        <div class="field"><span class="label">CDP Endpoint:</span> <span id="cdpEndpoint" class="value">-</span></div>
+        <div class="field"><span class="label">Frames Received:</span> <span id="frameCount" class="value">0</span></div>
+        <div class="field"><span class="label">Last Frame Time:</span> <span id="lastFrameTime" class="value">-</span></div>
+    </div>
+
     <canvas id="canvas" width="960" height="540"></canvas>
-    
+
     <div id="messages" style="margin-top: 20px; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; font-family: monospace; font-size: 12px;"></div>
     
     <script>
@@ -35,12 +68,21 @@
         let ctx = canvas.getContext('2d');
         let statusEl = document.getElementById('status');
         let messagesEl = document.getElementById('messages');
-        
+        let currentSessionId = null;
+        let frameCount = 0;
+
         function log(message) {
             const timestamp = new Date().toLocaleTimeString();
             messagesEl.innerHTML += `[${timestamp}] ${message}<br>`;
             messagesEl.scrollTop = messagesEl.scrollHeight;
             console.log(message);
+        }
+
+        function updateMetadata(field, value) {
+            const element = document.getElementById(field);
+            if (element) {
+                element.textContent = value || '-';
+            }
         }
         
         function connect() {
@@ -63,9 +105,13 @@
             ws.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
-                    log(`Received: ${message.type}`);
-                    
+
                     if (message.type === 'frame') {
+                        // Update frame counter (don't log - too spammy)
+                        frameCount++;
+                        updateMetadata('frameCount', frameCount);
+                        updateMetadata('lastFrameTime', new Date().toLocaleTimeString());
+
                         // Draw the frame to canvas
                         const img = new Image();
                         img.onload = () => {
@@ -74,11 +120,21 @@
                         };
                         img.src = `data:image/jpeg;base64,${message.data}`;
                     } else if (message.type === 'streaming-started') {
-                        log(`Streaming started for session: ${message.sessionId}`);
+                        log(`✓ Streaming started for session: ${message.sessionId}`);
+                        log(`  Target ID: ${message.targetId}`);
+                        log(`  CDP Endpoint: ${message.cdpEndpoint}`);
+
+                        // Update metadata display
+                        updateMetadata('sessionId', message.sessionId);
+                        updateMetadata('targetId', message.targetId);
+                        updateMetadata('cdpEndpoint', message.cdpEndpoint);
                     } else if (message.type === 'streaming-stopped') {
-                        log(`Streaming stopped for session: ${message.sessionId}`);
+                        log(`✓ Streaming stopped for session: ${message.sessionId}`);
                     } else if (message.type === 'error') {
-                        log(`ERROR: ${message.error}`);
+                        log(`✗ ERROR: ${message.error}`);
+                    } else {
+                        // Log unknown message types
+                        log(`Received: ${message.type}`);
                     }
                 } catch (err) {
                     log(`Error parsing message: ${err.message}`);
@@ -104,29 +160,45 @@
                 log('Not connected to WebSocket');
                 return;
             }
-            
+
+            // Generate unique session ID for each start
+            currentSessionId = 'test-session-' + Date.now();
+            frameCount = 0; // Reset frame counter
+
             const message = {
                 type: 'start-streaming',
-                sessionId: 'test-session-' + Date.now()
+                sessionId: currentSessionId
             };
-            
+
             ws.send(JSON.stringify(message));
-            log(`Sent: ${message.type} for session ${message.sessionId}`);
+            log(`→ Sent: ${message.type} for session ${currentSessionId}`);
+
+            // Reset metadata
+            updateMetadata('sessionId', currentSessionId);
+            updateMetadata('targetId', 'waiting...');
+            updateMetadata('cdpEndpoint', 'waiting...');
+            updateMetadata('frameCount', '0');
+            updateMetadata('lastFrameTime', '-');
         }
-        
+
         function stopStreaming() {
             if (!ws || ws.readyState !== WebSocket.OPEN) {
                 log('Not connected to WebSocket');
                 return;
             }
-            
+
+            if (!currentSessionId) {
+                log('No active session to stop');
+                return;
+            }
+
             const message = {
                 type: 'stop-streaming',
-                sessionId: 'test-session'
+                sessionId: currentSessionId
             };
-            
+
             ws.send(JSON.stringify(message));
-            log(`Sent: ${message.type}`);
+            log(`→ Sent: ${message.type} for session ${currentSessionId}`);
         }
         
         function disconnect() {

@@ -1,4 +1,3 @@
-import { exaMCP, playwrightMCP } from '../mcp';
 import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
@@ -12,8 +11,6 @@ import { databaseTools } from '../tools/database-tools';
 
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
-import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
-import { stepCountIs } from 'ai';
 
 const storage = postgresStore;
 
@@ -157,9 +154,10 @@ export const webAutomationAgent = new Agent({
   // model: anthropic('claude-sonnet-4-20250514'),
   model: google('gemini-2.5-pro'),
   // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
-  tools: { 
+  tools: {
+    // Only include database tools statically
+    // Playwright tools will be added dynamically per session via toolsets
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
-    ...(await playwrightMCP.getTools()),
   },
   memory: memory,
   scorers: {
