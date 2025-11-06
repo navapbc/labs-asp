@@ -83,6 +83,7 @@ export const mastra = new Mastra({
                 } : undefined,
                 // Add session-specific Playwright tools dynamically
                 toolsets: playwrightToolsets,
+                maxSteps: 50,
                 onError: ({ error }: { error: any }) => {
                   console.error('Error during agent streaming:', error);
                   // The error will be included in the stream
