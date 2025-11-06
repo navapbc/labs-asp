@@ -1,3 +1,10 @@
+# [1.0.0-dev.8](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.7...v1.0.0-dev.8) (2025-11-06)
+
+
+### Bug Fixes
+
+* explicitly set maxSteps in agent.stream(...) ([2d7aae5](https://github.com/navapbc/labs-asp/commit/2d7aae5a5fc187e40a29de658f22493947710745))
+
 # [1.0.0-dev.7](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.6...v1.0.0-dev.7) (2025-11-05)
 
 
