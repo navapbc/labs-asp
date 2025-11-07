@@ -334,13 +334,15 @@ const formDataCheckStep = createStep({
       1. Locate the form field "${resumeData.fieldName}" on the page
       2. Fill it with the value: "${resumeData.fieldValue}"
       3. Take a snapshot to confirm the field was filled
-      4. Check if there are any other missing required fields
+      4. Check if there are any other missing required fields (we will ask for them one at a time)
       5. Report the updated page state
 
       Respond in this exact format:
       STATUS: [FIELD_FILLED or MORE_FIELDS_NEEDED]
       FIELD_FILLED: [name of field that was filled]
-      REMAINING_FIELDS: [comma-separated list of any remaining missing fields, or "NONE" if all fields are filled]
+      NEXT_MISSING_FIELD: [name of the NEXT missing field to ask for, or "NONE" if all fields are filled]
+      FIELD_QUESTION: [a clear question asking for the next field, formatted as "What is your [field name]?" or similar, or "NONE"]
+      REMAINING_FIELDS: [comma-separated list of all remaining missing fields for tracking, or "NONE"]
       PAGE_STATE: [description of current page state]`;
 
       try {
@@ -359,21 +361,30 @@ const formDataCheckStep = createStep({
 
         // Parse the response to check for more missing fields
         const hasMoreFields = fillResult.includes('STATUS: MORE_FIELDS_NEEDED');
+        const nextFieldMatch = fillResult.match(/NEXT_MISSING_FIELD: ([^\n]+)/);
+        const fieldQuestionMatch = fillResult.match(/FIELD_QUESTION: ([^\n]+)/);
         const remainingFieldsMatch = fillResult.match(/REMAINING_FIELDS: ([^\n]+)/);
+        
+        const nextMissingField = nextFieldMatch?.[1]?.trim();
+        const fieldQuestion = fieldQuestionMatch?.[1]?.trim();
         const remainingFields = remainingFieldsMatch?.[1] 
           ? remainingFieldsMatch[1].split(',').map(f => f.trim()).filter(f => f !== 'NONE')
           : [];
 
-        logger.info(`Field filled: ${resumeData.fieldName}. More fields needed: ${hasMoreFields}. Remaining: ${remainingFields.length}`);
+        logger.info(`Field filled: ${resumeData.fieldName}. More fields needed: ${hasMoreFields}. Next field: ${nextMissingField || 'NONE'}`);
 
-        // If there are more missing fields, suspend again to get the next field value
-        if (hasMoreFields && remainingFields.length > 0) {
-          const nextMissingField = remainingFields[0];
+        // If there are more missing fields, suspend again to get the next field value (one at a time)
+        if (hasMoreFields && nextMissingField && nextMissingField !== 'NONE') {
           logger.info(`More missing fields detected. Pausing for next field: ${nextMissingField}`);
+          
+          // Use the question format from the agent, or create a default one
+          const question = fieldQuestion && fieldQuestion !== 'NONE' 
+            ? fieldQuestion 
+            : `What is your ${nextMissingField}?`;
           
           return suspend({
             missingField: nextMissingField,
-            fieldDescription: `Please provide the value for ${nextMissingField}`,
+            fieldDescription: question,
             pageState: fillResult,
           });
         }
@@ -412,15 +423,16 @@ const formDataCheckStep = createStep({
     1. Examine the page state and action result carefully
     2. Identify any required form fields that are empty or missing data
     3. Determine which fields cannot be automatically filled from available data
-    4. If missing fields are found, identify the FIRST missing field that needs user input
+    4. If missing fields are found, identify ONLY THE FIRST missing field that needs user input (we will ask for others one at a time)
 
     Respond in this exact format:
     HAS_MISSING_FIELDS: [YES or NO]
-    MISSING_FIELD: [name of the first missing field, or "NONE" if no missing fields]
-    FIELD_DESCRIPTION: [description of what information is needed for this field, or "NONE"]
-    ALL_MISSING_FIELDS: [comma-separated list of all missing fields, or "NONE"]
+    MISSING_FIELD: [name of the FIRST missing field only, or "NONE" if no missing fields]
+    FIELD_DESCRIPTION: [a clear question asking for this specific field, formatted as "What is your [field name]?" or similar, or "NONE"]
+    ALL_MISSING_FIELDS: [comma-separated list of all missing fields for tracking, or "NONE"]
 
-    Be specific about field names (e.g., "Social Security Number", "Date of Birth", "Phone Number").`;
+    Be specific about field names (e.g., "Social Security Number", "Date of Birth", "Phone Number").
+    Format the FIELD_DESCRIPTION as a clear, user-friendly question.`;
 
     try {
       const response = await agent.stream([
@@ -449,12 +461,22 @@ const formDataCheckStep = createStep({
         : [];
 
       if (hasMissingFields && missingField && missingField !== 'NONE') {
-        logger.info(`Missing form field detected: ${missingField}. Pausing for user input.`);
+        logger.info(`Missing form field detected: ${missingField}. Pausing for user input (one field at a time).`);
         
-        // Suspend the workflow to get user input for the missing field
+        // Format the description as a question if it's not already
+        let question = fieldDescription && fieldDescription !== 'NONE' 
+          ? fieldDescription 
+          : `What is your ${missingField}?`;
+        
+        // Ensure it's formatted as a question
+        if (!question.endsWith('?') && !question.toLowerCase().startsWith('what') && !question.toLowerCase().startsWith('please')) {
+          question = `What is your ${missingField}?`;
+        }
+        
+        // Suspend the workflow to get user input for the FIRST missing field only (one at a time)
         return suspend({
           missingField,
-          fieldDescription: fieldDescription && fieldDescription !== 'NONE' ? fieldDescription : `Please provide the value for ${missingField}`,
+          fieldDescription: question,
           pageState: inputData.pageState,
         });
       } else {
@@ -474,7 +496,139 @@ const formDataCheckStep = createStep({
   },
 });
 
-// Step 5: Completion assessment that can loop back or finish
+// Step 5: Application summary step - stops with summary when application is finished
+const applicationSummaryStep = createStep({
+  id: 'application-summary',
+  description: 'Generate and display application summary when all required fields are filled',
+  inputSchema: z.object({
+    actionResult: z.string().describe('Result of the executed action'),
+    pageState: z.string().describe('Current state of the page after the action'),
+    nextStepNeeded: z.boolean().describe('Whether another action step is needed'),
+    missingFields: z.array(z.string()).optional().describe('List of missing form fields if any'),
+    formDataProvided: z.record(z.string()).optional().describe('Form data provided by user'),
+  }),
+  outputSchema: z.object({
+    actionResult: z.string().describe('Result of the executed action'),
+    pageState: z.string().describe('Current state of the page after the action'),
+    nextStepNeeded: z.boolean().describe('Whether another action step is needed'),
+    missingFields: z.array(z.string()).optional().describe('List of missing form fields if any'),
+    formDataProvided: z.record(z.string()).optional().describe('Form data provided by user'),
+    applicationSummary: z.string().optional().describe('Summary of the completed application'),
+    isApplicationComplete: z.boolean().describe('Whether the application is complete'),
+  }),
+  suspendSchema: z.object({
+    applicationSummary: z.string().describe('Comprehensive summary of the completed application'),
+    pageState: z.string().describe('Final state of the page'),
+    filledFields: z.array(z.string()).optional().describe('List of all fields that were filled'),
+  }),
+  resumeSchema: z.object({
+    acknowledged: z.boolean().optional().describe('User acknowledgment that they have reviewed the summary'),
+  }),
+  execute: async ({ inputData, resumeData, suspend, mastra }) => {
+    if (!inputData) {
+      const error = new Error('Input data not found');
+      logger.error('Application summary step failed: Input data not found', { error });
+      throw error;
+    }
+
+    // Check if application is finished (all required fields filled)
+    const isApplicationComplete = !inputData.nextStepNeeded && 
+                                  (!inputData.missingFields || inputData.missingFields.length === 0);
+
+    // If resuming after user reviewed the summary, continue
+    if (resumeData?.acknowledged) {
+      logger.info('User acknowledged application summary. Continuing workflow.');
+      // Use actionResult as the summary since it contains the application state
+      return {
+        actionResult: inputData.actionResult,
+        pageState: inputData.pageState,
+        nextStepNeeded: inputData.nextStepNeeded,
+        missingFields: inputData.missingFields,
+        formDataProvided: inputData.formDataProvided,
+        applicationSummary: inputData.actionResult, // Summary was shown to user via suspend
+        isApplicationComplete,
+      };
+    }
+
+    // If application is not complete, continue without summary
+    if (!isApplicationComplete) {
+      logger.info('Application not yet complete. Missing fields or next step needed. Continuing workflow.');
+      return {
+        actionResult: inputData.actionResult,
+        pageState: inputData.pageState,
+        nextStepNeeded: inputData.nextStepNeeded,
+        missingFields: inputData.missingFields,
+        formDataProvided: inputData.formDataProvided,
+        isApplicationComplete: false,
+      };
+    }
+
+    // Application is complete - generate comprehensive summary
+    logger.info('Application is complete. Generating summary...');
+
+    const agent = mastra?.getAgent('webAutomationAgent');
+    if (!agent) {
+      const error = new Error('Web automation agent not found');
+      logger.error('Application summary step failed: Agent not found', { error });
+      throw error;
+    }
+
+    const summaryPrompt = `Generate a comprehensive summary of the completed application.
+
+    Page State: ${inputData.pageState}
+    Action Result: ${inputData.actionResult}
+    Form Data Provided: ${inputData.formDataProvided ? JSON.stringify(inputData.formDataProvided, null, 2) : 'None'}
+
+    Please:
+    1. Take a final snapshot of the page to see the current state
+    2. Review all form fields that were filled in
+    3. Create a comprehensive summary that includes:
+       - All fields that were filled and their values (if visible/appropriate)
+       - Any important information captured
+       - Current status of the application
+       - What page/section the application is currently on
+       - Any next steps or actions that may be needed (like submission)
+    4. Be clear and organized in your summary
+    5. Do NOT submit the application - just provide the summary
+
+    Format your summary clearly with sections if helpful. This summary will be shown to the user to review the completed application.`;
+
+    try {
+      const response = await agent.stream([
+        {
+          role: 'user',
+          content: summaryPrompt,
+        },
+      ]);
+
+      let summaryText = '';
+      for await (const chunk of response.textStream) {
+        process.stdout.write(chunk);
+        summaryText += chunk;
+      }
+
+      // Extract filled fields from the summary or form data
+      const filledFields: string[] = [];
+      if (inputData.formDataProvided) {
+        filledFields.push(...Object.keys(inputData.formDataProvided));
+      }
+
+      logger.info(`Application summary generated. Summary length: ${summaryText.length} chars. Filled fields: ${filledFields.length}`);
+
+      // Suspend with the summary so user can review it
+      return suspend({
+        applicationSummary: summaryText,
+        pageState: inputData.pageState,
+        filledFields: filledFields.length > 0 ? filledFields : undefined,
+      });
+    } catch (error) {
+      logger.error(`Failed to generate application summary - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  },
+});
+
+// Step 6: Completion assessment that can loop back or finish
 const completionStep = createStep({
   id: 'completion',
   description: 'Assess if the objective is complete or if more actions are needed',
@@ -484,6 +638,8 @@ const completionStep = createStep({
     nextStepNeeded: z.boolean(),
     missingFields: z.array(z.string()).optional(),
     formDataProvided: z.record(z.string()).optional(),
+    applicationSummary: z.string().optional(),
+    isApplicationComplete: z.boolean(),
   }),
   outputSchema: z.object({
     isComplete: z.boolean(),
@@ -497,14 +653,16 @@ const completionStep = createStep({
       throw error;
     }
 
-    // Simple completion logic - in a real implementation this could be more sophisticated
-    const isComplete = !inputData.nextStepNeeded && (!inputData.missingFields || inputData.missingFields.length === 0);
+    // Use application summary if available, otherwise use action result
+    const summary = inputData.applicationSummary || inputData.actionResult;
+    const isComplete = inputData.isApplicationComplete || 
+                      (!inputData.nextStepNeeded && (!inputData.missingFields || inputData.missingFields.length === 0));
 
-    logger.info(`Workflow completion assessment: ${isComplete ? 'Complete' : 'Incomplete'}. Next step needed: ${inputData.nextStepNeeded}. Missing fields: ${inputData.missingFields?.length || 0}. Result length: ${inputData.actionResult.length} chars`);
+    logger.info(`Workflow completion assessment: ${isComplete ? 'Complete' : 'Incomplete'}. Next step needed: ${inputData.nextStepNeeded}. Missing fields: ${inputData.missingFields?.length || 0}. Application complete: ${inputData.isApplicationComplete}`);
     
     return {
       isComplete,
-      summary: inputData.actionResult,
+      summary,
       nextActions: isComplete ? undefined : ['Continue with more actions', 'Refine the approach', 'Ask for guidance'],
     };
   },
@@ -526,8 +684,9 @@ export const webAutomationWorkflow = createWorkflow({
   .then(actionPlanningStep)
   .then(actionExecutionStep)
   .then(formDataCheckStep)
+  .then(applicationSummaryStep)
   .then(completionStep);
 
 webAutomationWorkflow.commit();
 
-export { actionPlanningStep, formDataCheckStep }; 
+export { actionPlanningStep, formDataCheckStep, applicationSummaryStep }; 
