@@ -11,7 +11,7 @@ import { databaseTools } from '../tools/database-tools';
 
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 
 const storage = postgresStore;
 
@@ -152,9 +152,9 @@ export const webAutomationAgent = new Agent({
   `,
   // model: openai('gpt-5-2025-08-07'),
   // // model: openai('gpt-4.1-mini'),
-  model: anthropic('claude-sonnet-4-20250514'),
+  // model: anthropic('claude-sonnet-4-20250514'),
   // model: google('gemini-2.5-pro'),
-  // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
+  model: vertexAnthropic('claude-sonnet-4-5@20250929'),
   tools: {
     // Only include database tools statically
     // Playwright tools will be added dynamically per session via toolsets
