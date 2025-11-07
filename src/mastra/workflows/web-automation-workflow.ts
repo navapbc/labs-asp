@@ -280,7 +280,201 @@ const actionExecutionStep = createStep({
   },
 });
 
-// Step 4: Completion assessment that can loop back or finish
+// Step 4: Check for missing form data and pause for user input if needed
+const formDataCheckStep = createStep({
+  id: 'form-data-check',
+  description: 'Check if form data is missing and pause for user input if needed',
+  inputSchema: z.object({
+    actionResult: z.string().describe('Result of the executed action'),
+    pageState: z.string().describe('Current state of the page after the action'),
+    nextStepNeeded: z.boolean().describe('Whether another action step is needed'),
+  }),
+  outputSchema: z.object({
+    actionResult: z.string().describe('Result of the executed action'),
+    pageState: z.string().describe('Current state of the page after the action'),
+    nextStepNeeded: z.boolean().describe('Whether another action step is needed'),
+    missingFields: z.array(z.string()).optional().describe('List of missing form fields if any'),
+    formDataProvided: z.record(z.string()).optional().describe('Form data provided by user'),
+  }),
+  suspendSchema: z.object({
+    missingField: z.string().describe('The missing form field that needs user input'),
+    fieldDescription: z.string().describe('Description of what information is needed for this field'),
+    pageState: z.string().describe('Current state of the page'),
+  }),
+  resumeSchema: z.object({
+    fieldValue: z.string().describe('The value provided by the user for the missing field'),
+    fieldName: z.string().describe('The name of the field this value corresponds to'),
+  }),
+  execute: async ({ inputData, resumeData, suspend, mastra }) => {
+    if (!inputData) {
+      const error = new Error('Input data not found');
+      logger.error('Form data check step failed: Input data not found', { error });
+      throw error;
+    }
+
+    // If resuming with user-provided data, continue with the provided field value
+    if (resumeData?.fieldValue) {
+      logger.info(`Resuming workflow with user-provided field: ${resumeData.fieldName} = ${resumeData.fieldValue}`);
+      
+      const agent = mastra?.getAgent('webAutomationAgent');
+      if (!agent) {
+        const error = new Error('Web automation agent not found');
+        logger.error('Form data check step failed: Agent not found', { error });
+        throw error;
+      }
+
+      // Use the agent to fill in the provided field value
+      const fillPrompt = `Fill in the form field with the user-provided value:
+
+      Field Name: ${resumeData.fieldName}
+      Field Value: ${resumeData.fieldValue}
+      Current Page State: ${inputData.pageState}
+
+      Please:
+      1. Locate the form field "${resumeData.fieldName}" on the page
+      2. Fill it with the value: "${resumeData.fieldValue}"
+      3. Take a snapshot to confirm the field was filled
+      4. Check if there are any other missing required fields
+      5. Report the updated page state
+
+      Respond in this exact format:
+      STATUS: [FIELD_FILLED or MORE_FIELDS_NEEDED]
+      FIELD_FILLED: [name of field that was filled]
+      REMAINING_FIELDS: [comma-separated list of any remaining missing fields, or "NONE" if all fields are filled]
+      PAGE_STATE: [description of current page state]`;
+
+      try {
+        const response = await agent.stream([
+          {
+            role: 'user',
+            content: fillPrompt,
+          },
+        ]);
+
+        let fillResult = '';
+        for await (const chunk of response.textStream) {
+          process.stdout.write(chunk);
+          fillResult += chunk;
+        }
+
+        // Parse the response to check for more missing fields
+        const hasMoreFields = fillResult.includes('STATUS: MORE_FIELDS_NEEDED');
+        const remainingFieldsMatch = fillResult.match(/REMAINING_FIELDS: ([^\n]+)/);
+        const remainingFields = remainingFieldsMatch?.[1] 
+          ? remainingFieldsMatch[1].split(',').map(f => f.trim()).filter(f => f !== 'NONE')
+          : [];
+
+        logger.info(`Field filled: ${resumeData.fieldName}. More fields needed: ${hasMoreFields}. Remaining: ${remainingFields.length}`);
+
+        // If there are more missing fields, suspend again to get the next field value
+        if (hasMoreFields && remainingFields.length > 0) {
+          const nextMissingField = remainingFields[0];
+          logger.info(`More missing fields detected. Pausing for next field: ${nextMissingField}`);
+          
+          return suspend({
+            missingField: nextMissingField,
+            fieldDescription: `Please provide the value for ${nextMissingField}`,
+            pageState: fillResult,
+          });
+        }
+
+        return {
+          actionResult: fillResult,
+          pageState: fillResult,
+          nextStepNeeded: inputData.nextStepNeeded,
+          missingFields: remainingFields.length > 0 ? remainingFields : undefined,
+          formDataProvided: {
+            [resumeData.fieldName]: resumeData.fieldValue,
+          },
+        };
+      } catch (error) {
+        logger.error(`Failed to fill form field - ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw error;
+      }
+    }
+
+    // Check if there are missing form fields in the action result
+    const agent = mastra?.getAgent('webAutomationAgent');
+    if (!agent) {
+      const error = new Error('Web automation agent not found');
+      logger.error('Form data check step failed: Agent not found', { error });
+      throw error;
+    }
+
+    logger.info('Checking for missing form data in action result');
+
+    const checkPrompt = `Analyze the action result and page state to determine if there are any missing required form fields that need user input.
+
+    Action Result: ${inputData.actionResult}
+    Page State: ${inputData.pageState}
+
+    Please:
+    1. Examine the page state and action result carefully
+    2. Identify any required form fields that are empty or missing data
+    3. Determine which fields cannot be automatically filled from available data
+    4. If missing fields are found, identify the FIRST missing field that needs user input
+
+    Respond in this exact format:
+    HAS_MISSING_FIELDS: [YES or NO]
+    MISSING_FIELD: [name of the first missing field, or "NONE" if no missing fields]
+    FIELD_DESCRIPTION: [description of what information is needed for this field, or "NONE"]
+    ALL_MISSING_FIELDS: [comma-separated list of all missing fields, or "NONE"]
+
+    Be specific about field names (e.g., "Social Security Number", "Date of Birth", "Phone Number").`;
+
+    try {
+      const response = await agent.stream([
+        {
+          role: 'user',
+          content: checkPrompt,
+        },
+      ]);
+
+      let checkResult = '';
+      for await (const chunk of response.textStream) {
+        process.stdout.write(chunk);
+        checkResult += chunk;
+      }
+
+      // Parse the agent's response
+      const hasMissingFields = checkResult.includes('HAS_MISSING_FIELDS: YES');
+      const missingFieldMatch = checkResult.match(/MISSING_FIELD: ([^\n]+)/);
+      const fieldDescriptionMatch = checkResult.match(/FIELD_DESCRIPTION: ([^\n]+)/);
+      const allFieldsMatch = checkResult.match(/ALL_MISSING_FIELDS: ([^\n]+)/);
+
+      const missingField = missingFieldMatch?.[1]?.trim();
+      const fieldDescription = fieldDescriptionMatch?.[1]?.trim();
+      const allMissingFields = allFieldsMatch?.[1]?.trim()
+        ? allFieldsMatch[1].split(',').map(f => f.trim()).filter(f => f !== 'NONE')
+        : [];
+
+      if (hasMissingFields && missingField && missingField !== 'NONE') {
+        logger.info(`Missing form field detected: ${missingField}. Pausing for user input.`);
+        
+        // Suspend the workflow to get user input for the missing field
+        return suspend({
+          missingField,
+          fieldDescription: fieldDescription && fieldDescription !== 'NONE' ? fieldDescription : `Please provide the value for ${missingField}`,
+          pageState: inputData.pageState,
+        });
+      } else {
+        logger.info('No missing form fields detected. Continuing workflow.');
+        
+        return {
+          actionResult: inputData.actionResult,
+          pageState: inputData.pageState,
+          nextStepNeeded: inputData.nextStepNeeded,
+          missingFields: allMissingFields.length > 0 ? allMissingFields : undefined,
+        };
+      }
+    } catch (error) {
+      logger.error(`Form data check failed - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  },
+});
+
+// Step 5: Completion assessment that can loop back or finish
 const completionStep = createStep({
   id: 'completion',
   description: 'Assess if the objective is complete or if more actions are needed',
@@ -288,6 +482,8 @@ const completionStep = createStep({
     actionResult: z.string(),
     pageState: z.string(),
     nextStepNeeded: z.boolean(),
+    missingFields: z.array(z.string()).optional(),
+    formDataProvided: z.record(z.string()).optional(),
   }),
   outputSchema: z.object({
     isComplete: z.boolean(),
@@ -302,9 +498,9 @@ const completionStep = createStep({
     }
 
     // Simple completion logic - in a real implementation this could be more sophisticated
-    const isComplete = !inputData.nextStepNeeded;
+    const isComplete = !inputData.nextStepNeeded && (!inputData.missingFields || inputData.missingFields.length === 0);
 
-    logger.info(`Workflow completion assessment: ${isComplete ? 'Complete' : 'Incomplete'}. Next step needed: ${inputData.nextStepNeeded}. Result length: ${inputData.actionResult.length} chars`);
+    logger.info(`Workflow completion assessment: ${isComplete ? 'Complete' : 'Incomplete'}. Next step needed: ${inputData.nextStepNeeded}. Missing fields: ${inputData.missingFields?.length || 0}. Result length: ${inputData.actionResult.length} chars`);
     
     return {
       isComplete,
@@ -329,8 +525,9 @@ export const webAutomationWorkflow = createWorkflow({
   .then(navigationStep)
   .then(actionPlanningStep)
   .then(actionExecutionStep)
+  .then(formDataCheckStep)
   .then(completionStep);
 
 webAutomationWorkflow.commit();
 
-export { actionPlanningStep }; 
+export { actionPlanningStep, formDataCheckStep }; 
