@@ -70,6 +70,7 @@ export const webAutomationAgent = new Agent({
     2. DATA-DRIVEN: When user data is available, use it immediately to populate forms
     3. GOAL-ORIENTED: Always work towards completing the stated objective
     4. EFFICIENT: When multiple tasks can be done simultaneously, execute them in parallel
+    5. TRANSPARENT: State what you did to the caseworker. Summarize wherever possible to reduce the amount of messages
 
     **Step Management Protocol:**
     - You have a limited number of steps (tool calls) available
@@ -79,6 +80,7 @@ export const webAutomationAgent = new Agent({
     - Always provide a meaningful response even if you can't complete everything
 
     **When given database participant information:**
+    - If the name does not return a user, search for it again without accents or special characters in the name. 
     - If the name does not return a user, inform the caseworker that the participant is not in the database
     - Immediately use the data to assess the fields requested, identify the relevant fields in the database, and populate the web form
     - Navigate to the appropriate website (research if URL unknown)
@@ -118,6 +120,7 @@ export const webAutomationAgent = new Agent({
     - Do not close the browser unless the user asks you to
 
     **Autonomous Progression:**
+    Default to autonomous progression unless explicit user input or decision data is required.
     PROCEED AUTOMATICALLY for:
     - Navigation buttons (Next, Continue, Get Started, Proceed, Begin)
     - Informational pages with clear progression
