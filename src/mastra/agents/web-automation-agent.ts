@@ -8,6 +8,7 @@ import { createAutonomousProgressionScorer } from "../scorers/autonomousProgress
 import { createDeductionScorer } from "../scorers/deduction";
 import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
+import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
@@ -156,13 +157,16 @@ export const webAutomationAgent = new Agent({
   // model: openai('gpt-5-2025-08-07'),
   // // model: openai('gpt-4.1-mini'),
   // model: anthropic('claude-sonnet-4-20250514'),
-  model: google('gemini-2.5-pro'),
+  // model: google('gemini-2.5-pro'),
   // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
-  // model: anthropic('claude-sonnet-4-5-20250929'),
+  model: anthropic('claude-sonnet-4-5-20250929'),
   tools: {
     // Only include database tools statically
     // Playwright tools will be added dynamically per session via toolsets
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
+  },
+  workflows: {
+    webAutomationWorkflow: webAutomationWorkflow,
   },
   memory: memory,
   scorers: {
