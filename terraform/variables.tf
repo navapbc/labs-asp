@@ -95,7 +95,7 @@ variable "chatbot_max_instances" {
 variable "chatbot_timeout" {
   description = "Request timeout for AI Chatbot service in seconds"
   type        = number
-  default     = 60  # 1 minute for typical chat responses
+  default     = 3600  # 1 hour maximum for AI agent workflows with browser automation
 }
 
 # Environment selection
