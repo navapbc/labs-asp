@@ -115,6 +115,9 @@ export const webAutomationAgent = new Agent({
     - Wait for elements to load when needed
     - Verify actions were successful
 
+    **Tool Usage:**
+    - When calling browser_snapshot, always provide an empty object {} as the parameter
+
     **Form Field Protocol:**
     - Skip disabled/grayed-out fields with a note
     - Do not submit at the end, summarize what you filled out and what is missing when all relevant fields are filled in from the database information
