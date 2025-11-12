@@ -138,6 +138,37 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # Microsoft Entra ID OAuth configuration
+      env {
+        name = "AUTH_MICROSOFT_ENTRA_ID_ID"
+        value_source {
+          secret_key_ref {
+            secret  = "microsoft-entra-id-client-id"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "AUTH_MICROSOFT_ENTRA_ID_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = "microsoft-entra-id-client-secret"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "AUTH_MICROSOFT_ENTRA_ID_ISSUER"
+        value_source {
+          secret_key_ref {
+            secret  = "microsoft-entra-id-issuer"
+            version = "latest"
+          }
+        }
+      }
+
       # Google Cloud configuration
       env {
         name = "GOOGLE_APPLICATION_CREDENTIALS"
