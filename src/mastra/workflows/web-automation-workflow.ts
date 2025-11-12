@@ -44,9 +44,8 @@ const navigationStep = createStep({
 
     Please:
     1. Navigate to the website
-    2. Take a snapshot to understand the page layout
-    3. Analyze what actions are possible on this page (forms, buttons, links, etc.)
-    4. Identify key elements that could help achieve the objective
+    2. Analyze what actions are possible on this page (forms, buttons, links, etc.)
+    3. Identify key elements that could help achieve the objective
 
     Provide a clear analysis of what you see and what actions are available.`;
     
@@ -237,10 +236,9 @@ const actionExecutionStep = createStep({
     Please:
     1. Perform the requested action
     2. If you're adding an address field and a suggested address is displayed, always select and use the suggested address
-    3. Take a snapshot after the action to show the result
-    4. Analyze if the action was successful
-    5. Determine if we've achieved the objective or if more actions are needed
-    6. If more actions are needed, describe the current state of the page
+    3. Analyze if the action was successful
+    4. Determine if we've achieved the objective or if more actions are needed
+    5. If more actions are needed, describe the current state of the page
 
     Follow the Address Handling Protocol and Form Field Handling Protocol from your instructions.
 
@@ -335,9 +333,8 @@ const formDataCheckStep = createStep({
       Please:
       1. Locate each form field on the page
       2. Fill each field with its corresponding value
-      3. Take a snapshot to confirm all fields were filled
-      4. Check if there are any other missing required fields
-      5. Report the updated page state
+      3. Check if there are any other missing required fields
+      4. Report the updated page state
 
       Respond in this exact format:
       STATUS: [ALL_FIELDS_FILLED or MORE_FIELDS_NEEDED]
@@ -550,9 +547,8 @@ const applicationSummaryStep = createStep({
     Form Data Provided: ${inputData.formDataProvided ? JSON.stringify(inputData.formDataProvided, null, 2) : 'None'}
 
     Please:
-    1. Take a final snapshot of the page to see the current state
-    2. Review all form fields that were filled in
-    3. Create a comprehensive summary that includes:
+    1. Review all form fields that were filled in
+    2. Create a comprehensive summary that includes:
        - All fields that were filled and their values (if visible/appropriate)
        - Any important information captured
        - Current status of the application
