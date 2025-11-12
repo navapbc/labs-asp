@@ -1,3 +1,16 @@
+# [1.0.0-dev.9](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.8...v1.0.0-dev.9) (2025-11-12)
+
+
+### Bug Fixes
+
+* update chatbot timeout to 1 hour, previously 1 minute ([0d1be1b](https://github.com/navapbc/labs-asp/commit/0d1be1b4bf146afc1ccd933e9a52a0b8c66047b3))
+
+
+### Features
+
+* register webAutomationWorkflow in the agent, switch to antrhopic ([5b1b8a7](https://github.com/navapbc/labs-asp/commit/5b1b8a7c6baad0f7d589c72ff3b19ae0c9d1159b))
+* update prompts to handle browser_snapshot bug ([287fee8](https://github.com/navapbc/labs-asp/commit/287fee8eeee5a8b69b13d08ec079279f216f8025))
+
 # [1.0.0-dev.8](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.7...v1.0.0-dev.8) (2025-11-06)
 
 
