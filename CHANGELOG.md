@@ -1,3 +1,10 @@
+# [1.0.0-dev.14](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.13...v1.0.0-dev.14) (2025-11-13)
+
+
+### Bug Fixes
+
+* increase VM disk size from 30GB to 100GB to prevent disk full errors ([ce1947a](https://github.com/navapbc/labs-asp/commit/ce1947aebfbf0be66ea8277c11517e7a216c6220))
+
 # [1.0.0-dev.13](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.12...v1.0.0-dev.13) (2025-11-13)
 
 
