@@ -1,3 +1,10 @@
+# [1.0.0-dev.12](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.11...v1.0.0-dev.12) (2025-11-13)
+
+
+### Bug Fixes
+
+* use preferred_username for email in multi-tenant Microsoft auth ([5bc3a50](https://github.com/navapbc/labs-asp/commit/5bc3a503916584217b6ccae8aeff15d45717ccb8))
+
 # [1.0.0-dev.11](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.10...v1.0.0-dev.11) (2025-11-13)
 
 
