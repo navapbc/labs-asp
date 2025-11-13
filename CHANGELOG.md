@@ -1,3 +1,10 @@
+# [1.0.0-dev.10](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.9...v1.0.0-dev.10) (2025-11-13)
+
+
+### Bug Fixes
+
+* hotfix client submodule to latest with Microsoft OAuth corrected scope ([6e6c5d2](https://github.com/navapbc/labs-asp/commit/6e6c5d287e89da07c811c8b0272dbcc0f8bc9b0f))
+
 # [1.0.0-dev.9](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.8...v1.0.0-dev.9) (2025-11-12)
 
 
