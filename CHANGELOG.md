@@ -1,3 +1,10 @@
+# [1.0.0-dev.13](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.12...v1.0.0-dev.13) (2025-11-13)
+
+
+### Bug Fixes
+
+* add type property to Microsoft profile callback ([e724238](https://github.com/navapbc/labs-asp/commit/e724238d2a9137ea9bf120d8f185cfc6b5ace850))
+
 # [1.0.0-dev.12](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.11...v1.0.0-dev.12) (2025-11-13)
 
 
