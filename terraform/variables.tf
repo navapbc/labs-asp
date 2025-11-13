@@ -40,7 +40,7 @@ variable "vm_machine_type" {
 variable "vm_disk_size" {
   description = "Boot disk size for VM in GB"
   type        = number
-  default     = 30
+  default     = 100  # Increased for Docker image storage and accumulated layers
 }
 
 variable "browser_image_url" {
