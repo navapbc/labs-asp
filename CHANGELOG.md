@@ -1,3 +1,10 @@
+# [1.0.0-dev.11](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.10...v1.0.0-dev.11) (2025-11-13)
+
+
+### Bug Fixes
+
+* add logging to debug Microsoft OAuth error ([f881c71](https://github.com/navapbc/labs-asp/commit/f881c712d24bb6230b202f01ae89bb2651502f46))
+
 # [1.0.0-dev.10](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.9...v1.0.0-dev.10) (2025-11-13)
 
 
