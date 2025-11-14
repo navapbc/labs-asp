@@ -83,7 +83,7 @@ variable "chatbot_memory" {
 variable "chatbot_min_instances" {
   description = "Minimum instances for AI Chatbot service"
   type        = number
-  default     = 0  # Scale to zero when not used
+  default     = 1  # Keep at least one instance warm to avoid cold start issues
 }
 
 variable "chatbot_max_instances" {
