@@ -26,12 +26,22 @@ const memory = new Memory({
     // This excludes verbose Playwright, database, and Exa tool interactions from memory context
     // while preserving useful working memory context for continuity
     new ToolCallFilter(),
-    // Apply token limiting as the final step (for Claude Sonnet 4's ~200k context)
-    new TokenLimiter(150000),
+    // Apply token limiting as the final step
+    // IMPORTANT: TokenLimiter only limits memory messages, not system instructions, tools, or current message
+    // Claude Sonnet 4 has 200k context limit. Reserve ~80k for:
+    // - System instructions (~3k tokens)
+    // - Tool definitions (~5-10k tokens depending on toolsets)
+    // - Current user message + response (~10-20k tokens)
+    // - Browser snapshots in tool calls (~30-50k tokens)
+    // - Working memory, semantic recall overhead (~5-10k tokens)
+    // This leaves ~120k for conversation history
+    new TokenLimiter(120000),
   ],
   options: {
-    lastMessages: 5,
-    workingMemory: { 
+    // Only keep last 3 messages in short-term memory to reduce token usage
+    // Rely more on semantic recall for older context
+    lastMessages: 3,
+    workingMemory: {
       enabled: true,
       scope: 'thread',
       template: `
@@ -47,8 +57,10 @@ const memory = new Memory({
       `,
      },
      semanticRecall: {
-        topK: 5,
-        messageRange: 2,
+        // Retrieve top 3 most relevant messages (reduced from 5)
+        topK: 3,
+        // Only include 1 message before/after for context (reduced from 2)
+        messageRange: 1,
         scope: "resource"
      },
      threads: {
