@@ -1,3 +1,11 @@
+# [1.0.0-dev.15](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.14...v1.0.0-dev.15) (2025-11-14)
+
+
+### Bug Fixes
+
+* make memory thread level not resource level ([70107a7](https://github.com/navapbc/labs-asp/commit/70107a7ef650cb28895b0ddc38816051a788c306))
+* reduce sizes of TokenLimiter, topK, messageRange ([d1af3d2](https://github.com/navapbc/labs-asp/commit/d1af3d27850c35e3770643a2ab59cee64d698102))
+
 # [1.0.0-dev.14](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.13...v1.0.0-dev.14) (2025-11-13)
 
 
