@@ -61,7 +61,9 @@ const memory = new Memory({
         topK: 3,
         // Only include 1 message before/after for context (reduced from 2)
         messageRange: 1,
-        scope: "resource"
+        // IMPORTANT: Use 'thread' scope to only search current conversation
+        // 'resource' scope would search across ALL user conversations and pull in old context
+        scope: "thread"
      },
      threads: {
        generateTitle: {
