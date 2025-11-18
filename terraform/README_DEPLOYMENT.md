@@ -6,4 +6,4 @@ triggering the workflow manually will deploy the infrastructure and the browser 
 
 # Testing PostHog integration with clean preview environment
 
-Testing workflow trigger from testing branch
+Testing workflow trigger from testing branch time 2
