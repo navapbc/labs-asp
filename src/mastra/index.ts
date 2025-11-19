@@ -72,8 +72,31 @@ export const mastra = new Mastra({
               // Get Playwright tools for this session
               const playwrightToolsets = await sessionPlaywrightMCP.getToolsets();
 
+              // Filter out specific browser tools
+              // Playwright MCP doesn't support tool filtering at the server level,
+              // so we filter after retrieval to prevent the agent from using certain tools
+              const filteredToolsets: Record<string, Record<string, any>> = {};
+              const excludedTools = ['browser_take_screenshot', 'browser_run_code'];
+
+              for (const [namespace, tools] of Object.entries(playwrightToolsets)) {
+                filteredToolsets[namespace] = {};
+                for (const [toolName, tool] of Object.entries(tools)) {
+                  // Check if tool should be excluded
+                  const shouldExclude = excludedTools.some(excludeName =>
+                    toolName === excludeName ||
+                    toolName.includes(excludeName)
+                  );
+
+                  if (!shouldExclude) {
+                    filteredToolsets[namespace][toolName] = tool;
+                  } else {
+                    console.log(`[Chat] Filtered out tool: ${toolName}`);
+                  }
+                }
+              }
+
               console.log(`[Chat] Streaming for session: ${sessionId}`);
-              console.log(`[Chat] Playwright toolsets:`, JSON.stringify(playwrightToolsets, null, 2));
+              console.log(`[Chat] Playwright toolsets (filtered):`, JSON.stringify(filteredToolsets, null, 2));
 
               const stream = await agent.stream(messages, {
                 format: 'aisdk',
@@ -81,8 +104,8 @@ export const mastra = new Mastra({
                   thread: threadId,
                   resource: resourceId,
                 } : undefined,
-                // Add session-specific Playwright tools dynamically
-                toolsets: playwrightToolsets,
+                // Add session-specific Playwright tools dynamically (filtered)
+                toolsets: filteredToolsets,
                 maxSteps: 50,
                 onError: ({ error }: { error: any }) => {
                   console.error('Error during agent streaming:', error);
