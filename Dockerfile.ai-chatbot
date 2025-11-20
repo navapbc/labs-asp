@@ -29,14 +29,18 @@ RUN rm -rf node_modules && pnpm install --frozen-lockfile --ignore-scripts
 ARG PLAYWRIGHT_MCP_URL=http://localhost:8931/mcp
 ARG BROWSER_STREAMING_URL=ws://localhost:8933
 ARG NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
+ARG NEXT_PUBLIC_POSTHOG_KEY
+ARG NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 
 # Set environment variables for build time
 ENV PLAYWRIGHT_MCP_URL=${PLAYWRIGHT_MCP_URL}
 ENV BROWSER_STREAMING_URL=${BROWSER_STREAMING_URL}
 ENV NEXT_PUBLIC_MASTRA_SERVER_URL=${NEXT_PUBLIC_MASTRA_SERVER_URL}
+ENV NEXT_PUBLIC_POSTHOG_KEY=${NEXT_PUBLIC_POSTHOG_KEY}
+ENV NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
 
-# Build Next.js client only
-RUN pnpm tsx lib/db/migrate && pnpm next build
+# Build Next.js client only (migrations run at container startup)
+RUN pnpm next build
 
 # Stage 2: Runtime stage
 FROM base AS runtime
@@ -64,5 +68,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:3000/health || curl -f http://localhost:3000 || exit 1
 
-# Start Next.js server
-CMD ["pnpm", "start"]
+# Start Next.js server (run migrations first, then start)
+CMD ["sh", "-c", "pnpm tsx lib/db/migrate && pnpm start"]

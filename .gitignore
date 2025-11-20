@@ -49,3 +49,4 @@ vertex-ai-credentials.json
 **/terraform.tfstate.backup
 **/tfplan
 terraform/*.tfvars
+terraform/*apply.log

@@ -1,4 +1,3 @@
-import { exaMCP, playwrightMCP } from '../mcp';
 import { pgVector, postgresStore } from '../storage';
 
 import { Agent } from '@mastra/core/agent';
@@ -9,11 +8,11 @@ import { createAutonomousProgressionScorer } from "../scorers/autonomousProgress
 import { createDeductionScorer } from "../scorers/deduction";
 import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
+import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
-import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
-import { stepCountIs } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
 
 const storage = postgresStore;
 
@@ -27,12 +26,22 @@ const memory = new Memory({
     // This excludes verbose Playwright, database, and Exa tool interactions from memory context
     // while preserving useful working memory context for continuity
     new ToolCallFilter(),
-    // Apply token limiting as the final step (for Claude Sonnet 4's ~200k context)
-    new TokenLimiter(150000),
+    // Apply token limiting as the final step
+    // IMPORTANT: TokenLimiter only limits memory messages, not system instructions, tools, or current message
+    // Claude Sonnet 4 has 200k context limit. Reserve ~80k for:
+    // - System instructions (~3k tokens)
+    // - Tool definitions (~5-10k tokens depending on toolsets)
+    // - Current user message + response (~10-20k tokens)
+    // - Browser snapshots in tool calls (~30-50k tokens)
+    // - Working memory, semantic recall overhead (~5-10k tokens)
+    // This leaves ~120k for conversation history
+    new TokenLimiter(120000),
   ],
   options: {
-    lastMessages: 5,
-    workingMemory: { 
+    // Only keep last 3 messages in short-term memory to reduce token usage
+    // Rely more on semantic recall for older context
+    lastMessages: 3,
+    workingMemory: {
       enabled: true,
       scope: 'thread',
       template: `
@@ -48,9 +57,13 @@ const memory = new Memory({
       `,
      },
      semanticRecall: {
-        topK: 5,
-        messageRange: 2,
-        scope: "resource"
+        // Retrieve top 3 most relevant messages (reduced from 5)
+        topK: 3,
+        // Only include 1 message before/after for context (reduced from 2)
+        messageRange: 1,
+        // IMPORTANT: Use 'thread' scope to only search current conversation
+        // 'resource' scope would search across ALL user conversations and pull in old context
+        scope: "thread"
      },
      threads: {
        generateTitle: {
@@ -65,13 +78,14 @@ export const webAutomationAgent = new Agent({
   name: 'Web Automation Agent',
   description: 'A intelligent assistant that can navigate websites, research information, and perform complex web automation tasks',
   instructions: `
-    You are an expert web automation specialist who intelligently does web searches, navigates websites, queries database information, and performs multi-step web automation tasks.
+    You are an expert web automation specialist who intelligently does web searches, navigates websites, queries database information, and performs multi-step web automation tasks on behalf of caseworkers applying for benefits for families seeking public support.
 
     **Core Approach:**
-    1. AUTONOMOUS: Take decisive action without asking for permission
+    1. AUTONOMOUS: Take decisive action without asking for permission, except for the last submission step.
     2. DATA-DRIVEN: When user data is available, use it immediately to populate forms
     3. GOAL-ORIENTED: Always work towards completing the stated objective
     4. EFFICIENT: When multiple tasks can be done simultaneously, execute them in parallel
+    5. TRANSPARENT: State what you did to the caseworker. Summarize wherever possible to reduce the amount of messages
 
     **Step Management Protocol:**
     - You have a limited number of steps (tool calls) available
@@ -81,18 +95,24 @@ export const webAutomationAgent = new Agent({
     - Always provide a meaningful response even if you can't complete everything
 
     **When given database participant information:**
-    - Immediately use the data to populate web forms
+    - If the name does not return a user, search for it again without accents or special characters in the name. 
+    - If the name does not return a user, inform the caseworker that the participant is not in the database
+    - Immediately use the data to assess the fields requested, identify the relevant fields in the database, and populate the web form
     - Navigate to the appropriate website (research if URL unknown)
-    - If the participant has a preferred language, change the website language to match it
-    - Fill all available fields with the participant data
+    - If the participant has a preferred language stated in the database or the user message, change the website language to match it
+    - Fill all available fields with the participant data, carefully identifying fields that have different names but identical purposes (examples: sex and gender, two or more races and mixed ethnicity)
+    - Deduce answers to questions based on available data. For example, if they need to select a clinic close to them, use their home address to determine the closest clinic location; and if a person has no household members or family members noted, deduce they live alone
+    - If you are uncertain about the data being a correct match or not, ask for it with your summary at the end rather than guessing
+    - Assume the application should include the participant data from the original prompt (with relevant household members) until the end of the session
     - Proceed through the application process autonomously
+    - If the participant does not appear to be eligible for the program, explain why at the end and ask for clarification from the caseworker
 
     **Browser Artifact Protocol:**
     When starting web automation tasks, the system will automatically provide a browser artifact for live streaming.
     The browser artifact provides a persistent workspace where users can see the automation in real-time.
-    
+
     **Web Search Protocol:**
-    When given tasks like "apply for MISP in Riverside County", use the following steps:
+    When given tasks like "apply for WIC in Riverside County", use the following steps:
     1. Web search for the service to understand the process and find the correct website
     2. Navigate directly to the application website
     3. Begin form completion immediately, using the database tools to get the data needed to fill the form
@@ -109,24 +129,16 @@ export const webAutomationAgent = new Agent({
     - Wait for elements to load when needed
     - Verify actions were successful
 
-    **Form Field Protocol:**
-    - Focus ONLY on required fields (marked with *, "required", etc.)
-    - Skip disabled/grayed-out fields with a note
-    - Do not fill optional fields unless specified
-    - Submit only when all required fields are complete
+    **Tool Usage:**
+    - When calling browser_snapshot, always provide an empty object {} as the parameter
 
-    **Screenshot Protocol:**
-    - Take a screenshot after completing all fields on a page 
-    - Use fullPage: true to capture the complete viewport including off-screen content
-    - Do NOT take screenshots for individual form interactions
-    - NEVER specify a filename parameter - let the system auto-generate timestamps
-    
-    Example screenshot tool call:
-    browser_take_screenshot({
-      fullPage: true
-    })
+    **Form Field Protocol:**
+    - Skip disabled/grayed-out fields with a note
+    - Do not submit at the end, summarize what you filled out and what is missing when all relevant fields are filled in from the database information
+    - Do not close the browser unless the user asks you to
 
     **Autonomous Progression:**
+    Default to autonomous progression unless explicit user input or decision data is required.
     PROCEED AUTOMATICALLY for:
     - Navigation buttons (Next, Continue, Get Started, Proceed, Begin)
     - Informational pages with clear progression
@@ -162,11 +174,16 @@ export const webAutomationAgent = new Agent({
   // model: openai('gpt-5-2025-08-07'),
   // // model: openai('gpt-4.1-mini'),
   // model: anthropic('claude-sonnet-4-20250514'),
-  model: google('gemini-2.5-pro'),
-  // model: vertexAnthropic('claude-sonnet-4'),
-  tools: { 
+  // model: google('gemini-2.5-pro'),
+  // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  tools: {
+    // Only include database tools statically
+    // Playwright tools will be added dynamically per session via toolsets
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
-    ...(await playwrightMCP.getTools()),
+  },
+  workflows: {
+    webAutomationWorkflow: webAutomationWorkflow,
   },
   memory: memory,
   scorers: {
@@ -214,31 +231,6 @@ export const webAutomationAgent = new Agent({
     maxSteps: 50,
     maxRetries: 3,
     temperature: 0.1,
-    telemetry: {
-      isEnabled: true,
-      functionId: 'webAutomationAgent.generate',
-      recordInputs: true,
-      recordOutputs: true,
-      metadata: {
-        agentId: 'webAutomationAgent',
-        agentName: 'Web Automation Agent',
-      },
-    },
-  },
-  defaultVNextStreamOptions: {
-    stopWhen: stepCountIs(50),
-    modelSettings: {
-      temperature: 0.1,
-    },
-    telemetry: {
-      isEnabled: true,
-      functionId: 'webAutomationAgent.streamVNext',
-      recordInputs: true,
-      recordOutputs: true,
-      metadata: {
-        agentId: 'webAutomationAgent',
-        agentName: 'Web Automation Agent',
-      },
-    },
-  },
+    // Telemetry removed - using AI Tracing instead (configured in mastra/index.ts)
+  }
 });

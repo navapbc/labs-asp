@@ -1,0 +1,15 @@
+{
+  "name": "browser-ws-proxy",
+  "version": "1.0.0",
+  "description": "WebSocket proxy for browser streaming service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

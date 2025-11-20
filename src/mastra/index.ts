@@ -3,6 +3,7 @@ import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
 import { chatRoute } from '@mastra/ai-sdk';
+import { createSessionPlaywrightMCP } from './mcp';
 
 export const mastra = new Mastra({
   agents: { 
@@ -11,25 +12,21 @@ export const mastra = new Mastra({
   storage: postgresStore,
   logger: new PinoLogger({
     name: 'Mastra',
-    level: 'info', // Change from 'info' to 'debug' to capture more error details
+    level: 'debug', // Change from 'info' to 'debug' to capture more error details
   }),
 
-  telemetry: {
-    serviceName: 'mastra-test-app',
-    enabled: true,
-    sampling: {
-      type: 'always_on',
-    },
-    export: {
-      type: 'console', // Use console for development; switch to 'otlp' for production
-    },
+  // AI Tracing (replaces deprecated telemetry)
+  observability: {
+    default: { enabled: true }, // Enables DefaultExporter for Playground access
   },
 
   server: {
     host: '0.0.0.0', // Allow external connections
     port: parseInt(process.env.MASTRA_PORT || '4112'),
     cors: {
-      origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4111', 'http://localhost:4112'],
+      origin: process.env.CORS_ORIGINS === '*'
+        ? '*'
+        : (process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4111', 'http://localhost:4112']),
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization', 'x-mastra-dev-playground'],
     },
@@ -67,12 +64,49 @@ export const mastra = new Mastra({
             const agent = c.var.mastra.getAgent('webAutomationAgent');
 
             try {
-              const stream = await agent.streamVNext(messages, {
+              // Create session-specific Playwright MCP client for browser context isolation
+              // Each chat session (thread + resource) gets its own browser context
+              const sessionId = threadId && resourceId ? `${threadId}-${resourceId}` : `default-${Date.now()}`;
+              const sessionPlaywrightMCP = createSessionPlaywrightMCP(sessionId);
+
+              // Get Playwright tools for this session
+              const playwrightToolsets = await sessionPlaywrightMCP.getToolsets();
+
+              // Filter out specific browser tools
+              // Playwright MCP doesn't support tool filtering at the server level,
+              // so we filter after retrieval to prevent the agent from using certain tools
+              const filteredToolsets: Record<string, Record<string, any>> = {};
+              const excludedTools = ['browser_take_screenshot', 'browser_run_code'];
+
+              for (const [namespace, tools] of Object.entries(playwrightToolsets)) {
+                filteredToolsets[namespace] = {};
+                for (const [toolName, tool] of Object.entries(tools)) {
+                  // Check if tool should be excluded
+                  const shouldExclude = excludedTools.some(excludeName =>
+                    toolName === excludeName ||
+                    toolName.includes(excludeName)
+                  );
+
+                  if (!shouldExclude) {
+                    filteredToolsets[namespace][toolName] = tool;
+                  } else {
+                    console.log(`[Chat] Filtered out tool: ${toolName}`);
+                  }
+                }
+              }
+
+              console.log(`[Chat] Streaming for session: ${sessionId}`);
+              console.log(`[Chat] Playwright toolsets (filtered):`, JSON.stringify(filteredToolsets, null, 2));
+
+              const stream = await agent.stream(messages, {
                 format: 'aisdk',
                 memory: threadId && resourceId ? {
                   thread: threadId,
                   resource: resourceId,
                 } : undefined,
+                // Add session-specific Playwright tools dynamically (filtered)
+                toolsets: filteredToolsets,
+                maxSteps: 50,
                 onError: ({ error }: { error: any }) => {
                   console.error('Error during agent streaming:', error);
                   // The error will be included in the stream

@@ -1,0 +1,67 @@
+name: Cleanup Preview Environment
+
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  PROJECT_ID: nava-labs
+  REGION: us-central1
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: |
+          terraform init \
+            -backend-config="prefix=terraform/state/preview-pr-${{ github.event.pull_request.number }}"
+
+      - name: Terraform Destroy Preview Environment
+        working-directory: ./terraform
+        run: |
+          terraform destroy -auto-approve \
+            -var="environment=preview-pr-${{ github.event.pull_request.number }}" \
+            -var="browser_image_url=placeholder" \
+            -var="mastra_image_url=placeholder" \
+            -var="chatbot_image_url=placeholder" \
+            -var="browser_ws_proxy_image_url=placeholder" \
+            -var="enable_custom_domain=false"
+
+      - name: Delete Terraform State
+        run: |
+          gsutil -m rm -r "gs://labs-asp-terraform-state/terraform/state/preview-pr-${{ github.event.pull_request.number }}/" || echo "State already deleted"
+
+      - name: Cleanup Summary
+        run: |
+          echo "## Preview Environment Cleanup Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Destroyed preview-pr-${{ github.event.pull_request.number }} environment" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted Cloud Run services" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted VM instance" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted firewall rules" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted service accounts" >> $GITHUB_STEP_SUMMARY
+          echo "- Removed terraform state" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,333 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches: [develop, main]  # Preview deployment on PRs
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - dev
+          - preview
+          - prod
+
+env:
+  PROJECT_ID: nava-labs
+  REGION: us-central1
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/nava-labs/labs-asp
+
+jobs:
+  # Determine environment based on branch/trigger
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      should_deploy: ${{ steps.env.outputs.should_deploy }}
+
+    steps:
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+            SHOULD_DEPLOY="true"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ENVIRONMENT="preview-pr-${{ github.event.pull_request.number }}"
+            SHOULD_DEPLOY="true"  # PRs deploy to isolated preview environment
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            ENVIRONMENT="prod"
+            SHOULD_DEPLOY="true"
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            ENVIRONMENT="dev"
+            SHOULD_DEPLOY="true"
+          else
+            # Any other branch = preview environment with actual deployment
+            ENVIRONMENT="preview"
+            SHOULD_DEPLOY="true"
+          fi
+
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+          echo "should_deploy=${SHOULD_DEPLOY}" >> $GITHUB_OUTPUT
+          echo "Environment: ${ENVIRONMENT} (deploy: ${SHOULD_DEPLOY})"
+
+  # Build and push Docker images
+  build:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      browser_image: ${{ steps.images.outputs.browser_image }}
+      browser_ws_proxy_image: ${{ steps.images.outputs.browser_ws_proxy_image }}
+      mastra_image: ${{ steps.images.outputs.mastra_image }}
+      chatbot_image: ${{ steps.images.outputs.chatbot_image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Detect project changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            browser:
+              - 'playwright-mcp/**'
+            proxy:
+              - 'browser-ws-proxy/**'
+            mastra:
+              - 'Dockerfile'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'src/**'
+              - 'migrations/**'
+              - '.mastra/**'
+            chatbot:
+              - 'Dockerfile.ai-chatbot'
+              - 'client/**'
+            terraform:
+              - 'terraform/**'
+
+      - name: Set image tags
+        id: images
+        run: |
+          TAG=${GITHUB_SHA:0:7}
+          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:${TAG}" >> $GITHUB_OUTPUT
+          echo "browser_ws_proxy_image=${ARTIFACT_REGISTRY}/browser-ws-proxy:${TAG}" >> $GITHUB_OUTPUT
+          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
+          echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Build and push browser-streaming image
+        run: |
+          docker build \
+            -f playwright-mcp/Dockerfile \
+            -t ${{ steps.images.outputs.browser_image }} \
+            ./playwright-mcp
+          docker push ${{ steps.images.outputs.browser_image }}
+
+      - name: Build and push browser-ws-proxy image
+        run: |
+          docker build \
+            -f browser-ws-proxy/Dockerfile \
+            -t ${{ steps.images.outputs.browser_ws_proxy_image }} \
+            ./browser-ws-proxy
+          docker push ${{ steps.images.outputs.browser_ws_proxy_image }}
+
+      - name: Build and push mastra-app image
+        run: |
+          docker build \
+            --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
+            -f Dockerfile \
+            -t ${{ steps.images.outputs.mastra_image }} \
+            .
+          docker push ${{ steps.images.outputs.mastra_image }}
+
+      - name: Get PostHog API key
+        id: posthog_key
+        run: |
+          POSTHOG_KEY=$(gcloud secrets versions access latest --secret=posthog-api-key)
+          echo "::add-mask::$POSTHOG_KEY"
+          echo "key=$POSTHOG_KEY" >> $GITHUB_OUTPUT
+
+      - name: Build and push ai-chatbot image
+        run: |
+          docker build \
+            --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
+            --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ steps.posthog_key.outputs.key }} \
+            --build-arg NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com \
+            -f Dockerfile.ai-chatbot \
+            -t ${{ steps.images.outputs.chatbot_image }} \
+            .
+          docker push ${{ steps.images.outputs.chatbot_image }}
+
+  # Deploy infrastructure with Terraform
+  terraform:
+    runs-on: ubuntu-latest
+    needs: [setup, build]
+    if: needs.setup.outputs.should_deploy == 'true' || github.event_name == 'pull_request'
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+      url: ${{ steps.tf_outputs.outputs.chatbot_url }}
+
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: |
+          terraform init \
+            -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
+
+      - name: Verify Terraform State
+        working-directory: ./terraform
+        run: |
+          echo "Checking Terraform state for environment: ${{ needs.setup.outputs.environment }}"
+          terraform state list || echo "No existing state found (expected for first deployment)"
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: |
+          # Enable custom domain only for dev and prod environments
+          ENABLE_DOMAIN="false"
+          if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]] || [[ "${{ needs.setup.outputs.environment }}" == "prod" ]]; then
+            ENABLE_DOMAIN="true"
+          fi
+
+          terraform plan \
+            -var="environment=${{ needs.setup.outputs.environment }}" \
+            -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
+            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
+            -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
+            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
+            -var="enable_custom_domain=${ENABLE_DOMAIN}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        if: needs.setup.outputs.should_deploy == 'true'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
+
+      # REMOVED: Automatic rollback with terraform destroy is too dangerous
+      # It can destroy global resources like IAM bindings and workload identity pools
+      # Manual cleanup should be done if deployment fails
+
+      - name: Get Terraform Outputs
+        if: needs.setup.outputs.should_deploy == 'true'
+        working-directory: ./terraform
+        id: tf_outputs
+        run: |
+          echo "chatbot_url=$(terraform output -raw chatbot_public_url)" >> $GITHUB_OUTPUT
+          echo "custom_domain=$(terraform output -raw custom_domain)" >> $GITHUB_OUTPUT
+          echo "vm_ip=$(terraform output -raw vm_external_ip)" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with deployment info
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const shouldDeploy = '${{ needs.setup.outputs.should_deploy }}' === 'true';
+            const customDomain = '${{ steps.tf_outputs.outputs.custom_domain }}';
+            const hasCustomDomain = customDomain && customDomain.length > 0;
+
+            const body = shouldDeploy
+              ? `## Preview Deployment Complete
+
+            Infrastructure deployed to **${{ needs.setup.outputs.environment }}** environment.
+
+            ### Access URLs
+            - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+            - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
+            - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
+            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+
+            ${hasCustomDomain ? `**Custom Domain**: https://${customDomain}\n\n**Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.` : '**Note:** Custom domain not configured for preview environments. Use Cloud Run URL to access the application.'}`
+              : `## Terraform Plan Complete
+
+            Infrastructure changes have been planned for **${{ needs.setup.outputs.environment }}** environment.
+
+            ### Changes
+            - VM will run: browser-streaming + mastra-app containers
+            - Cloud Run services: ai-chatbot, browser-ws-proxy
+            - All services connect to **dev database** and **dev GCS bucket**
+
+            **Note:** This is a plan only. Merge to deploy.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Create deployment summary
+        if: needs.setup.outputs.should_deploy == 'true'
+        id: summary
+        run: |
+          CUSTOM_DOMAIN="${{ steps.tf_outputs.outputs.custom_domain }}"
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Deployment Complete: ${{ needs.setup.outputs.environment }}
+
+          ### Access URLs
+          - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
+          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
+          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
+          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+          EOF
+
+          if [ -n "$CUSTOM_DOMAIN" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Custom Domain
+          - **AI Chatbot**: https://$CUSTOM_DOMAIN
+
+          **Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.
+          EOF
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### VM Information
+          - **External IP**: ${{ steps.tf_outputs.outputs.vm_ip }}
+          - **Environment**: ${{ needs.setup.outputs.environment }}
+          EOF
+
+      - name: Deployment Summary (console)
+        if: needs.setup.outputs.should_deploy == 'true'
+        run: |
+          CUSTOM_DOMAIN="${{ steps.tf_outputs.outputs.custom_domain }}"
+
+          echo "Deployment to ${{ needs.setup.outputs.environment }} complete"
+          echo "Cloud Run URL: ${{ steps.tf_outputs.outputs.chatbot_url }}"
+          echo "VM IP: ${{ steps.tf_outputs.outputs.vm_ip }}"
+          echo "Mastra API: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112"
+          echo "Browser MCP: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp"
+
+          if [ -n "$CUSTOM_DOMAIN" ]; then
+            echo "Custom Domain: https://$CUSTOM_DOMAIN"
+          fi
