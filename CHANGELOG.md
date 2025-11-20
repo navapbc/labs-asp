@@ -1,3 +1,10 @@
+# [1.0.0-dev.18](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.17...v1.0.0-dev.18) (2025-11-20)
+
+
+### Bug Fixes
+
+* increase chatbot memory to 4Gi ([0328ad6](https://github.com/navapbc/labs-asp/commit/0328ad6cbf5ec2d4d4869072c9d2e3a7c472a830))
+
 # [1.0.0-dev.17](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.16...v1.0.0-dev.17) (2025-11-20)
 
 
