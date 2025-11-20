@@ -77,7 +77,7 @@ variable "chatbot_cpu" {
 variable "chatbot_memory" {
   description = "Memory allocation for AI Chatbot Cloud Run service"
   type        = string
-  default     = "2Gi"  # 2GB RAM for Next.js app
+  default     = "4Gi"
 }
 
 variable "chatbot_min_instances" {
