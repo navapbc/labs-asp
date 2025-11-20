@@ -1,3 +1,10 @@
+# [1.0.0-dev.16](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.15...v1.0.0-dev.16) (2025-11-20)
+
+
+### Features
+
+* add excludedTools for a filteredToolset in mastra index ([8978dce](https://github.com/navapbc/labs-asp/commit/8978dce81aa65e03a1be71eec2891b651f4ad51d))
+
 # [1.0.0-dev.15](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.14...v1.0.0-dev.15) (2025-11-14)
 
 
