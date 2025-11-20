@@ -1,3 +1,10 @@
+# [1.0.0-dev.17](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.16...v1.0.0-dev.17) (2025-11-20)
+
+
+### Features
+
+* add bot-disclosure docs and page endpoint in the app ([4bc3238](https://github.com/navapbc/labs-asp/commit/4bc3238237c34c86500a06d8e47662a42de68aa4))
+
 # [1.0.0-dev.16](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.15...v1.0.0-dev.16) (2025-11-20)
 
 
