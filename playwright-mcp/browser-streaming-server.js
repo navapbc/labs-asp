@@ -150,28 +150,35 @@ class BrowserStreamingService extends EventEmitter {
       await Page.enable();
       await Runtime.enable();
 
-      // Start screencast
+      // Start screencast with optimized settings for performance
       await Page.startScreencast({
         format: 'jpeg',
-        quality: 80,
+        quality: 60, // Lower quality for better performance (was 80)
         maxWidth: 1920,
         maxHeight: 1080,
         everyNthFrame: 1 // Capture every frame for smooth streaming
       });
 
-      // Handle screencast frames with better error handling
+      // Handle screencast frames with better error handling and backpressure
       Page.screencastFrame((params) => {
         try {
-          /** @type {BrowserFrame} */
-          const frame = {
-            type: 'frame',
-            data: params.data, // Base64 encoded JPEG
-            timestamp: Date.now(),
-            sessionId
-          };
-
-          // Send frame to WebSocket client with connection check
+          // Check WebSocket buffer before sending to avoid backpressure
           if (ws.readyState === 1) { // WebSocket.OPEN
+            // Skip frame if buffer is getting full (>1MB backpressure)
+            if (ws.bufferedAmount > 1024 * 1024) {
+              console.warn(`Skipping frame due to WebSocket backpressure: ${ws.bufferedAmount} bytes buffered`);
+              Page.screencastFrameAck({ sessionId: params.sessionId });
+              return;
+            }
+
+            /** @type {BrowserFrame} */
+            const frame = {
+              type: 'frame',
+              data: params.data, // Base64 encoded JPEG
+              timestamp: Date.now(),
+              sessionId
+            };
+
             ws.send(JSON.stringify(frame));
           } else if (ws.readyState === 3) { // WebSocket.CLOSED
             console.log(`WebSocket closed for session ${sessionId}, stopping capture`);
@@ -183,7 +190,12 @@ class BrowserStreamingService extends EventEmitter {
           Page.screencastFrameAck({ sessionId: params.sessionId });
         } catch (error) {
           console.error('Error handling screencast frame:', error);
-          // Don't stop the entire capture for frame errors, just log them
+          // Acknowledge frame even on error to prevent CDP from blocking
+          try {
+            Page.screencastFrameAck({ sessionId: params.sessionId });
+          } catch (ackError) {
+            console.error('Error acknowledging frame:', ackError);
+          }
         }
       });
 
@@ -342,12 +354,31 @@ class BrowserStreamingService extends EventEmitter {
             text: inputData.text
           });
 
-          await Input.dispatchKeyEvent({
-            type: inputData.type === 'keydown' ? 'keyDown' : 'keyUp',
+          // For keydown events, we need to decide between 'keyDown' and 'rawKeyDown'
+          // - Use 'keyDown' for character keys (has text)
+          // - Use 'rawKeyDown' for special keys like Backspace, Delete, Arrow keys, etc.
+          let cdpEventType;
+          if (inputData.type === 'keydown') {
+            cdpEventType = inputData.text ? 'keyDown' : 'rawKeyDown';
+          } else {
+            cdpEventType = 'keyUp';
+          }
+
+          // Build the CDP key event parameters
+          const keyEventParams = {
+            type: cdpEventType,
             key: inputData.key,
             code: inputData.code,
-            text: inputData.text,
-          });
+          };
+
+          // For character keys, include the text field (not needed for rawKeyDown or keyUp)
+          if (inputData.text && cdpEventType === 'keyDown') {
+            keyEventParams.text = inputData.text;
+          }
+
+          console.log('CDP event params:', keyEventParams);
+
+          await Input.dispatchKeyEvent(keyEventParams);
           break;
 
         case 'scroll':
