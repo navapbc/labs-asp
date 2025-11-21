@@ -36,6 +36,11 @@ mastra-memory.db-*
 # Google Vertex AI
 vertex-ai-credentials.json
 
+# Cloudflare Bot Verification Keys
+private-key.pem
+public-key.pem
+public-key.jwk.json
+
 # macOS
 .DS_Store
 
