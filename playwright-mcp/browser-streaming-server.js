@@ -335,6 +335,13 @@ class BrowserStreamingService extends EventEmitter {
 
         case 'keydown':
         case 'keyup':
+          console.log('Dispatching key event:', {
+            type: inputData.type,
+            key: inputData.key,
+            code: inputData.code,
+            text: inputData.text
+          });
+
           await Input.dispatchKeyEvent({
             type: inputData.type === 'keydown' ? 'keyDown' : 'keyUp',
             key: inputData.key,
