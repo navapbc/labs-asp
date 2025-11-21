@@ -1,3 +1,10 @@
+# [1.0.0-dev.19](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.18...v1.0.0-dev.19) (2025-11-21)
+
+
+### Features
+
+* add .well-known credentials to .gitignore and update client ([649fe15](https://github.com/navapbc/labs-asp/commit/649fe1505ebd14da3209ddaff30f8f500ed2b880))
+
 # [1.0.0-dev.18](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.17...v1.0.0-dev.18) (2025-11-20)
 
 
