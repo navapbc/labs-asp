@@ -100,11 +100,94 @@ variable "chatbot_timeout" {
 
 # Environment selection
 variable "environment" {
-  description = "Environment to deploy (dev, preview-pr-N, prod)"
+  description = "Environment to deploy (dev, preview, preview-pr-N, prod)"
   type        = string
   default     = "dev"
   validation {
-    condition     = can(regex("^(dev|prod|preview(-pr-[0-9]+)?)$", var.environment))
-    error_message = "Environment must be one of: dev, prod, preview, or preview-pr-NUMBER"
+    condition     = can(regex("^(dev|preview|preview-pr-[0-9]+|prod)$", var.environment))
+    error_message = "Environment must be one of: dev, preview, preview-pr-NUMBER, or prod"
   }
+}
+
+# VPC Network Configuration
+# These CIDR blocks should be defined per workspace in GitHub Actions
+variable "vpc_cidr_public" {
+  description = "CIDR block for public subnet (pattern: 10.X.0.0/16)"
+  type        = string
+  default     = "10.0.0.0/20"  # Default for dev if not overridden
+}
+
+variable "vpc_cidr_private" {
+  description = "CIDR block for private subnet (pattern: 10.X.16.0/16)"
+  type        = string
+  default     = "10.0.16.0/20"  # Default for dev if not overridden
+}
+
+variable "vpc_cidr_db" {
+  description = "CIDR block for database subnet (pattern: 10.X.32.0/16)"
+  type        = string
+  default     = "10.0.32.0/20"  # Default for dev if not overridden
+}
+
+variable "vpc_connector_cidr" {
+  description = "CIDR block for VPC Serverless Connector (must be /28)"
+  type        = string
+  default     = "10.0.48.0/28"  # Default for dev if not overridden
+  validation {
+    condition     = can(cidrhost(var.vpc_connector_cidr, 0)) && tonumber(split("/", var.vpc_connector_cidr)[1]) == 28
+    error_message = "VPC connector CIDR must be a /28 block"
+  }
+}
+
+# Firewall Configuration
+# Granular firewall rules per service with configurable ports
+variable "firewall_rules" {
+  description = "Firewall rules per service. Each service can have different ports and IP restrictions."
+  type = object({
+    browser_mcp = object({
+      port                = number
+      allow_public_access = bool
+      allowed_ip_ranges   = list(string)
+    })
+    browser_streaming = object({
+      port                = number
+      allow_public_access = bool
+      allowed_ip_ranges   = list(string)
+    })
+    mastra_api = object({
+      port                = number
+      allow_public_access = bool
+      allowed_ip_ranges   = list(string)
+    })
+  })
+  default = {
+    browser_mcp = {
+      port                = 8931
+      allow_public_access = true
+      allowed_ip_ranges   = ["0.0.0.0/0"]
+    }
+    browser_streaming = {
+      port                = 8933
+      allow_public_access = true
+      allowed_ip_ranges   = ["0.0.0.0/0"]
+    }
+    mastra_api = {
+      port                = 4112
+      allow_public_access = true
+      allowed_ip_ranges   = ["0.0.0.0/0"]
+    }
+  }
+}
+
+# Legacy variables for backward compatibility (deprecated)
+variable "allowed_ip_ranges" {
+  description = "DEPRECATED: Use firewall_rules instead. List of IP ranges allowed to access application services."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
+variable "allow_public_access" {
+  description = "DEPRECATED: Use firewall_rules instead. Allow public access (0.0.0.0/0) to application services."
+  type        = bool
+  default     = true
 }
