@@ -176,7 +176,7 @@ export const webAutomationAgent = new Agent({
   // model: anthropic('claude-sonnet-4-20250514'),
   // model: google('gemini-2.5-pro'),
   // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
-  model: anthropic('claude-sonnet-4-5-20250929'),
+  model: anthropic('claude-opus-4-5-20251101'),
   tools: {
     // Only include database tools statically
     // Playwright tools will be added dynamically per session via toolsets
