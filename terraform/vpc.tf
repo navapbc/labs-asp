@@ -127,6 +127,11 @@ resource "google_compute_global_address" "private_ip_range" {
   address_type  = "INTERNAL"
   prefix_length = 16
   network       = google_compute_network.main.id
+
+  labels = merge(local.common_labels, {
+    environment = var.environment
+    purpose     = "vpc-peering"
+  })
 }
 
 resource "google_service_networking_connection" "private_vpc_connection" {
@@ -274,41 +279,5 @@ resource "google_compute_firewall" "mastra_app" {
   target_tags = ["mastra-app"]
 
   description = "Allow Mastra API access on port ${var.firewall_rules.mastra_api.port} from VPC and approved external IPs"
-}
-
-# Outputs for other modules
-output "vpc_id" {
-  description = "The ID of the VPC network"
-  value       = google_compute_network.main.id
-}
-
-output "vpc_name" {
-  description = "The name of the VPC network"
-  value       = google_compute_network.main.name
-}
-
-output "public_subnet_id" {
-  description = "The ID of the public subnet"
-  value       = google_compute_subnetwork.public.id
-}
-
-output "private_subnet_id" {
-  description = "The ID of the private subnet"
-  value       = google_compute_subnetwork.private.id
-}
-
-output "db_subnet_id" {
-  description = "The ID of the database subnet"
-  value       = google_compute_subnetwork.db.id
-}
-
-output "vpc_connector_id" {
-  description = "The ID of the VPC connector for Cloud Run"
-  value       = google_vpc_access_connector.cloud_run.id
-}
-
-output "vpc_connector_name" {
-  description = "The name of the VPC connector for Cloud Run"
-  value       = google_vpc_access_connector.cloud_run.name
 }
 
