@@ -20,6 +20,7 @@ output "api_whitelisting_info" {
     static_ip   = google_compute_address.app_vm_static_ip.address
     environment = var.environment
     region      = local.region
+    zone        = local.zone
     purpose     = "Mastra server API calls from port 4112"
   }
 }
