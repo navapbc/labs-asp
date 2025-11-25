@@ -353,6 +353,46 @@ class BrowserStreamingService extends EventEmitter {
           });
           break;
 
+        case 'touchstart':
+          // Handle touch as a click for mobile devices
+          console.log('Dispatching touch event (touchstart as click):', { x: inputData.x, y: inputData.y });
+          await Input.dispatchMouseEvent({
+            type: 'mouseMoved',
+            x: inputData.x,
+            y: inputData.y,
+          });
+          
+          await Input.dispatchMouseEvent({
+            type: 'mousePressed',
+            x: inputData.x,
+            y: inputData.y,
+            button: 'left',
+            clickCount: 1,
+          });
+          break;
+
+        case 'touchmove':
+          // Handle touch move as mouse move
+          console.log('Dispatching touch event (touchmove as mousemove):', { x: inputData.x, y: inputData.y });
+          await Input.dispatchMouseEvent({
+            type: 'mouseMoved',
+            x: inputData.x,
+            y: inputData.y,
+          });
+          break;
+
+        case 'touchend':
+          // Handle touch end as mouse release
+          console.log('Dispatching touch event (touchend as release):', { x: inputData.x, y: inputData.y });
+          await Input.dispatchMouseEvent({
+            type: 'mouseReleased',
+            x: inputData.x,
+            y: inputData.y,
+            button: 'left',
+            clickCount: 1,
+          });
+          break;
+
         default:
           console.warn('Unknown user input type:', inputData.type);
       }
