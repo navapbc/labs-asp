@@ -1,6 +1,6 @@
 {
   "name": "mastra-test-app",
-  "version": "1.0.0-dev.20",
+  "version": "1.0.0-dev.21",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

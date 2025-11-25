@@ -1,3 +1,11 @@
+# [1.0.0-dev.21](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.20...v1.0.0-dev.21) (2025-11-25)
+
+
+### Features
+
+* add static IP for external API whitelisting ([fe21879](https://github.com/navapbc/labs-asp/commit/fe2187996d42edb0eb2bea3810d277190de41daa))
+* add zone to API whitelisting info ([5a97aa4](https://github.com/navapbc/labs-asp/commit/5a97aa4072624050766d1e6e662a37186f5071c7))
+
 # [1.0.0-dev.20](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.19...v1.0.0-dev.20) (2025-11-25)
 
 
