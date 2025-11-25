@@ -1,3 +1,10 @@
+# [1.0.0-dev.20](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.19...v1.0.0-dev.20) (2025-11-25)
+
+
+### Bug Fixes
+
+* test for tablet and mobile views ([e962c50](https://github.com/navapbc/labs-asp/commit/e962c50571a5a131c8b9344cbaf2d38c613dc3f3))
+
 # [1.0.0-dev.19](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.18...v1.0.0-dev.19) (2025-11-21)
 
 
