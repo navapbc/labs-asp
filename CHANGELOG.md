@@ -1,3 +1,10 @@
+# [1.0.0-dev.23](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.22...v1.0.0-dev.23) (2025-11-26)
+
+
+### Bug Fixes
+
+* language prompt updates ([f203de1](https://github.com/navapbc/labs-asp/commit/f203de18f2eb123056a9be3312c2d11d89bb9406))
+
 # [1.0.0-dev.22](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.21...v1.0.0-dev.22) (2025-11-26)
 
 
