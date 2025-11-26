@@ -5,6 +5,9 @@ import { webAutomationAgent } from './agents/web-automation-agent';
 import { chatRoute } from '@mastra/ai-sdk';
 import { createSessionPlaywrightMCP } from './mcp';
 
+// Track active streams by sessionId for stop functionality
+const activeStreams = new Map<string, AbortController>();
+
 export const mastra = new Mastra({
   agents: { 
     webAutomationAgent
@@ -62,11 +65,12 @@ export const mastra = new Mastra({
             });
 
             const agent = c.var.mastra.getAgent('webAutomationAgent');
-
-            try {
-              // Create session-specific Playwright MCP client for browser context isolation
+            // Create session-specific Playwright MCP client for browser context isolation
               // Each chat session (thread + resource) gets its own browser context
               const sessionId = threadId && resourceId ? `${threadId}-${resourceId}` : `default-${Date.now()}`;
+
+
+            try {
               const sessionPlaywrightMCP = createSessionPlaywrightMCP(sessionId);
 
               // Get Playwright tools for this session
@@ -98,6 +102,16 @@ export const mastra = new Mastra({
               console.log(`[Chat] Streaming for session: ${sessionId}`);
               console.log(`[Chat] Playwright toolsets (filtered):`, JSON.stringify(filteredToolsets, null, 2));
 
+              // Create AbortController for this stream
+              const abortController = new AbortController();
+              activeStreams.set(sessionId, abortController);
+
+              // Clean up when stream ends
+              const cleanupStream = () => {
+                activeStreams.delete(sessionId);
+                console.log(`[Chat] Cleaned up stream for session: ${sessionId}`);
+              };
+
               const stream = await agent.stream(messages, {
                 format: 'aisdk',
                 memory: threadId && resourceId ? {
@@ -107,15 +121,23 @@ export const mastra = new Mastra({
                 // Add session-specific Playwright tools dynamically (filtered)
                 toolsets: filteredToolsets,
                 maxSteps: 50,
+                abortSignal: abortController.signal,
                 onError: ({ error }: { error: any }) => {
                   console.error('Error during agent streaming:', error);
+                  cleanupStream();
                   // The error will be included in the stream
+                },
+                onFinish: () => {
+                  cleanupStream();
                 },
               });
 
               return stream.toUIMessageStreamResponse();
             } catch (streamError: any) {
               console.error('Error creating stream', streamError);
+
+              // Clean up the active stream reference on error
+              activeStreams.delete(sessionId);
 
               // Return a JSON error response instead of a broken stream
               return c.json({
@@ -135,6 +157,50 @@ export const mastra = new Mastra({
               error: errorMessage,
               details: error.data || null
             }, statusCode);
+          }
+        },
+      },
+      {
+        method: 'POST',
+        path: '/stop-chat',
+        handler: async (c) => {
+          try {
+            const body = await c.req.json();
+            const { threadId, resourceId } = body;
+
+            if (!threadId || !resourceId) {
+              return c.json({ error: 'Thread ID and resource ID are required' }, 400);
+            }
+
+            const sessionId = `${threadId}-${resourceId}`;
+            console.log('Stopping chat for session:', sessionId);
+
+            // Get the active stream for this session
+            const abortController = activeStreams.get(sessionId);
+            
+            if (abortController) {
+              // Abort the stream
+              abortController.abort();
+              activeStreams.delete(sessionId);
+              console.log(`Successfully aborted stream for session: ${sessionId}`);
+              return c.json({ 
+                status: 'ok', 
+                service: 'mastra-app',
+                message: 'Stream stopped successfully',
+                sessionId 
+              }, 200);
+            } else {
+              console.log(`No active stream found for session: ${sessionId}`);
+              return c.json({ 
+                status: 'ok', 
+                service: 'mastra-app',
+                message: 'No active stream found',
+                sessionId 
+              }, 200);
+            }
+          } catch (error: any) {
+            console.error('Error in stop chat handler:', error);
+            return c.json({ error: 'An error occurred while stopping the chat' }, 500);
           }
         },
       },
