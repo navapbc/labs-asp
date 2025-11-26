@@ -1,3 +1,10 @@
+# [1.0.0-dev.22](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.21...v1.0.0-dev.22) (2025-11-26)
+
+
+### Bug Fixes
+
+* stop chat stream on chat ui and mastra ([0cdea97](https://github.com/navapbc/labs-asp/commit/0cdea97eaa0fa5860c6d368d6c00133dc16496f5))
+
 # [1.0.0-dev.21](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.20...v1.0.0-dev.21) (2025-11-25)
 
 
