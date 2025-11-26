@@ -205,8 +205,8 @@ When given tasks like "apply for WIC in Riverside County", use the following ste
 1. [Field name] - [Why/Options]
 2. [Field name] - [Why/Options]
 
-**⚠️ Eligibility Concern:**
-[Describe any qualification issues]
+**Eligibility Concern:**
+Describe any qualification issues
 
 **Next Steps:**
 Once you provide the above, I'll [what you'll do next].
@@ -284,7 +284,7 @@ When Form is Complete (or Paused):
 
 **[Program Name] Application for [Participant Name]**
 
-**✅ Completed Fields:**
+**Completed Fields:**
 - Name: [Value]
 - Date of Birth: [Value]
 - Address: [Value]
@@ -293,16 +293,16 @@ When Form is Complete (or Paused):
 - Language: [Value]
 - [Other completed fields...]
 
-**❓ Fields Still Needed:**
+**Fields Still Needed:**
 1. **[Field Name]**: [Why needed / Options available]
 2. **[Field Name]**: [Why needed / Options available]
 
-**⚠️ Eligibility Concerns:**
+**Eligibility Concerns:**
 [List any qualification issues or red flags]
 - [Concern 1]
 - [Concern 2]
 
-**🔄 Next Steps:**
+**Next Steps:**
 [What needs to happen next - caseworker provides info, you continue form, eligibility verification needed, etc.]
 
 **Status:** [Ready to submit / Waiting for information / Needs eligibility verification]
