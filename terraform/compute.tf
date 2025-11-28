@@ -39,6 +39,20 @@ data "google_secret_manager_secret_version" "mastra_jwt_token" {
   secret = "mastra-jwt-token"
 }
 
+# Static external IP for app VM (for external API whitelisting)
+resource "google_compute_address" "app_vm_static_ip" {
+  name         = "app-vm-static-ip-${var.environment}"
+  region       = local.region
+  address_type = "EXTERNAL"
+  description  = "Static external IP for app VM in ${var.environment} environment (for external API whitelisting)"
+
+  labels = merge(local.common_labels, {
+    environment = var.environment
+    component   = "app-vm-networking"
+    purpose     = "external-api-whitelisting"
+  })
+}
+
 # Compute VM - Runs browser-streaming and mastra-app containers
 resource "google_compute_instance" "app_vm" {
   name         = "app-vm-${var.environment}"
@@ -59,7 +73,7 @@ resource "google_compute_instance" "app_vm" {
     network    = google_compute_network.main.id
     subnetwork = google_compute_subnetwork.public.id
     access_config {
-      # Ephemeral external IP for external access
+      nat_ip = google_compute_address.app_vm_static_ip.address
     }
   }
 

@@ -9,6 +9,22 @@ output "vm_external_ip" {
   value       = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
 }
 
+output "app_vm_static_ip" {
+  description = "Static external IP address for app VM (for external API whitelisting)"
+  value       = google_compute_address.app_vm_static_ip.address
+}
+
+output "api_whitelisting_info" {
+  description = "Information needed for external API whitelisting"
+  value = {
+    static_ip   = google_compute_address.app_vm_static_ip.address
+    environment = var.environment
+    region      = local.region
+    zone        = local.zone
+    purpose     = "Mastra server API calls from port 4112"
+  }
+}
+
 output "vm_internal_ip" {
   description = "Internal IP address of the application VM"
   value       = google_compute_instance.app_vm.network_interface[0].network_ip

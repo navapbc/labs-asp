@@ -1,3 +1,32 @@
+# [1.0.0-dev.23](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.22...v1.0.0-dev.23) (2025-11-26)
+
+
+### Bug Fixes
+
+* language prompt updates ([f203de1](https://github.com/navapbc/labs-asp/commit/f203de18f2eb123056a9be3312c2d11d89bb9406))
+
+# [1.0.0-dev.22](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.21...v1.0.0-dev.22) (2025-11-26)
+
+
+### Bug Fixes
+
+* stop chat stream on chat ui and mastra ([0cdea97](https://github.com/navapbc/labs-asp/commit/0cdea97eaa0fa5860c6d368d6c00133dc16496f5))
+
+# [1.0.0-dev.21](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.20...v1.0.0-dev.21) (2025-11-25)
+
+
+### Features
+
+* add static IP for external API whitelisting ([fe21879](https://github.com/navapbc/labs-asp/commit/fe2187996d42edb0eb2bea3810d277190de41daa))
+* add zone to API whitelisting info ([5a97aa4](https://github.com/navapbc/labs-asp/commit/5a97aa4072624050766d1e6e662a37186f5071c7))
+
+# [1.0.0-dev.20](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.19...v1.0.0-dev.20) (2025-11-25)
+
+
+### Bug Fixes
+
+* test for tablet and mobile views ([e962c50](https://github.com/navapbc/labs-asp/commit/e962c50571a5a131c8b9344cbaf2d38c613dc3f3))
+
 # [1.0.0-dev.19](https://github.com/navapbc/labs-asp/compare/v1.0.0-dev.18...v1.0.0-dev.19) (2025-11-21)
 
 
