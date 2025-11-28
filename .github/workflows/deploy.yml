@@ -209,6 +209,59 @@ jobs:
           echo "Checking Terraform state for environment: ${{ needs.setup.outputs.environment }}"
           terraform state list || echo "No existing state found (expected for first deployment)"
 
+      - name: Set VPC CIDR blocks and Firewall rules
+        id: vpc_cidrs
+        run: |
+          ENV="${{ needs.setup.outputs.environment }}"
+          
+          # Set VPC CIDR blocks based on environment
+          # Pattern: 10.X.0.0/16 where X is determined by environment
+          case ${ENV} in
+            dev)
+              # Dev: 10.0.0.0/16
+              echo "vpc_cidr_public=10.0.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.0.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.0.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.0.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Dev: Allow public access for all services (JSON in single line)
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
+              ;;
+            preview|preview-*)
+              # Preview (HML): 10.1.0.0/16
+              echo "vpc_cidr_public=10.1.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.1.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.1.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.1.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Preview: Allow public access for testing (JSON in single line)
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              # Production: 10.2.0.0/16
+              echo "vpc_cidr_public=10.2.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.2.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.2.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.2.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Prod: Granular firewall rules per service (JSON in single line)
+              # TODO: Update with your production IP ranges and ports
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":false,"allowed_ip_ranges":["203.0.113.0/24"]},"browser_streaming":{"port":8933,"allow_public_access":false,"allowed_ip_ranges":["203.0.113.0/24","198.51.100.0/24"]},"mastra_api":{"port":4112,"allow_public_access":false,"allowed_ip_ranges":["203.0.113.0/24"]}}' >> $GITHUB_OUTPUT
+              ;;
+            *)
+              # Default to dev range
+              echo "vpc_cidr_public=10.0.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.0.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.0.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.0.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Default: Public access (JSON in single line)
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
+              ;;
+          esac
+          
+          echo "VPC CIDRs and Firewall rules configured for ${ENV}"
+
       - name: Terraform Plan
         working-directory: ./terraform
         run: |
@@ -225,12 +278,17 @@ jobs:
             -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
             -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
             -var="enable_custom_domain=${ENABLE_DOMAIN}" \
+            -var="vpc_cidr_public=${{ steps.vpc_cidrs.outputs.vpc_cidr_public }}" \
+            -var="vpc_cidr_private=${{ steps.vpc_cidrs.outputs.vpc_cidr_private }}" \
+            -var="vpc_cidr_db=${{ steps.vpc_cidrs.outputs.vpc_cidr_db }}" \
+            -var="vpc_connector_cidr=${{ steps.vpc_cidrs.outputs.vpc_connector_cidr }}" \
+            -var='firewall_rules=${{ steps.vpc_cidrs.outputs.firewall_rules }}' \
             -out=tfplan
 
-      - name: Terraform Apply
-        if: needs.setup.outputs.should_deploy == 'true'
-        working-directory: ./terraform
-        run: terraform apply -auto-approve tfplan
+      # - name: Terraform Apply
+      #   if: needs.setup.outputs.should_deploy == 'true'
+      #   working-directory: ./terraform
+      #   run: terraform apply -auto-approve tfplan
 
       # REMOVED: Automatic rollback with terraform destroy is too dangerous
       # It can destroy global resources like IAM bindings and workload identity pools

@@ -12,6 +12,12 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   template {
     service_account = google_service_account.cloud_run.email
 
+    # VPC Access - Connect to VPC network
+    vpc_access {
+      connector = google_vpc_access_connector.cloud_run.id
+      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+    }
+
     containers {
       image = var.chatbot_image_url
 
@@ -318,7 +324,8 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   depends_on = [
     google_project_service.required_apis,
     google_service_account.cloud_run,
-    google_compute_instance.app_vm
+    google_compute_instance.app_vm,
+    google_vpc_access_connector.cloud_run
   ]
 }
 
@@ -332,6 +339,12 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
 
   template {
     service_account = google_service_account.cloud_run.email
+
+    # VPC Access - Connect to VPC network
+    vpc_access {
+      connector = google_vpc_access_connector.cloud_run.id
+      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+    }
 
     containers {
       image = var.browser_ws_proxy_image_url
@@ -390,7 +403,8 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
   depends_on = [
     google_project_service.required_apis,
     google_service_account.cloud_run,
-    google_compute_instance.app_vm
+    google_compute_instance.app_vm,
+    google_vpc_access_connector.cloud_run
   ]
 }
 

@@ -6,8 +6,55 @@ zone       = "us-central1-a"
 # Domain Configuration
 domain_name = "labs-asp.com"
 
-# Environment Selection (dev, preview, prod)
+# Environment Selection (dev, preview, preview-pr-N, prod)
 environment = "dev"
+
+# VPC Network Configuration
+# These are set automatically by GitHub Actions based on environment
+# Dev: 10.0.0.0/16, Preview: 10.1.0.0/16, Prod: 10.2.0.0/16
+vpc_cidr_public      = "10.0.0.0/20"   # Public subnet (dev default)
+vpc_cidr_private     = "10.0.16.0/20"  # Private subnet (dev default)
+vpc_cidr_db          = "10.0.32.0/20"  # Database subnet (dev default)
+vpc_connector_cidr   = "10.0.48.0/28"  # VPC Connector (must be /28)
+
+# Firewall Configuration
+# Granular firewall rules per service with configurable ports and IPs
+firewall_rules = {
+  browser_mcp = {
+    port                = 8931           # Playwright MCP port
+    allow_public_access = true
+    allowed_ip_ranges   = ["0.0.0.0/0"]
+  }
+  browser_streaming = {
+    port                = 8933           # Browser WebSocket port
+    allow_public_access = true
+    allowed_ip_ranges   = ["0.0.0.0/0"]
+  }
+  mastra_api = {
+    port                = 4112           # AI Agents API port
+    allow_public_access = true
+    allowed_ip_ranges   = ["0.0.0.0/0"]
+  }
+}
+
+# Example: Production with custom ports and different rules per service
+# firewall_rules = {
+#   browser_mcp = {
+#     port                = 9931           # Custom port!
+#     allow_public_access = false
+#     allowed_ip_ranges   = ["203.0.113.0/24"]              # Office only
+#   }
+#   browser_streaming = {
+#     port                = 9933           # Custom port!
+#     allow_public_access = false
+#     allowed_ip_ranges   = ["203.0.113.0/24", "198.51.100.0/24"]  # Office + VPN
+#   }
+#   mastra_api = {
+#     port                = 5112           # Custom port!
+#     allow_public_access = false
+#     allowed_ip_ranges   = ["203.0.113.50/32"]             # Specific server only
+#   }
+# }
 
 # Browser VM Configuration
 browser_vm_machine_type = "e2-standard-2"  # 2 vCPUs, 8GB RAM

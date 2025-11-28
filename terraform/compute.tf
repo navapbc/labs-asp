@@ -68,9 +68,10 @@ resource "google_compute_instance" "app_vm" {
     }
   }
 
-  # Network configuration
+  # Network configuration - Use public subnet with external IP
   network_interface {
-    network = "default"
+    network    = google_compute_network.main.id
+    subnetwork = google_compute_subnetwork.public.id
     access_config {
       nat_ip = google_compute_address.app_vm_static_ip.address
     }
@@ -115,7 +116,9 @@ resource "google_compute_instance" "app_vm" {
 
   depends_on = [
     google_project_service.required_apis,
-    google_service_account.vm
+    google_service_account.vm,
+    google_compute_network.main,
+    google_compute_subnetwork.public
   ]
 }
 
@@ -142,55 +145,6 @@ resource "terraform_data" "vm_restart" {
   depends_on = [
     google_compute_instance.app_vm
   ]
-}
-
-# Firewall rules for browser service
-resource "google_compute_firewall" "browser_mcp" {
-  name    = "allow-browser-mcp-${var.environment}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["8931"]  # Playwright MCP port
-  }
-
-  source_ranges = ["0.0.0.0/0"]  # Allow from anywhere (Cloud Run uses dynamic IPs)
-
-  target_tags = ["browser-mcp"]
-
-  description = "Allow MCP access from Cloud Run services to browser VM (dev uses external IP)"
-}
-
-resource "google_compute_firewall" "browser_streaming" {
-  name    = "allow-browser-streaming-${var.environment}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["8933"]  # Browser streaming WebSocket port
-  }
-
-  source_ranges = ["0.0.0.0/0"]  # Allow from anywhere
-
-  target_tags = ["browser-streaming"]
-
-  description = "Allow browser streaming WebSocket access"
-}
-
-resource "google_compute_firewall" "mastra_app" {
-  name    = "allow-mastra-app-${var.environment}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["4112"]  # Mastra API port
-  }
-
-  source_ranges = ["0.0.0.0/0"]  # Allow from anywhere (Cloud Run uses dynamic IPs)
-
-  target_tags = ["mastra-app"]
-
-  description = "Allow Mastra API access from Cloud Run"
 }
 
 # Service account for VM

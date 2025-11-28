@@ -98,6 +98,37 @@ output "region" {
   value       = local.region
 }
 
+# VPC Network outputs
+output "vpc_id" {
+  description = "VPC network ID"
+  value       = google_compute_network.main.id
+}
+
+output "vpc_name" {
+  description = "VPC network name"
+  value       = google_compute_network.main.name
+}
+
+output "vpc_public_subnet" {
+  description = "Public subnet CIDR"
+  value       = var.vpc_cidr_public
+}
+
+output "vpc_private_subnet" {
+  description = "Private subnet CIDR"
+  value       = var.vpc_cidr_private
+}
+
+output "vpc_db_subnet" {
+  description = "Database subnet CIDR"
+  value       = var.vpc_cidr_db
+}
+
+output "vpc_connector_cidr" {
+  description = "VPC Connector CIDR"
+  value       = var.vpc_connector_cidr
+}
+
 # Architecture summary
 output "architecture_summary" {
   description = "Summary of the deployed architecture"
@@ -118,9 +149,16 @@ output "architecture_summary" {
       memory     = var.chatbot_memory
     }
     networking = {
+      vpc_network      = google_compute_network.main.name
       vm_services      = "Both containers on same Docker network"
-      chatbot_to_vm    = "Cloud Run → VM external IP"
+      chatbot_to_vm    = "Cloud Run → VPC → VM internal IP"
       public_access    = "Cloud Run → Internet"
+      vpc_cidrs = {
+        public   = var.vpc_cidr_public
+        private  = var.vpc_cidr_private
+        database = var.vpc_cidr_db
+        connector = var.vpc_connector_cidr
+      }
     }
   }
 }
