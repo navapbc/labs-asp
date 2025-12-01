@@ -285,11 +285,10 @@ jobs:
             -var='firewall_rules=${{ steps.vpc_cidrs.outputs.firewall_rules }}' \
             -out=tfplan
 
-      # - name: Terraform Apply
-      #   if: needs.setup.outputs.should_deploy == 'true'
-      #   working-directory: ./terraform
-      #   run: terraform apply -auto-approve tfplan
-
+      - name: Terraform Apply
+        if: needs.setup.outputs.should_deploy == 'true'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
 
       - name: Get Terraform Outputs
         if: needs.setup.outputs.should_deploy == 'true'
