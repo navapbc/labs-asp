@@ -285,14 +285,10 @@ jobs:
             -var='firewall_rules=${{ steps.vpc_cidrs.outputs.firewall_rules }}' \
             -out=tfplan
 
-      # - name: Terraform Apply
-      #   if: needs.setup.outputs.should_deploy == 'true'
-      #   working-directory: ./terraform
-      #   run: terraform apply -auto-approve tfplan
-
-      # REMOVED: Automatic rollback with terraform destroy is too dangerous
-      # It can destroy global resources like IAM bindings and workload identity pools
-      # Manual cleanup should be done if deployment fails
+      - name: Terraform Apply
+        if: needs.setup.outputs.should_deploy == 'true'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
 
       - name: Get Terraform Outputs
         if: needs.setup.outputs.should_deploy == 'true'
