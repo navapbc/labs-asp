@@ -92,7 +92,7 @@ resource "google_compute_router_nat" "main" {
 
 # Serverless VPC Access Connector for Cloud Run
 resource "google_vpc_access_connector" "cloud_run" {
-  name          = "labs-asp-connector-${var.environment}"
+  name          = local.vpc_connector_name
   region        = local.region
   network       = google_compute_network.main.name
   ip_cidr_range = var.vpc_connector_cidr

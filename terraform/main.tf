@@ -71,6 +71,18 @@ locals {
     managed_by  = "terraform"
     deployment  = "client-server-architecture"
   }
+
+  # VPC Connector name - must be max 25 chars, start/end with alphanumeric
+  # Pattern: ^[a-z][-a-z0-9]{0,23}[a-z0-9]$
+  # Map environments to short names that fit the pattern
+  connector_names = {
+    dev     = "labs-conn-dev"
+    preview = "labs-conn-prev"
+    prod    = "labs-conn-prod"
+  }
+  # For preview-pr-N, use prN format (e.g., preview-pr-114 -> labs-conn-pr114)
+  connector_env_short = startswith(var.environment, "preview-pr-") ? "pr${replace(var.environment, "preview-pr-", "")}" : var.environment
+  vpc_connector_name = lookup(local.connector_names, local.connector_env_short, "labs-conn-${substr(local.connector_env_short, 0, 14)}")
 }
 
 # Enable required APIs
