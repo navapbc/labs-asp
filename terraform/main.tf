@@ -73,7 +73,7 @@ locals {
   }
 }
 
-# Enable required APIs (reuse existing pattern)
+# Enable required APIs
 resource "google_project_service" "required_apis" {
   for_each = toset([
     "run.googleapis.com",

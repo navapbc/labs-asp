@@ -22,17 +22,6 @@ resource "google_compute_subnetwork" "public" {
   # Enable Private Google Access for API calls
   private_ip_google_access = true
 
-  # Secondary ranges for GKE pods and services (if needed in future)
-  secondary_ip_range {
-    range_name    = "pods"
-    ip_cidr_range = cidrsubnet(var.vpc_cidr_public, 4, 1)
-  }
-
-  secondary_ip_range {
-    range_name    = "services"
-    ip_cidr_range = cidrsubnet(var.vpc_cidr_public, 4, 2)
-  }
-
   log_config {
     aggregation_interval = "INTERVAL_5_SEC"
     flow_sampling        = 0.5
