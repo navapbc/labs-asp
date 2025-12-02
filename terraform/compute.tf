@@ -39,19 +39,9 @@ data "google_secret_manager_secret_version" "mastra_jwt_token" {
   secret = "mastra-jwt-token"
 }
 
-# Static external IP for app VM (for external API whitelisting)
-resource "google_compute_address" "app_vm_static_ip" {
-  name         = "app-vm-static-ip-${var.environment}"
-  region       = local.region
-  address_type = "EXTERNAL"
-  description  = "Static external IP for app VM in ${var.environment} environment (for external API whitelisting)"
-
-  labels = merge(local.common_labels, {
-    environment = var.environment
-    component   = "app-vm-networking"
-    purpose     = "external-api-whitelisting"
-  })
-}
+# Note: VM uses private subnet without external IP
+# Internet access is provided via Cloud NAT
+# If external IP is needed for API whitelisting, consider using Cloud NAT's external IPs
 
 # Compute VM - Runs browser-streaming and mastra-app containers
 resource "google_compute_instance" "app_vm" {
@@ -68,13 +58,12 @@ resource "google_compute_instance" "app_vm" {
     }
   }
 
-  # Network configuration - Use public subnet with external IP
+  # Network configuration - Use private subnet without external IP
+  # Internet access via Cloud NAT (configured in vpc.tf)
   network_interface {
     network    = google_compute_network.main.id
-    subnetwork = google_compute_subnetwork.public.id
-    access_config {
-      nat_ip = google_compute_address.app_vm_static_ip.address
-    }
+    subnetwork = google_compute_subnetwork.private.id
+    # No access_config - VM uses Cloud NAT for outbound internet access
   }
 
   # Service account for VM
@@ -118,7 +107,8 @@ resource "google_compute_instance" "app_vm" {
     google_project_service.required_apis,
     google_service_account.vm,
     google_compute_network.main,
-    google_compute_subnetwork.public
+    google_compute_subnetwork.private,
+    google_compute_router_nat.main  # Ensure NAT is ready for internet access
   ]
 }
 
