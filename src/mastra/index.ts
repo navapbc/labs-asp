@@ -9,10 +9,13 @@ import { createSessionPlaywrightMCP } from './mcp';
 const activeStreams = new Map<string, AbortController>();
 
 export const mastra = new Mastra({
-  agents: { 
+  agents: {
     webAutomationAgent
   },
   storage: postgresStore,
+  bundler: {
+    externals: ['@mastra/mcp'],
+  },
   logger: new PinoLogger({
     name: 'Mastra',
     level: 'debug', // Change from 'info' to 'debug' to capture more error details
