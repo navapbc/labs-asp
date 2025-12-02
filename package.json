@@ -67,6 +67,7 @@
   },
   "overrides": {
     "form-data": ">=4.0.4",
-    "hono": ">=4.10.2"
+    "hono": ">=4.10.2",
+    "@modelcontextprotocol/sdk": ">=1.24.0"
   }
 }
