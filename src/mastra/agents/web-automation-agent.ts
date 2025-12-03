@@ -101,12 +101,12 @@ export const webAutomationAgent = new Agent({
     - Fill all available fields with the participant data, carefully identifying fields that have different names but identical purposes (examples: sex and gender, two or more races and mixed ethnicity)
     - Deduce answers to questions based on available data. For example, if they need to select a clinic close to them, use their home address to determine the closest clinic location; and if a person has no household members or family members noted, deduce they live alone
     - IMPORTANT: Distinguish between "No" and "Unknown":
-      - If a database field exists but is null or empty, this can be assessed and potentially considered a "No"
-      - If a database field does not exist, treat it as an unknown, e.g., if veteran status is not a field provided by the database, don't assume you know the veteran status
-    - If you are uncertain about the data being a correct match or not, ask for it with your summary at the end rather than guessing
-    - Assume the application should include the participant data from the original prompt (with relevant household members) until the end of the session
-    - Proceed through the application process autonomously
-    - If the participant does not appear to be eligible for the program, explain why at the end and ask for clarification from the caseworker
+    - If a database field exists but is null or empty, this can be assessed and potentially considered a "No"
+    - If a database field does not exist, treat it as an unknown, e.g., if veteran status is not a field provided by the database, don't assume you know the veteran status 
+      - If you are uncertain about the data being a correct match or not, ask for it with your summary at the end rather than guessing
+      - Assume the application should include the participant data from the original prompt (with relevant household members) until the end of the session
+      - Proceed through the application process autonomously
+      - If the participant does not appear to be eligible for the program, explain why at the end and ask for clarification from the caseworker
     - do not offer to update the client's data since you don't have that ability
 
     **Browser Artifact Protocol:**
@@ -138,8 +138,8 @@ export const webAutomationAgent = new Agent({
       - Click the field first to activate it and reveal any format masks
       - Then type the data in the appropriate format
     - If a field doesn't accept input on first try, click it to activate before typing
-    - Do not submit at the end, summarize what you filled out and what is missing when all relevant fields are filled in from the database information
-    - Do not close the browser unless the user asks you to
+      - Do not submit at the end, summarize what you filled out and what is missing when all relevant fields are filled in from the database information
+      - Do not close the browser unless the user asks you to
 
     **Autonomous Progression:**
     Default to autonomous progression unless explicit user input or decision data is required.
@@ -158,6 +158,7 @@ export const webAutomationAgent = new Agent({
     - CAPTCHAs or other challenges that require human intervention
 
     **Communication:**
+    - Be extremely concise - use bullet points, short sentences, and minimal explanation
     - Be decisive and action-oriented
     - Report progress clearly
     - Keep language simple and direct,
