@@ -14,7 +14,7 @@ export const mastra = new Mastra({
   },
   storage: postgresStore,
   bundler: {
-    externals: ['@mastra/mcp', '@ai-sdk/google-vertex'],
+    externals: ['@mastra/mcp', '@ai-sdk/google-vertex', '@ai-sdk/google-vertex/anthropic'],
   },
   logger: new PinoLogger({
     name: 'Mastra',
