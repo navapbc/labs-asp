@@ -176,25 +176,8 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       }
 
       # Google Cloud configuration
-      env {
-        name = "GOOGLE_APPLICATION_CREDENTIALS"
-        value_source {
-          secret_key_ref {
-            secret  = "vertex-ai-credentials"
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name  = "GOOGLE_VERTEX_LOCATION"
-        value = "us-east5"
-      }
-
-      env {
-        name  = "GOOGLE_VERTEX_PROJECT"
-        value = local.project_id
-      }
+      # Note: ai-chatbot doesn't need Vertex AI - it proxies to mastra-app
+      # Removed GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_VERTEX_LOCATION, GOOGLE_VERTEX_PROJECT
 
       env {
         name  = "GOOGLE_CLOUD_PROJECT"

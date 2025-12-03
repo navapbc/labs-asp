@@ -13,6 +13,22 @@ import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
+import { createVertex } from '@ai-sdk/google-vertex';
+import { createVertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+
+// Vertex AI using ADC (Application Default Credentials)
+// On GCE/Cloud Run: uses attached service account automatically
+// Locally: uses `gcloud auth application-default login`
+const vertex = createVertex({
+  project: process.env.GOOGLE_VERTEX_PROJECT || 'nava-labs',
+  location: process.env.GOOGLE_VERTEX_LOCATION || 'us-east5',
+});
+
+// Anthropic Claude models via Vertex AI Model Garden
+const vertexAnthropic = createVertexAnthropic({
+  project: process.env.GOOGLE_VERTEX_PROJECT || 'nava-labs',
+  location: process.env.GOOGLE_VERTEX_LOCATION || 'us-east5',
+});
 
 const storage = postgresStore;
 
@@ -176,11 +192,12 @@ export const webAutomationAgent = new Agent({
     Take action immediately. Don't ask for permission to proceed with your core function.
   `,
   // model: openai('gpt-5-2025-08-07'),
-  // // model: openai('gpt-4.1-mini'),
+  // model: openai('gpt-4.1-mini'),
   // model: anthropic('claude-sonnet-4-20250514'),
   // model: google('gemini-2.5-pro'),
-  // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
-  model: anthropic('claude-sonnet-4-5-20250929'),
+  // model: anthropic('claude-sonnet-4-5-20250929'),
+  // model: vertex('gemini-2.0-flash'),
+  model: vertexAnthropic('claude-sonnet-4-5@20250929'),
   tools: {
     // Only include database tools statically
     // Playwright tools will be added dynamically per session via toolsets
