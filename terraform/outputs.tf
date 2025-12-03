@@ -9,8 +9,21 @@ output "vm_internal_ip" {
   value       = google_compute_instance.app_vm.network_interface[0].network_ip
 }
 
-# Note: VM no longer has external IP - uses Cloud NAT for outbound internet access
-# For API whitelisting, use Cloud NAT's external IPs if needed
+# Cloud NAT static IP for external API whitelisting
+output "nat_external_ip" {
+  description = "Static external IP for Cloud NAT (use for external API whitelisting)"
+  value       = google_compute_address.nat_static_ip.address
+}
+
+output "api_whitelisting_info" {
+  description = "Information needed for external API whitelisting"
+  value = {
+    static_ip   = google_compute_address.nat_static_ip.address
+    environment = var.environment
+    region      = local.region
+    purpose     = "Outbound traffic from VM via Cloud NAT"
+  }
+}
 
 output "browser_mcp_url" {
   description = "MCP server URL for browser automation (internal IP)"

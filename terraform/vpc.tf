@@ -76,12 +76,27 @@ resource "google_compute_router" "main" {
   }
 }
 
+# Static external IP for Cloud NAT (for external API whitelisting)
+resource "google_compute_address" "nat_static_ip" {
+  name         = "labs-asp-nat-ip-${var.environment}"
+  region       = local.region
+  address_type = "EXTERNAL"
+  description  = "Static IP for Cloud NAT - used for external API whitelisting in ${var.environment} environment"
+
+  labels = merge(local.common_labels, {
+    environment = var.environment
+    component   = "cloud-nat"
+    purpose     = "external-api-whitelisting"
+  })
+}
+
 # Cloud NAT - Provides internet access for private subnet instances
 resource "google_compute_router_nat" "main" {
   name                               = "labs-asp-nat-${var.environment}"
   router                             = google_compute_router.main.name
   region                             = google_compute_router.main.region
-  nat_ip_allocate_option             = "AUTO_ONLY"
+  nat_ip_allocate_option             = "MANUAL_ONLY"
+  nat_ips                            = [google_compute_address.nat_static_ip.self_link]
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 
   log_config {
