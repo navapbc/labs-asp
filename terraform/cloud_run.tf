@@ -218,6 +218,17 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # Cloudflare Verified Bots - Ed25519 private key for signing key directory
+      env {
+        name = "CLOUDFLARE_BOT_PRIVATE_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = "cloudflare-bot-private-key"
+            version = "latest"
+          }
+        }
+      }
+
       # Mastra server connection (server-side env var, not NEXT_PUBLIC_*)
       # Uses internal IP - VM is in private subnet, accessible via VPC Connector
       env {

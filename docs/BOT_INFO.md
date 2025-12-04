@@ -23,7 +23,7 @@ This bot helps caseworkers by:
 
 ### Bot Identification
 
-- **User-Agent:** `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36`
+- **User-Agent:** `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 (Nava/1.0)`
 - **Domains:**
   - Development: `dev.labs-asp.navateam.com`
   - Production: `app.labs-asp.navateam.com`
