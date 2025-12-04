@@ -56,7 +56,7 @@ log "Writing Vertex AI credentials file..."
 cat > /tmp/vertex-ai-credentials.json << 'EOFCREDS'
 ${vertex_ai_credentials}
 EOFCREDS
-chmod 600 /tmp/vertex-ai-credentials.json
+chmod 644 /tmp/vertex-ai-credentials.json
 
 # Start browser-streaming container
 log "Starting browser-streaming container..."
