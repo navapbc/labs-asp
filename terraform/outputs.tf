@@ -4,50 +4,45 @@ output "vm_name" {
   value       = google_compute_instance.app_vm.name
 }
 
-output "vm_external_ip" {
-  description = "External IP address of the application VM"
-  value       = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+output "vm_internal_ip" {
+  description = "Internal IP address of the application VM (in private subnet)"
+  value       = google_compute_instance.app_vm.network_interface[0].network_ip
 }
 
-output "app_vm_static_ip" {
-  description = "Static external IP address for app VM (for external API whitelisting)"
-  value       = google_compute_address.app_vm_static_ip.address
+# Cloud NAT static IP for external API whitelisting
+output "nat_external_ip" {
+  description = "Static external IP for Cloud NAT (use for external API whitelisting)"
+  value       = google_compute_address.nat_static_ip.address
 }
 
 output "api_whitelisting_info" {
   description = "Information needed for external API whitelisting"
   value = {
-    static_ip   = google_compute_address.app_vm_static_ip.address
+    static_ip   = google_compute_address.nat_static_ip.address
     environment = var.environment
     region      = local.region
-    zone        = local.zone
-    purpose     = "Mastra server API calls from port 4112"
+    purpose     = "Outbound traffic from VM via Cloud NAT"
   }
 }
 
-output "vm_internal_ip" {
-  description = "Internal IP address of the application VM"
-  value       = google_compute_instance.app_vm.network_interface[0].network_ip
-}
-
 output "browser_mcp_url" {
-  description = "MCP server URL for browser automation"
-  value       = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8931/mcp"
+  description = "MCP server URL for browser automation (internal IP)"
+  value       = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:8931/mcp"
 }
 
 output "browser_streaming_url" {
-  description = "WebSocket URL for browser streaming"
-  value       = "ws://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8933"
+  description = "WebSocket URL for browser streaming (internal IP)"
+  value       = "ws://${google_compute_instance.app_vm.network_interface[0].network_ip}:8933"
 }
 
 output "mastra_service_url" {
-  description = "URL of the Mastra service (running on VM)"
-  value       = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
+  description = "URL of the Mastra service (running on VM, internal IP)"
+  value       = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112"
 }
 
 output "mastra_chat_endpoint" {
-  description = "Chat endpoint for Mastra service"
-  value       = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112/chat"
+  description = "Chat endpoint for Mastra service (internal IP)"
+  value       = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112/chat"
 }
 
 # AI Chatbot service outputs
@@ -136,7 +131,9 @@ output "architecture_summary" {
     app_vm = {
       type         = "Compute Engine VM"
       machine_type = var.vm_machine_type
-      external_ip  = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+      internal_ip  = google_compute_instance.app_vm.network_interface[0].network_ip
+      subnet       = "private"
+      internet_access = "via Cloud NAT"
       services     = "browser-streaming + mastra-app"
       browser_mcp_port = 8931
       browser_ws_port  = 8933

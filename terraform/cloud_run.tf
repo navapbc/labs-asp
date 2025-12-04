@@ -230,21 +230,22 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       }
 
       # Mastra server connection (server-side env var, not NEXT_PUBLIC_*)
+      # Uses internal IP - VM is in private subnet, accessible via VPC Connector
       env {
         name  = "MASTRA_SERVER_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112"
       }
 
       # Keep NEXT_PUBLIC_ version for backwards compatibility
       env {
         name  = "NEXT_PUBLIC_MASTRA_SERVER_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112"
       }
 
       # Browser service connection (for direct client access if needed)
       env {
         name  = "PLAYWRIGHT_MCP_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8931/mcp"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:8931/mcp"
       }
 
       # Browser WebSocket Proxy URL (server-side runtime config)
@@ -256,7 +257,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Legacy browser streaming env vars (keeping for backwards compatibility)
       env {
         name  = "BROWSER_STREAMING_URL"
-        value = "ws://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8933"
+        value = "ws://${google_compute_instance.app_vm.network_interface[0].network_ip}:8933"
       }
 
       env {
@@ -266,7 +267,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "BROWSER_STREAMING_HOST"
-        value = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+        value = google_compute_instance.app_vm.network_interface[0].network_ip
       }
 
       # Runtime configuration
@@ -371,7 +372,7 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
       # Backend browser-streaming configuration
       env {
         name  = "BROWSER_STREAMING_HOST"
-        value = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+        value = google_compute_instance.app_vm.network_interface[0].network_ip
       }
 
       env {

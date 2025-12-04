@@ -110,7 +110,7 @@ jobs:
         id: tf_outputs
         run: |
           echo "chatbot_url=$(terraform output -raw chatbot_public_url)" >> $GITHUB_OUTPUT
-          echo "vm_ip=$(terraform output -raw vm_external_ip)" >> $GITHUB_OUTPUT
+          echo "vm_ip=$(terraform output -raw vm_internal_ip)" >> $GITHUB_OUTPUT
 
       - name: Deployment Summary
         run: |
@@ -119,9 +119,9 @@ jobs:
 
           ### Service URLs
           - **AI Chatbot**: ${{ steps.tf_outputs.outputs.chatbot_url }}
-          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
-          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
-          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112 (internal IP, accessible via VPC)
+          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp (internal IP, accessible via VPC)
+          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933 (internal IP, accessible via VPC)
 
           ### Deployment Info
           - **Version**: ${{ github.event.inputs.version }}
