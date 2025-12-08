@@ -13,19 +13,25 @@ resource "google_sql_database_instance" "dev" {
   region           = local.region
 
   settings {
-    tier                        = "db-f1-micro"  # Minimal tier for testing
+    tier                        = "db-custom-2-3840"  # Dev: 2 vCPUs, 3.75GB RAM
     availability_type           = "ZONAL"
     deletion_protection_enabled = false  # Allow deletion for dev environment
 
-    # Storage configuration - minimal for testing
+    # Storage configuration
     disk_type       = "PD_SSD"
-    disk_size       = 10  # Minimal storage (10GB)
-    disk_autoresize = false  # Disable autoresize for testing
+    disk_size       = 50  # 50GB storage for dev
+    disk_autoresize = true  # Enable autoresize
 
-    # Backup configuration - minimal for testing
+    # Backup configuration
     backup_configuration {
-      enabled                        = false  # Disable backups for testing
-      point_in_time_recovery_enabled = false
+      enabled                        = true
+      start_time                     = "03:00"
+      point_in_time_recovery_enabled = true
+      transaction_log_retention_days = 7
+      backup_retention_settings {
+        retained_backups = 7
+        retention_unit   = "COUNT"
+      }
     }
 
     # IP configuration - Private IP only via VPC peering
@@ -35,10 +41,10 @@ resource "google_sql_database_instance" "dev" {
       enable_private_path_for_google_cloud_services = true
     }
 
-    # Database flags - minimal for testing
+    # Database flags
     database_flags {
       name  = "max_connections"
-      value = "25"  # Reduced for minimal tier
+      value = "100"  # Appropriate for dev tier
     }
   }
 
@@ -112,19 +118,25 @@ resource "google_sql_database_instance" "prod" {
   region           = local.region
 
   settings {
-    tier                        = "db-f1-micro"  # Minimal tier for testing
+    tier                        = "db-custom-4-7680"  # Prod: 4 vCPUs, 7.5GB RAM
     availability_type           = "ZONAL"
-    deletion_protection_enabled = false  # Disabled for testing (set to true in production)
+    deletion_protection_enabled = true  # Protect production database
 
-    # Storage configuration - minimal for testing
+    # Storage configuration
     disk_type       = "PD_SSD"
-    disk_size       = 10  # Minimal storage (10GB)
-    disk_autoresize = false  # Disable autoresize for testing
+    disk_size       = 100  # 100GB storage for prod
+    disk_autoresize = true  # Enable autoresize
 
-    # Backup configuration - minimal for testing
+    # Backup configuration
     backup_configuration {
-      enabled                        = false  # Disable backups for testing
-      point_in_time_recovery_enabled = false
+      enabled                        = true
+      start_time                     = "03:00"
+      point_in_time_recovery_enabled = true
+      transaction_log_retention_days = 7
+      backup_retention_settings {
+        retained_backups = 7
+        retention_unit   = "COUNT"
+      }
     }
 
     # IP configuration - Private IP only via VPC peering
@@ -134,10 +146,10 @@ resource "google_sql_database_instance" "prod" {
       enable_private_path_for_google_cloud_services = true
     }
 
-    # Database flags - minimal for testing
+    # Database flags
     database_flags {
       name  = "max_connections"
-      value = "25"  # Reduced for minimal tier
+      value = "200"  # Higher for production tier
     }
   }
 
@@ -146,7 +158,7 @@ resource "google_sql_database_instance" "prod" {
     google_compute_network.main
   ]
 
-  deletion_protection = false  # Disabled for testing (set to true in production)
+  deletion_protection = true  # Critical: Protect production database
 }
 
 # Cloud SQL Database for PROD
