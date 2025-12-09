@@ -197,13 +197,15 @@ variable "allow_public_access" {
 # - database-password-prod (for prod environment)
 # No variable needed - passwords are retrieved from Secret Manager
 
-# VPC Peering configuration for preview environments
-variable "preview_vpc_names" {
-  description = "Set of preview VPC network names that should have peering with dev environment. Example: toset([\"labs-asp-vpc-preview-pr-123\", \"labs-asp-vpc-preview-pr-124\"])"
-  type        = set(string)
-  default     = []
-  
-  # Only used when environment is "dev"
-  # When a preview environment is created, add its VPC name here and redeploy dev
-  # Format: "labs-asp-vpc-preview-pr-{number}"
+# Database connection info for preview environments (passed from dev state)
+variable "dev_database_private_ip" {
+  description = "Private IP of the dev Cloud SQL instance (for preview environments to connect)"
+  type        = string
+  default     = ""
+}
+
+variable "dev_database_connection_name" {
+  description = "Connection name of the dev Cloud SQL instance (for Cloud SQL Proxy)"
+  type        = string
+  default     = ""
 }

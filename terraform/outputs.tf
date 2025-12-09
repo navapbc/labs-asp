@@ -124,6 +124,50 @@ output "vpc_connector_cidr" {
   value       = var.vpc_connector_cidr
 }
 
+# Database outputs
+output "database_instance_name" {
+  description = "Cloud SQL instance name"
+  value = var.environment == "dev" ? (
+    length(google_sql_database_instance.dev) > 0 ? google_sql_database_instance.dev[0].name : null
+  ) : (
+    var.environment == "prod" ? (
+      length(google_sql_database_instance.prod) > 0 ? google_sql_database_instance.prod[0].name : null
+    ) : null
+  )
+}
+
+output "database_connection_name" {
+  description = "Cloud SQL connection name (for Cloud SQL Proxy)"
+  value = var.environment == "dev" ? (
+    length(google_sql_database_instance.dev) > 0 ? google_sql_database_instance.dev[0].connection_name : null
+  ) : (
+    var.environment == "prod" ? (
+      length(google_sql_database_instance.prod) > 0 ? google_sql_database_instance.prod[0].connection_name : null
+    ) : null
+  )
+}
+
+output "database_private_ip" {
+  description = "Cloud SQL private IP address"
+  value = var.environment == "dev" ? (
+    length(google_sql_database_instance.dev) > 0 ? google_sql_database_instance.dev[0].private_ip_address : null
+  ) : (
+    var.environment == "prod" ? (
+      length(google_sql_database_instance.prod) > 0 ? google_sql_database_instance.prod[0].private_ip_address : null
+    ) : null
+  )
+}
+
+output "database_name" {
+  description = "Database name"
+  value       = "app_db"
+}
+
+output "database_user" {
+  description = "Database username"
+  value       = "app_user"
+}
+
 # Architecture summary
 output "architecture_summary" {
   description = "Summary of the deployed architecture"

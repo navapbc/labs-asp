@@ -262,6 +262,33 @@ jobs:
           
           echo "VPC CIDRs and Firewall rules configured for ${ENV}"
 
+      - name: Get dev database info for preview
+        if: startsWith(needs.setup.outputs.environment, 'preview-')
+        id: dev_db
+        working-directory: ./terraform
+        run: |
+          # Save current backend config
+          PREVIEW_ENV="${{ needs.setup.outputs.environment }}"
+
+          # Temporarily init with dev state to get DB info
+          terraform init \
+            -backend-config="prefix=terraform/state/dev" \
+            -reconfigure \
+            -input=false
+
+          # Get dev database outputs
+          DB_IP=$(terraform output -raw database_private_ip 2>/dev/null || echo "")
+          DB_CONNECTION=$(terraform output -raw database_connection_name 2>/dev/null || echo "")
+
+          echo "database_ip=${DB_IP}" >> $GITHUB_OUTPUT
+          echo "database_connection=${DB_CONNECTION}" >> $GITHUB_OUTPUT
+
+          # Re-init with preview state
+          terraform init \
+            -backend-config="prefix=terraform/state/${PREVIEW_ENV}" \
+            -reconfigure \
+            -input=false
+
       - name: Terraform Plan
         working-directory: ./terraform
         run: |
@@ -271,19 +298,30 @@ jobs:
             ENABLE_DOMAIN="true"
           fi
 
-          terraform plan \
-            -var="environment=${{ needs.setup.outputs.environment }}" \
-            -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
-            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
-            -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
-            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
-            -var="enable_custom_domain=${ENABLE_DOMAIN}" \
-            -var="vpc_cidr_public=${{ steps.vpc_cidrs.outputs.vpc_cidr_public }}" \
-            -var="vpc_cidr_private=${{ steps.vpc_cidrs.outputs.vpc_cidr_private }}" \
-            -var="vpc_cidr_db=${{ steps.vpc_cidrs.outputs.vpc_cidr_db }}" \
-            -var="vpc_connector_cidr=${{ steps.vpc_cidrs.outputs.vpc_connector_cidr }}" \
-            -var='firewall_rules=${{ steps.vpc_cidrs.outputs.firewall_rules }}' \
-            -out=tfplan
+          # Build terraform plan command
+          PLAN_ARGS=(
+            -var="environment=${{ needs.setup.outputs.environment }}"
+            -var="browser_image_url=${{ needs.build.outputs.browser_image }}"
+            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}"
+            -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}"
+            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}"
+            -var="enable_custom_domain=${ENABLE_DOMAIN}"
+            -var="vpc_cidr_public=${{ steps.vpc_cidrs.outputs.vpc_cidr_public }}"
+            -var="vpc_cidr_private=${{ steps.vpc_cidrs.outputs.vpc_cidr_private }}"
+            -var="vpc_cidr_db=${{ steps.vpc_cidrs.outputs.vpc_cidr_db }}"
+            -var="vpc_connector_cidr=${{ steps.vpc_cidrs.outputs.vpc_connector_cidr }}"
+            -var='firewall_rules=${{ steps.vpc_cidrs.outputs.firewall_rules }}'
+          )
+
+          # Add dev database info for preview environments
+          if [[ "${{ needs.setup.outputs.environment }}" == preview-* ]]; then
+            PLAN_ARGS+=(
+              -var="dev_database_private_ip=${{ steps.dev_db.outputs.database_ip }}"
+              -var="dev_database_connection_name=${{ steps.dev_db.outputs.database_connection }}"
+            )
+          fi
+
+          terraform plan "${PLAN_ARGS[@]}" -out=tfplan
 
       - name: Terraform Apply
         if: needs.setup.outputs.should_deploy == 'true'
