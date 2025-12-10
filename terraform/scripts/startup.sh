@@ -52,7 +52,9 @@ mkdir -p /tmp/artifacts
 chmod 755 /tmp/artifacts
 
 # Write Vertex AI credentials to file for Docker container mounting
+# Clean up if previous run left a directory instead of file (Docker creates dirs for missing mount paths)
 log "Writing Vertex AI credentials file..."
+rm -rf /tmp/vertex-ai-credentials.json
 cat > /tmp/vertex-ai-credentials.json << 'EOFCREDS'
 ${vertex_ai_credentials}
 EOFCREDS
