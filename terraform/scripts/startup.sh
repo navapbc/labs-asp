@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # VM startup script for Container-Optimized OS
-# Runs browser-streaming and mastra-app containers
+# Runs cloud-sql-proxy, browser-streaming, and mastra-app containers
 
 set -euo pipefail
 
@@ -38,25 +38,56 @@ DOCKER_CONFIG="$DOCKER_CONFIG" docker pull "${mastra_image}" || {
     exit 1
 }
 
+log "Pulling cloud-sql-proxy image..."
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1 || {
+    log "Failed to pull cloud-sql-proxy image"
+    exit 1
+}
+
 # Create Docker network
 log "Creating Docker network..."
 docker network create mastra-network 2>/dev/null || log "Network already exists"
 
 # Stop and remove existing containers
 log "Cleaning up existing containers..."
-docker stop browser-streaming mastra-app 2>/dev/null || true
-docker rm browser-streaming mastra-app 2>/dev/null || true
+docker stop cloud-sql-proxy browser-streaming mastra-app 2>/dev/null || true
+docker rm cloud-sql-proxy browser-streaming mastra-app 2>/dev/null || true
 
 # Create artifacts directory
 mkdir -p /tmp/artifacts
 chmod 755 /tmp/artifacts
 
 # Write Vertex AI credentials to file for Docker container mounting
+# Clean up if previous run left a directory instead of file (Docker creates dirs for missing mount paths)
 log "Writing Vertex AI credentials file..."
+rm -rf /tmp/vertex-ai-credentials.json
 cat > /tmp/vertex-ai-credentials.json << 'EOFCREDS'
 ${vertex_ai_credentials}
 EOFCREDS
 chmod 644 /tmp/vertex-ai-credentials.json
+
+# Start Cloud SQL Auth Proxy container
+# This provides secure database connectivity without VPC peering
+log "Starting cloud-sql-proxy container..."
+docker run -d \
+    --name cloud-sql-proxy \
+    --restart unless-stopped \
+    --network mastra-network \
+    -p 5432:5432 \
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1 \
+    --address 0.0.0.0 \
+    --port 5432 \
+    ${cloud_sql_connection_name}
+
+# Wait for proxy to be ready
+log "Waiting for cloud-sql-proxy to start..."
+sleep 5
+if ! docker ps | grep -q cloud-sql-proxy; then
+    log "Cloud-sql-proxy container failed to start"
+    docker logs cloud-sql-proxy
+    exit 1
+fi
+log "Cloud-sql-proxy is running"
 
 # Start browser-streaming container
 log "Starting browser-streaming container..."
@@ -82,6 +113,7 @@ fi
 log "Browser-streaming container is running"
 
 # Start mastra-app container
+# DATABASE_URL connects to cloud-sql-proxy via Docker network
 log "Starting mastra-app container..."
 docker run -d \
     --name mastra-app \
@@ -95,7 +127,7 @@ docker run -d \
     -e NODE_ENV=production \
     -e ENVIRONMENT="${environment}" \
     -e GCP_PROJECT_ID="${project_id}" \
-    -e DATABASE_URL="${database_url}" \
+    -e DATABASE_URL="postgresql://${database_user}:${database_password}@cloud-sql-proxy:5432/${database_name}" \
     -e OPENAI_API_KEY="${openai_api_key}" \
     -e ANTHROPIC_API_KEY="${anthropic_api_key}" \
     -e EXA_API_KEY="${exa_api_key}" \
@@ -137,6 +169,7 @@ done
 
 # Set up log forwarding
 log "Setting up log forwarding..."
+docker logs -f cloud-sql-proxy &
 docker logs -f browser-streaming &
 docker logs -f mastra-app &
 

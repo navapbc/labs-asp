@@ -1,6 +1,17 @@
+# Cloud SQL connection name for Auth Proxy
+# Preview environments use dev database, prod uses prod database
+locals {
+  cloud_sql_connection_name = var.environment == "prod" ? "${local.project_id}:${local.region}:app-prod" : "${local.project_id}:${local.region}:app-dev"
+}
+
 # Secret data sources for VM startup script
 data "google_secret_manager_secret_version" "database_url" {
   secret = var.environment == "prod" ? "database-url-production" : "database-url-dev"
+}
+
+# Database credentials for Cloud SQL Auth Proxy connection
+data "google_secret_manager_secret_version" "database_password" {
+  secret = var.environment == "prod" ? "database-password-prod" : "database-password-dev"
 }
 
 data "google_secret_manager_secret_version" "openai_api_key" {
@@ -82,21 +93,27 @@ resource "google_compute_instance" "app_vm" {
     browser-image-version = var.browser_image_url
     mastra-image-version  = var.mastra_image_url
     startup-script = templatefile("${path.module}/scripts/startup.sh", {
-      browser_image           = var.browser_image_url
-      mastra_image            = var.mastra_image_url
-      project_id              = local.project_id
-      environment             = var.environment
-      database_url            = data.google_secret_manager_secret_version.database_url.secret_data
-      openai_api_key          = data.google_secret_manager_secret_version.openai_api_key.secret_data
-      anthropic_api_key       = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
-      exa_api_key             = data.google_secret_manager_secret_version.exa_api_key.secret_data
-      google_ai_key           = data.google_secret_manager_secret_version.google_ai_key.secret_data
-      grok_api_key            = data.google_secret_manager_secret_version.grok_api_key.secret_data
-      xai_api_key             = data.google_secret_manager_secret_version.xai_api_key.secret_data
-      mastra_jwt_secret       = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
-      mastra_app_password     = data.google_secret_manager_secret_version.mastra_app_password.secret_data
-      mastra_jwt_token        = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
-      vertex_ai_credentials   = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
+      browser_image             = var.browser_image_url
+      mastra_image              = var.mastra_image_url
+      project_id                = local.project_id
+      environment               = var.environment
+      # Cloud SQL Auth Proxy configuration
+      cloud_sql_connection_name = local.cloud_sql_connection_name
+      database_user             = "app_user"
+      database_password         = data.google_secret_manager_secret_version.database_password.secret_data
+      database_name             = "app_db"
+      # Legacy DATABASE_URL kept for reference but proxy uses components above
+      database_url              = data.google_secret_manager_secret_version.database_url.secret_data
+      openai_api_key            = data.google_secret_manager_secret_version.openai_api_key.secret_data
+      anthropic_api_key         = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
+      exa_api_key               = data.google_secret_manager_secret_version.exa_api_key.secret_data
+      google_ai_key             = data.google_secret_manager_secret_version.google_ai_key.secret_data
+      grok_api_key              = data.google_secret_manager_secret_version.grok_api_key.secret_data
+      xai_api_key               = data.google_secret_manager_secret_version.xai_api_key.secret_data
+      mastra_jwt_secret         = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
+      mastra_app_password       = data.google_secret_manager_secret_version.mastra_app_password.secret_data
+      mastra_jwt_token          = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
+      vertex_ai_credentials     = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
     })
   }
 
@@ -183,5 +200,12 @@ resource "google_project_iam_member" "vm_secret_accessor" {
 resource "google_project_iam_member" "vm_vertex_ai_user" {
   project = local.project_id
   role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.vm.email}"
+}
+
+# Cloud SQL Client role - required for Cloud SQL Auth Proxy
+resource "google_project_iam_member" "vm_cloudsql_client" {
+  project = local.project_id
+  role    = "roles/cloudsql.client"
   member  = "serviceAccount:${google_service_account.vm.email}"
 }

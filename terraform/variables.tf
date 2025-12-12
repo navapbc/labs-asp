@@ -196,14 +196,3 @@ variable "allow_public_access" {
 # - database-password-dev (for dev environment)
 # - database-password-prod (for prod environment)
 # No variable needed - passwords are retrieved from Secret Manager
-
-# VPC Peering configuration for preview environments
-variable "preview_vpc_names" {
-  description = "Set of preview VPC network names that should have peering with dev environment. Example: toset([\"labs-asp-vpc-preview-pr-123\", \"labs-asp-vpc-preview-pr-124\"])"
-  type        = set(string)
-  default     = []
-  
-  # Only used when environment is "dev"
-  # When a preview environment is created, add its VPC name here and redeploy dev
-  # Format: "labs-asp-vpc-preview-pr-{number}"
-}
