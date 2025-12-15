@@ -1,8 +1,49 @@
 # VPC Network Configuration
-# Creates VPC with public, private, and database subnets
+# 
+# Strategy:
+# - Dev/Prod: Creates dedicated VPC for each environment
+# - Preview: Uses shared preview VPC (created in shared-preview-vpc/)
+#
+# Preview environments reference the existing shared VPC via data sources
 
-# Main VPC Network
+# Data sources for shared preview VPC (used by all preview-pr-* environments)
+data "google_compute_network" "preview_shared" {
+  count   = startswith(var.environment, "preview-") ? 1 : 0
+  name    = "labs-asp-vpc-preview-shared"
+  project = local.project_id
+}
+
+data "google_compute_subnetwork" "preview_public" {
+  count   = startswith(var.environment, "preview-") ? 1 : 0
+  name    = "labs-asp-public-preview-shared"
+  region  = local.region
+  project = local.project_id
+}
+
+data "google_compute_subnetwork" "preview_private" {
+  count   = startswith(var.environment, "preview-") ? 1 : 0
+  name    = "labs-asp-private-preview-shared"
+  region  = local.region
+  project = local.project_id
+}
+
+data "google_compute_subnetwork" "preview_db" {
+  count   = startswith(var.environment, "preview-") ? 1 : 0
+  name    = "labs-asp-db-preview-shared"
+  region  = local.region
+  project = local.project_id
+}
+
+data "google_vpc_access_connector" "preview_connector" {
+  count   = startswith(var.environment, "preview-") ? 1 : 0
+  name    = "labs-conn-preview-shared"
+  region  = local.region
+  project = local.project_id
+}
+
+# Main VPC Network (only for dev and prod)
 resource "google_compute_network" "main" {
+  count                   = startswith(var.environment, "preview-") ? 0 : 1
   name                    = "labs-asp-vpc-${var.environment}"
   auto_create_subnetworks = false
   routing_mode            = "REGIONAL"
@@ -11,12 +52,46 @@ resource "google_compute_network" "main" {
   depends_on = [google_project_service.required_apis]
 }
 
-# Public Subnet - For resources that need direct internet access
+# Local values to reference VPC/subnets regardless of source (created or data source)
+locals {
+  vpc_network = startswith(var.environment, "preview-") ? (
+    data.google_compute_network.preview_shared[0]
+  ) : (
+    google_compute_network.main[0]
+  )
+  
+  public_subnet = startswith(var.environment, "preview-") ? (
+    data.google_compute_subnetwork.preview_public[0]
+  ) : (
+    google_compute_subnetwork.public[0]
+  )
+  
+  private_subnet = startswith(var.environment, "preview-") ? (
+    data.google_compute_subnetwork.preview_private[0]
+  ) : (
+    google_compute_subnetwork.private[0]
+  )
+  
+  db_subnet = startswith(var.environment, "preview-") ? (
+    data.google_compute_subnetwork.preview_db[0]
+  ) : (
+    google_compute_subnetwork.db[0]
+  )
+  
+  vpc_connector = startswith(var.environment, "preview-") ? (
+    data.google_vpc_access_connector.preview_connector[0]
+  ) : (
+    google_vpc_access_connector.cloud_run[0]
+  )
+}
+
+# Public Subnet - For resources that need direct internet access (only for dev/prod)
 resource "google_compute_subnetwork" "public" {
+  count         = startswith(var.environment, "preview-") ? 0 : 1
   name          = "labs-asp-public-${var.environment}"
   ip_cidr_range = var.vpc_cidr_public
   region        = local.region
-  network       = google_compute_network.main.id
+  network       = google_compute_network.main[0].id
   description   = "Public subnet for resources with internet access"
 
   # Enable Private Google Access for API calls
@@ -29,12 +104,13 @@ resource "google_compute_subnetwork" "public" {
   }
 }
 
-# Private Subnet - For internal resources (VMs, Cloud Run connectors)
+# Private Subnet - For internal resources (only for dev/prod)
 resource "google_compute_subnetwork" "private" {
+  count         = startswith(var.environment, "preview-") ? 0 : 1
   name          = "labs-asp-private-${var.environment}"
   ip_cidr_range = var.vpc_cidr_private
   region        = local.region
-  network       = google_compute_network.main.id
+  network       = google_compute_network.main[0].id
   description   = "Private subnet for internal resources"
 
   # Enable Private Google Access for API calls without external IPs
@@ -47,12 +123,13 @@ resource "google_compute_subnetwork" "private" {
   }
 }
 
-# Database Subnet - For Cloud SQL and database resources
+# Database Subnet - For Cloud SQL and database resources (only for dev/prod)
 resource "google_compute_subnetwork" "db" {
+  count         = startswith(var.environment, "preview-") ? 0 : 1
   name          = "labs-asp-db-${var.environment}"
   ip_cidr_range = var.vpc_cidr_db
   region        = local.region
-  network       = google_compute_network.main.id
+  network       = google_compute_network.main[0].id
   description   = "Database subnet for Cloud SQL and related services"
 
   # Enable Private Google Access
@@ -65,19 +142,21 @@ resource "google_compute_subnetwork" "db" {
   }
 }
 
-# Cloud Router for NAT Gateway (allows private instances to access internet)
+# Cloud Router for NAT Gateway (only for dev/prod, preview uses shared router)
 resource "google_compute_router" "main" {
+  count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-router-${var.environment}"
   region  = local.region
-  network = google_compute_network.main.id
+  network = google_compute_network.main[0].id
 
   bgp {
     asn = 64514
   }
 }
 
-# Static external IP for Cloud NAT (for external API whitelisting)
+# Static external IP for Cloud NAT (only for dev/prod)
 resource "google_compute_address" "nat_static_ip" {
+  count        = startswith(var.environment, "preview-") ? 0 : 1
   name         = "labs-asp-nat-ip-${var.environment}"
   region       = local.region
   address_type = "EXTERNAL"
@@ -90,13 +169,14 @@ resource "google_compute_address" "nat_static_ip" {
   })
 }
 
-# Cloud NAT - Provides internet access for private subnet instances
+# Cloud NAT - Provides internet access for private subnet instances (only for dev/prod)
 resource "google_compute_router_nat" "main" {
+  count                              = startswith(var.environment, "preview-") ? 0 : 1
   name                               = "labs-asp-nat-${var.environment}"
-  router                             = google_compute_router.main.name
-  region                             = google_compute_router.main.region
+  router                             = google_compute_router.main[0].name
+  region                             = google_compute_router.main[0].region
   nat_ip_allocate_option             = "MANUAL_ONLY"
-  nat_ips                            = [google_compute_address.nat_static_ip.self_link]
+  nat_ips                            = [google_compute_address.nat_static_ip[0].self_link]
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 
   log_config {
@@ -105,11 +185,12 @@ resource "google_compute_router_nat" "main" {
   }
 }
 
-# Serverless VPC Access Connector for Cloud Run
+# Serverless VPC Access Connector for Cloud Run (only for dev/prod, preview uses shared connector)
 resource "google_vpc_access_connector" "cloud_run" {
+  count         = startswith(var.environment, "preview-") ? 0 : 1
   name          = local.vpc_connector_name
   region        = local.region
-  network       = google_compute_network.main.name
+  network       = google_compute_network.main[0].name
   ip_cidr_range = var.vpc_connector_cidr
   
   # Connector machine type (f1-micro, e2-micro, or e2-standard-4)
@@ -124,13 +205,15 @@ resource "google_vpc_access_connector" "cloud_run" {
   ]
 }
 
-# Private Service Connection for Cloud SQL
+# Private Service Connection for Cloud SQL (only for dev/prod)
+# Preview uses the connection from shared VPC
 resource "google_compute_global_address" "private_ip_range" {
+  count         = startswith(var.environment, "preview-") ? 0 : 1
   name          = "labs-asp-private-ip-${var.environment}"
   purpose       = "VPC_PEERING"
   address_type  = "INTERNAL"
   prefix_length = 16
-  network       = google_compute_network.main.id
+  network       = google_compute_network.main[0].id
 
   labels = merge(local.common_labels, {
     environment = var.environment
@@ -139,18 +222,20 @@ resource "google_compute_global_address" "private_ip_range" {
 }
 
 resource "google_service_networking_connection" "private_vpc_connection" {
-  network                 = google_compute_network.main.id
+  count                   = startswith(var.environment, "preview-") ? 0 : 1
+  network                 = google_compute_network.main[0].id
   service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
+  reserved_peering_ranges = [google_compute_global_address.private_ip_range[0].name]
 
   depends_on = [google_project_service.required_apis]
 }
 
-# Firewall Rules
+# Firewall Rules (only for dev/prod, preview uses shared VPC firewalls)
 # Allow internal communication within VPC
 resource "google_compute_firewall" "allow_internal" {
+  count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-allow-internal-${var.environment}"
-  network = google_compute_network.main.name
+  network = google_compute_network.main[0].name
 
   allow {
     protocol = "tcp"
@@ -178,8 +263,9 @@ resource "google_compute_firewall" "allow_internal" {
 
 # Allow SSH from IAP (Identity-Aware Proxy)
 resource "google_compute_firewall" "allow_iap_ssh" {
+  count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-allow-iap-ssh-${var.environment}"
-  network = google_compute_network.main.name
+  network = google_compute_network.main[0].name
 
   allow {
     protocol = "tcp"
@@ -194,8 +280,9 @@ resource "google_compute_firewall" "allow_iap_ssh" {
 
 # Allow health checks from Google Cloud
 resource "google_compute_firewall" "allow_health_checks" {
+  count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-allow-health-checks-${var.environment}"
-  network = google_compute_network.main.name
+  network = google_compute_network.main[0].name
 
   allow {
     protocol = "tcp"
@@ -210,10 +297,12 @@ resource "google_compute_firewall" "allow_health_checks" {
   description = "Allow health checks from Google Cloud load balancers"
 }
 
-# Browser MCP access (configurable port)
+# Browser MCP access (configurable port, only for dev/prod)
+# Preview environments use shared VPC firewall rules
 resource "google_compute_firewall" "browser_mcp" {
+  count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-browser-mcp-${var.environment}"
-  network = google_compute_network.main.name
+  network = google_compute_network.main[0].name
 
   allow {
     protocol = "tcp"
@@ -235,10 +324,11 @@ resource "google_compute_firewall" "browser_mcp" {
   description = "Allow Playwright MCP access on port ${var.firewall_rules.browser_mcp.port} from VPC and approved external IPs"
 }
 
-# Browser Streaming WebSocket access (configurable port)
+# Browser Streaming WebSocket access (configurable port, only for dev/prod)
 resource "google_compute_firewall" "browser_streaming" {
+  count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-browser-streaming-${var.environment}"
-  network = google_compute_network.main.name
+  network = google_compute_network.main[0].name
 
   allow {
     protocol = "tcp"
@@ -260,10 +350,11 @@ resource "google_compute_firewall" "browser_streaming" {
   description = "Allow browser streaming WebSocket access on port ${var.firewall_rules.browser_streaming.port} from VPC and approved external IPs"
 }
 
-# Mastra API access (configurable port)
+# Mastra API access (configurable port, only for dev/prod)
 resource "google_compute_firewall" "mastra_app" {
+  count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-mastra-app-${var.environment}"
-  network = google_compute_network.main.name
+  network = google_compute_network.main[0].name
 
   allow {
     protocol = "tcp"
@@ -288,61 +379,9 @@ resource "google_compute_firewall" "mastra_app" {
 # ============================================================================
 # VPC Peering Configuration
 # ============================================================================
-# Peering between Preview and Dev environments to allow preview to access dev database
-
-# VPC Peering for Preview environments to access Dev database
-# This allows preview environments to connect to the dev Cloud SQL instance
-resource "google_compute_network_peering" "preview_to_dev" {
-  count    = startswith(var.environment, "preview-") ? 1 : 0
-  name     = "preview-to-dev-peering-${var.environment}"
-  network  = google_compute_network.main.id
-  peer_network = data.google_compute_network.dev_vpc[0].id
-
-  # Allow custom routes to enable connectivity
-  import_custom_routes = true
-  export_custom_routes = true
-
-  depends_on = [
-    google_compute_network.main,
-    google_service_networking_connection.private_vpc_connection
-  ]
-}
-
-# Data source to get dev VPC network for peering
-data "google_compute_network" "dev_vpc" {
-  count   = startswith(var.environment, "preview-") ? 1 : 0
-  name    = "labs-asp-vpc-dev"
-  project = local.project_id
-}
-
-# Reverse VPC Peering from Dev to Preview environments
-# This allows preview environments to connect back to dev VPC
-# Note: VPC peering is bidirectional - both sides need to be created
-# The preview-to-dev peering is created above when deploying preview environments
-# The reverse peering (dev-to-preview) is created here when deploying the dev environment
-
-# Data sources to get preview VPC networks for reverse peering
-# These are discovered based on the preview_vpc_names variable
-data "google_compute_network" "preview_vpcs" {
-  for_each = var.environment == "dev" ? var.preview_vpc_names : toset([])
-  name     = each.value
-  project  = local.project_id
-}
-
-# Reverse peering from dev to preview environments
-# This completes the bidirectional peering connection
-resource "google_compute_network_peering" "dev_to_preview" {
-  for_each = var.environment == "dev" ? var.preview_vpc_names : toset([])
-  name     = "dev-to-preview-peering-${replace(each.value, "labs-asp-vpc-", "")}"
-  network  = google_compute_network.main.id
-  peer_network = data.google_compute_network.preview_vpcs[each.value].id
-
-  import_custom_routes = true
-  export_custom_routes = true
-
-  depends_on = [
-    google_compute_network.main,
-    google_service_networking_connection.private_vpc_connection
-  ]
-}
+# 
+# Note: VPC peering for preview environments is now managed in shared-preview-vpc/
+# All preview environments use a shared VPC that has permanent peering with dev VPC
+# 
+# This eliminates the need for dynamic peering creation/destruction per preview environment
 

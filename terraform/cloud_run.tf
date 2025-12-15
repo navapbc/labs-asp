@@ -14,7 +14,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
     # VPC Access - Connect to VPC network
     vpc_access {
-      connector = google_vpc_access_connector.cloud_run.id
+      connector = local.vpc_connector.id
       egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
     }
 
@@ -354,7 +354,7 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
 
     # VPC Access - Connect to VPC network
     vpc_access {
-      connector = google_vpc_access_connector.cloud_run.id
+      connector = local.vpc_connector.id
       egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
     }
 

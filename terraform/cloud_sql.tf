@@ -37,7 +37,7 @@ resource "google_sql_database_instance" "dev" {
     # IP configuration - Private IP only via VPC peering
     ip_configuration {
       ipv4_enabled                                  = false
-      private_network                               = google_compute_network.main.id
+      private_network                               = local.vpc_network.id
       enable_private_path_for_google_cloud_services = true
     }
 
@@ -142,7 +142,7 @@ resource "google_sql_database_instance" "prod" {
     # IP configuration - Private IP only via VPC peering
     ip_configuration {
       ipv4_enabled                                  = false
-      private_network                               = google_compute_network.main.id
+      private_network                               = local.vpc_network.id
       enable_private_path_for_google_cloud_services = true
     }
 

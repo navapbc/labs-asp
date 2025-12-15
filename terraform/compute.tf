@@ -65,8 +65,8 @@ resource "google_compute_instance" "app_vm" {
   # Network configuration - Use private subnet without external IP
   # Internet access via Cloud NAT (configured in vpc.tf)
   network_interface {
-    network    = google_compute_network.main.id
-    subnetwork = google_compute_subnetwork.private.id
+    network    = local.vpc_network.id
+    subnetwork = local.private_subnet.id
     # No access_config - VM uses Cloud NAT for outbound internet access
   }
 

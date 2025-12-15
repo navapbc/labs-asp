@@ -216,6 +216,7 @@ jobs:
           
           # Set VPC CIDR blocks based on environment
           # Pattern: 10.X.0.0/16 where X is determined by environment
+          # Note: Preview environments use shared VPC (10.1.0.0/16) but still need CIDR values for Terraform variables
           case ${ENV} in
             dev)
               # Dev: 10.0.0.0/16
@@ -228,7 +229,7 @@ jobs:
               echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
               ;;
             preview|preview-*)
-              # Preview (HML): 10.1.0.0/16
+              # Preview: Uses shared VPC (10.1.0.0/16) - values for reference only
               echo "vpc_cidr_public=10.1.0.0/20" >> $GITHUB_OUTPUT
               echo "vpc_cidr_private=10.1.16.0/20" >> $GITHUB_OUTPUT
               echo "vpc_cidr_db=10.1.32.0/20" >> $GITHUB_OUTPUT
