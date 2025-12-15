@@ -12,17 +12,17 @@ output "vm_internal_ip" {
 # Cloud NAT static IP for external API whitelisting
 output "nat_external_ip" {
   description = "Static external IP for Cloud NAT (use for external API whitelisting)"
-  value       = google_compute_address.nat_static_ip.address
+  value       = length(google_compute_address.nat_static_ip) > 0 ? google_compute_address.nat_static_ip[0].address : null
 }
 
 output "api_whitelisting_info" {
   description = "Information needed for external API whitelisting"
-  value = {
-    static_ip   = google_compute_address.nat_static_ip.address
+  value = length(google_compute_address.nat_static_ip) > 0 ? {
+    static_ip   = google_compute_address.nat_static_ip[0].address
     environment = var.environment
     region      = local.region
     purpose     = "Outbound traffic from VM via Cloud NAT"
-  }
+  } : null
 }
 
 output "browser_mcp_url" {
