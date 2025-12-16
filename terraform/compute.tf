@@ -44,15 +44,15 @@ data "google_secret_manager_secret_version" "vertex_ai_credentials" {
 }
 
 data "google_secret_manager_secret_version" "apricot_api_base_url" {
-  secret = "apricot-api-base-url"
+  secret = "apricot_api_base_url"
 }
 
 data "google_secret_manager_secret_version" "apricot_client_id" {
-  secret = "apricot-client-id"
+  secret = "apricot_client_id"
 }
 
 data "google_secret_manager_secret_version" "apricot_client_secret" {
-  secret = "apricot-client-secret"
+  secret = "apricot_client_secret"
 }
 
 # Note: VM uses private subnet without external IP
