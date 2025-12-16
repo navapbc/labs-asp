@@ -14,6 +14,7 @@ import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
 // import { anthropic } from '@ai-sdk/anthropic'; // Keeping for reference - direct Anthropic API
 import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+import { apricotTools } from '../tools/apricot-tools';
 
 const storage = postgresStore;
 
@@ -186,6 +187,7 @@ export const webAutomationAgent = new Agent({
     // Only include database tools statically
     // Playwright tools will be added dynamically per session via toolsets
     ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
+    ...Object.fromEntries(apricotTools.map(tool => [tool.id, tool])),
   },
   workflows: {
     webAutomationWorkflow: webAutomationWorkflow,

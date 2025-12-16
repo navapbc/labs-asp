@@ -43,6 +43,18 @@ data "google_secret_manager_secret_version" "vertex_ai_credentials" {
   secret = "vertex-ai-credentials"
 }
 
+data "google_secret_manager_secret_version" "apricot_api_base_url" {
+  secret = "apricot-api-base-url"
+}
+
+data "google_secret_manager_secret_version" "apricot_client_id" {
+  secret = "apricot-client-id"
+}
+
+data "google_secret_manager_secret_version" "apricot_client_secret" {
+  secret = "apricot-client-secret"
+}
+
 # Note: VM uses private subnet without external IP
 # Internet access is provided via Cloud NAT
 # If external IP is needed for API whitelisting, consider using Cloud NAT's external IPs
@@ -97,6 +109,9 @@ resource "google_compute_instance" "app_vm" {
       mastra_app_password     = data.google_secret_manager_secret_version.mastra_app_password.secret_data
       mastra_jwt_token        = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
       vertex_ai_credentials   = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
+      apricot_api_base_url    = data.google_secret_manager_secret_version.apricot_api_base_url.secret_data
+      apricot_client_id       = data.google_secret_manager_secret_version.apricot_client_id.secret_data
+      apricot_client_secret   = data.google_secret_manager_secret_version.apricot_client_secret.secret_data
     })
   }
 
