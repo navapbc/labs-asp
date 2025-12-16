@@ -47,7 +47,14 @@ const wss = new WebSocketServer({ server });
 
 wss.on('connection', (clientWs, req) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
-  const sessionId = url.searchParams.get('sessionId') || 'default';
+  const sessionId = url.searchParams.get('sessionId');
+
+  // Require sessionId to prevent session collision
+  if (!sessionId) {
+    console.error('[browser-ws-proxy] Connection rejected: Missing required sessionId query parameter');
+    clientWs.close(1008, 'Missing required sessionId query parameter');
+    return;
+  }
 
   console.log(`[${sessionId}] Client connected`);
 
