@@ -45,6 +45,8 @@ class BrowserStreamingService extends EventEmitter {
     this.wss = new WebSocketServer({ port });
     this.activeSessions = new Map(); // Map<sessionId, {ws, client, cdpEndpoint, controlMode, targetId}>
     this.sessionToTarget = new Map(); // Map<sessionId, targetId> - tracks which session owns which CDP target
+    // Mutex to prevent race conditions in target assignment
+    this._targetAssignmentLock = Promise.resolve();
   }
 
   async start() {
@@ -88,19 +90,39 @@ class BrowserStreamingService extends EventEmitter {
   async handleMessage(ws, message) {
     switch (message.type) {
       case 'start-streaming':
-        await this.startBrowserCapture(ws, message.sessionId || 'default');
+        if (!message.sessionId) {
+          console.error('start-streaming: Missing required sessionId');
+          ws.send(JSON.stringify({ type: 'error', error: 'Missing required sessionId' }));
+          return;
+        }
+        await this.startBrowserCapture(ws, message.sessionId);
         break;
-      
+
       case 'stop-streaming':
-        await this.stopBrowserCapture(message.sessionId || 'default');
+        if (!message.sessionId) {
+          console.error('stop-streaming: Missing required sessionId');
+          ws.send(JSON.stringify({ type: 'error', error: 'Missing required sessionId' }));
+          return;
+        }
+        await this.stopBrowserCapture(message.sessionId);
         break;
-      
+
       case 'control-mode':
-        await this.handleChangeControlMode(ws, message.sessionId || 'default', message.data?.mode);
+        if (!message.sessionId) {
+          console.error('control-mode: Missing required sessionId');
+          ws.send(JSON.stringify({ type: 'error', error: 'Missing required sessionId' }));
+          return;
+        }
+        await this.handleChangeControlMode(ws, message.sessionId, message.data?.mode);
         break;
 
       case 'user-input':
-        await this.handleUserInput(ws, message.sessionId || 'default', message.data);
+        if (!message.sessionId) {
+          console.error('user-input: Missing required sessionId');
+          ws.send(JSON.stringify({ type: 'error', error: 'Missing required sessionId' }));
+          return;
+        }
+        await this.handleUserInput(ws, message.sessionId, message.data);
         break;
       
       case 'offer':
@@ -159,9 +181,26 @@ class BrowserStreamingService extends EventEmitter {
         everyNthFrame: 1 // Capture every frame for smooth streaming
       });
 
-      // Handle screencast frames with better error handling
+      // Handle screencast frames with session validation
       Page.screencastFrame((params) => {
         try {
+          // SESSION VALIDATION: Verify this session still owns this target
+          // This prevents frames from being sent to the wrong session if target was reassigned
+          const currentSession = this.activeSessions.get(sessionId);
+          const expectedTargetId = this.sessionToTarget.get(sessionId);
+
+          if (!currentSession) {
+            console.warn(`[SESSION VALIDATION] Session ${sessionId} no longer active, skipping frame`);
+            Page.screencastFrameAck({ sessionId: params.sessionId });
+            return;
+          }
+
+          if (currentSession.targetId !== expectedTargetId) {
+            console.warn(`[SESSION VALIDATION] Target mismatch for session ${sessionId}: active=${currentSession.targetId}, expected=${expectedTargetId}`);
+            Page.screencastFrameAck({ sessionId: params.sessionId });
+            return;
+          }
+
           /** @type {BrowserFrame} */
           const frame = {
             type: 'frame',
@@ -427,7 +466,31 @@ class BrowserStreamingService extends EventEmitter {
     }
   }
 
+  /**
+   * Get CDP endpoint for a session with mutex to prevent race conditions.
+   * This wrapper ensures only one session can claim a target at a time.
+   */
   async getCDPEndpoint(sessionId) {
+    // Use mutex to serialize target assignment and prevent race conditions
+    const result = await new Promise((resolve) => {
+      this._targetAssignmentLock = this._targetAssignmentLock.then(async () => {
+        const endpoint = await this._getCDPEndpointInternal(sessionId);
+        resolve(endpoint);
+        return endpoint;
+      }).catch((error) => {
+        console.error('Error in target assignment lock:', error);
+        resolve(null);
+        return null;
+      });
+    });
+    return result;
+  }
+
+  /**
+   * Internal implementation of CDP endpoint discovery.
+   * Called within mutex lock to prevent race conditions.
+   */
+  async _getCDPEndpointInternal(sessionId) {
     try {
       // Check if this session already has a mapped target
       if (this.sessionToTarget.has(sessionId)) {
@@ -448,9 +511,19 @@ class BrowserStreamingService extends EventEmitter {
         const existingTarget = targets.find(t => t.id === targetId && t.type === 'page');
 
         if (existingTarget) {
-          console.log(`Reconnecting to existing target ${targetId} for session ${sessionId}`);
-          this.cdpPort = detectedPort;
-          return existingTarget.webSocketDebuggerUrl;
+          // Verify this target isn't claimed by another active session
+          const claimingSession = Array.from(this.activeSessions.entries())
+            .find(([sid, sess]) => sid !== sessionId && sess.targetId === targetId);
+
+          if (claimingSession) {
+            console.warn(`Target ${targetId} is now claimed by session ${claimingSession[0]}, clearing mapping for ${sessionId}`);
+            this.sessionToTarget.delete(sessionId);
+            // Fall through to find a new target
+          } else {
+            console.log(`Reconnecting to existing target ${targetId} for session ${sessionId}`);
+            this.cdpPort = detectedPort;
+            return existingTarget.webSocketDebuggerUrl;
+          }
         } else {
           console.warn(`Previously mapped target ${targetId} no longer exists, will select new target`);
           this.sessionToTarget.delete(sessionId);
@@ -486,11 +559,13 @@ class BrowserStreamingService extends EventEmitter {
       }
 
       // Get target IDs already claimed by other active sessions
-      const claimedTargetIds = new Set(
-        Array.from(this.activeSessions.values())
+      // Include both activeSessions AND sessionToTarget to catch in-progress assignments
+      const claimedTargetIds = new Set([
+        ...Array.from(this.activeSessions.values())
           .map(session => session.targetId)
-          .filter(Boolean)
-      );
+          .filter(Boolean),
+        ...Array.from(this.sessionToTarget.values())
+      ]);
 
       console.log(`Claimed target IDs by other sessions:`, Array.from(claimedTargetIds));
 
@@ -505,13 +580,12 @@ class BrowserStreamingService extends EventEmitter {
       }
 
       if (!availableTarget) {
-        console.warn('All page targets are already claimed by other sessions');
-        // Fall back to the newest target (index 0 since CDP returns newest-first)
-        const newestTarget = pageTargets[0];
-        console.log(`Falling back to newest target: ${newestTarget.id}`);
-        this.sessionToTarget.set(sessionId, newestTarget.id);
-        this.cdpPort = portToTry;
-        return newestTarget.webSocketDebuggerUrl;
+        // CRITICAL FIX: Do NOT steal targets from other sessions
+        // Return null and let the caller handle the error/retry
+        console.error(`[SESSION ISOLATION] No available targets for session ${sessionId}. All ${pageTargets.length} targets are claimed by other sessions.`);
+        console.error(`[SESSION ISOLATION] Claimed targets: ${Array.from(claimedTargetIds).join(', ')}`);
+        console.error(`[SESSION ISOLATION] This session must wait for a new browser context to be created.`);
+        return null;
       }
 
       console.log(`Assigning unclaimed target ${availableTarget.id} to session ${sessionId}`);
