@@ -12,17 +12,17 @@ output "vm_internal_ip" {
 # Cloud NAT static IP for external API whitelisting
 output "nat_external_ip" {
   description = "Static external IP for Cloud NAT (use for external API whitelisting)"
-  value       = google_compute_address.nat_static_ip.address
+  value       = length(google_compute_address.nat_static_ip) > 0 ? google_compute_address.nat_static_ip[0].address : null
 }
 
 output "api_whitelisting_info" {
   description = "Information needed for external API whitelisting"
-  value = {
-    static_ip   = google_compute_address.nat_static_ip.address
+  value = length(google_compute_address.nat_static_ip) > 0 ? {
+    static_ip   = google_compute_address.nat_static_ip[0].address
     environment = var.environment
     region      = local.region
     purpose     = "Outbound traffic from VM via Cloud NAT"
-  }
+  } : null
 }
 
 output "browser_mcp_url" {
@@ -96,12 +96,12 @@ output "region" {
 # VPC Network outputs
 output "vpc_id" {
   description = "VPC network ID"
-  value       = google_compute_network.main.id
+  value       = local.vpc_network.id
 }
 
 output "vpc_name" {
   description = "VPC network name"
-  value       = google_compute_network.main.name
+  value       = local.vpc_network.name
 }
 
 output "vpc_public_subnet" {
@@ -146,7 +146,7 @@ output "architecture_summary" {
       memory     = var.chatbot_memory
     }
     networking = {
-      vpc_network      = google_compute_network.main.name
+      vpc_network      = local.vpc_network.name
       vm_services      = "Both containers on same Docker network"
       chatbot_to_vm    = "Cloud Run → VPC → VM internal IP"
       public_access    = "Cloud Run → Internet"

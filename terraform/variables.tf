@@ -191,3 +191,11 @@ variable "allow_public_access" {
   type        = bool
   default     = true
 }
+
+# Database passwords are stored in Secret Manager:
+# - database-password-dev (for dev environment)
+# - database-password-prod (for prod environment)
+# No variable needed - passwords are retrieved from Secret Manager
+
+# Note: Preview environments use shared VPC with permanent peering to dev VPC
+# No need for dynamic VPC tracking variables

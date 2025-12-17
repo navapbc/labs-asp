@@ -197,6 +197,25 @@ jobs:
         with:
           terraform_version: "1.9.0"
 
+      # Deploy shared preview VPC first (only for preview environments, before anything else)
+      - name: Deploy Shared Preview VPC
+        if: startsWith(needs.setup.outputs.environment, 'preview-')
+        working-directory: ./terraform/shared-preview-vpc
+        run: |
+          echo "🔧 Ensuring shared preview VPC exists..."
+          
+          # Initialize shared VPC terraform
+          terraform init
+          
+          # Check if VPC already exists
+          if gcloud compute networks describe labs-asp-vpc-preview-shared --project=nava-labs 2>/dev/null; then
+            echo "✅ Shared preview VPC already exists, skipping creation"
+          else
+            echo "🚀 Creating shared preview VPC (first preview deployment)..."
+            terraform apply -auto-approve
+            echo "✅ Shared preview VPC created successfully"
+          fi
+
       - name: Terraform Init
         working-directory: ./terraform
         run: |
@@ -209,6 +228,25 @@ jobs:
           echo "Checking Terraform state for environment: ${{ needs.setup.outputs.environment }}"
           terraform state list || echo "No existing state found (expected for first deployment)"
 
+      # Establish VPC peering on dev environment deployment
+      - name: Establish VPC Peering with Shared Preview VPC
+        if: needs.setup.outputs.environment == 'dev'
+        working-directory: ./terraform/shared-preview-vpc
+        run: |
+          echo "🔗 Ensuring VPC peering between dev and shared preview VPC..."
+          
+          # Initialize shared VPC terraform
+          terraform init
+          
+          # Check if shared preview VPC exists
+          if gcloud compute networks describe labs-asp-vpc-preview-shared --project=nava-labs 2>/dev/null; then
+            echo "✅ Shared preview VPC exists, ensuring peering is configured..."
+            terraform apply -auto-approve
+            echo "✅ VPC peering established/updated successfully"
+          else
+            echo "⚠️  Shared preview VPC does not exist yet (will be created on first preview deployment)"
+          fi
+
       - name: Set VPC CIDR blocks and Firewall rules
         id: vpc_cidrs
         run: |
@@ -216,6 +254,7 @@ jobs:
           
           # Set VPC CIDR blocks based on environment
           # Pattern: 10.X.0.0/16 where X is determined by environment
+          # Note: Preview environments use shared VPC (10.1.0.0/16) but still need CIDR values for Terraform variables
           case ${ENV} in
             dev)
               # Dev: 10.0.0.0/16
@@ -228,7 +267,7 @@ jobs:
               echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
               ;;
             preview|preview-*)
-              # Preview (HML): 10.1.0.0/16
+              # Preview: Uses shared VPC (10.1.0.0/16) - values for reference only
               echo "vpc_cidr_public=10.1.0.0/20" >> $GITHUB_OUTPUT
               echo "vpc_cidr_private=10.1.16.0/20" >> $GITHUB_OUTPUT
               echo "vpc_cidr_db=10.1.32.0/20" >> $GITHUB_OUTPUT
