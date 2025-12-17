@@ -288,7 +288,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "CLOUD_SQL_INSTANCE"
-        value = var.environment == "prod" ? "nava-labs:us-central1:app-prod" : "nava-labs:us-central1:app-dev"
+        value = var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"
       }
 
       # Port configuration - Next.js port
@@ -317,7 +317,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     volumes {
       name = "cloudsql"
       cloud_sql_instance {
-        instances = [var.environment == "prod" ? "nava-labs:us-central1:app-prod" : "nava-labs:us-central1:app-dev"]
+        instances = [var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"]
       }
     }
   }

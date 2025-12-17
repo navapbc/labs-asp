@@ -1,14 +1,14 @@
 # Cloud SQL Database Configuration
 # 
 # Strategy:
-# - Dev: Creates and manages app-dev Cloud SQL instance
+# - Dev: Creates and manages nava-db-dev Cloud SQL instance
 # - Preview: Does NOT create database, uses VPC peering to connect to dev database
-# - Prod: Creates and manages app-prod Cloud SQL instance (completely isolated from dev/preview)
+# - Prod: Creates and manages nava-db-prod Cloud SQL instance (completely isolated from dev/preview)
 
 # Cloud SQL Instance for DEV environment
 resource "google_sql_database_instance" "dev" {
   count            = var.environment == "dev" ? 1 : 0
-  name             = "app-dev"
+  name             = "nava-db-dev"
   database_version = "POSTGRES_15"
   region           = local.region
 
@@ -76,7 +76,7 @@ resource "random_password" "dev_password" {
 # Create secret in Secret Manager for DEV database password
 resource "google_secret_manager_secret" "database_password_dev" {
   count     = var.environment == "dev" ? 1 : 0
-  secret_id = "database-password-dev"
+  secret_id = "nava-db-password-dev"
   project   = local.project_id
 
   replication {
@@ -113,7 +113,7 @@ resource "google_sql_user" "dev" {
 # Cloud SQL Instance for PROD environment (completely isolated)
 resource "google_sql_database_instance" "prod" {
   count            = var.environment == "prod" ? 1 : 0
-  name             = "app-prod"
+  name             = "nava-db-prod"
   database_version = "POSTGRES_15"
   region           = local.region
 
@@ -181,7 +181,7 @@ resource "random_password" "prod_password" {
 # Create secret in Secret Manager for PROD database password
 resource "google_secret_manager_secret" "database_password_prod" {
   count     = var.environment == "prod" ? 1 : 0
-  secret_id = "database-password-prod"
+  secret_id = "nava-db-password-prod"
   project   = local.project_id
 
   replication {
