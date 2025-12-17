@@ -19,7 +19,7 @@ resource "google_sql_database_instance" "dev" {
 
     # Storage configuration
     disk_type       = "PD_SSD"
-    disk_size       = 50  # 50GB storage for dev
+    disk_size       = 100  # 50GB storage for dev
     disk_autoresize = true  # Enable autoresize
 
     # Backup configuration
@@ -119,7 +119,7 @@ resource "google_sql_database_instance" "prod" {
 
   settings {
     tier                        = "db-custom-4-7680"  # Prod: 4 vCPUs, 7.5GB RAM
-    availability_type           = "ZONAL"
+    availability_type           = "REGIONAL" # Prod: Regional availability
     deletion_protection_enabled = true  # Protect production database
 
     # Storage configuration
