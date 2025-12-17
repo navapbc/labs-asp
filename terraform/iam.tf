@@ -194,6 +194,19 @@ resource "google_project_iam_member" "github_actions_service_account_admin" {
   }
 }
 
+# Cloud SQL Admin for managing Cloud SQL instances and databases
+resource "google_project_iam_member" "github_actions_cloud_sql_admin" {
+  count = local.is_managing_globals ? 1 : 0
+
+  project = local.project_id
+  role    = "roles/cloudsql.admin"
+  member  = "serviceAccount:${local.github_actions_sa_email}"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 # Workload Identity Pool for GitHub Actions
 # IMPORTANT: GLOBAL resource managed ONLY by 'dev' environment
 # NEVER destroy these, even during rollback
