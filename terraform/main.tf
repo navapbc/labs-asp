@@ -49,19 +49,19 @@ locals {
     dev = {
       mastra_service_name = "mastra-app-dev"
       chatbot_service_name = "ai-chatbot-dev"
-      sql_instance_name = "app-dev"  # dev database
+      sql_instance_name = "nava-db-dev"  # dev database
       domain_prefix = "dev"
     }
     preview = {
       mastra_service_name = "mastra-app-${var.environment}"  # Use full env name for unique resources
       chatbot_service_name = "ai-chatbot-${var.environment}"
-      sql_instance_name = "app-dev"  # ALL preview environments use dev database
+      sql_instance_name = "nava-db-dev"  # ALL preview environments use dev database
       domain_prefix = var.environment  # preview-pr-123 gets preview-pr-123.labs-asp.com
     }
     prod = {
       mastra_service_name = "mastra-app-prod"
       chatbot_service_name = "ai-chatbot-prod"
-      sql_instance_name = "app-prod"  # prod database
+      sql_instance_name = "nava-db-prod"  # prod database
       domain_prefix = "app"
     }
   }
