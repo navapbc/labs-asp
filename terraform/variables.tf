@@ -193,7 +193,7 @@ variable "allow_public_access" {
 }
 
 # Database passwords are stored in Secret Manager:
-# - database-password-dev (for dev environment)
+# - nava-db-password-dev (for dev environment)
 # - database-password-prod (for prod environment)
 # No variable needed - passwords are retrieved from Secret Manager
 

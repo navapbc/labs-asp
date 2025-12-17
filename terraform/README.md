@@ -38,7 +38,7 @@ This Terraform configuration deploys the Labs ASP application using a **client-s
 ## Prerequisites
 
 1. **Existing Infrastructure** (reused):
-   - Cloud SQL databases (`app-dev`, `app-preview`, `app-prod`)
+   - Cloud SQL databases (`nava-db-dev`, `nava-db-prod`)
    - Secret Manager secrets for API keys
    - Artifact Registry repository
 
