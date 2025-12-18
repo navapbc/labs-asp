@@ -123,12 +123,15 @@ resource "google_compute_instance" "app_vm" {
     component   = "app-vm"
   })
 
+  # Dependencies use local.* values which handle preview vs dev/prod routing.
+  # For preview: uses shared VPC (data sources, no explicit depends_on needed)
+  # For dev/prod: implicit dependencies via local.vpc_network and local.private_subnet
+  # NOTE: Do NOT add explicit depends_on for google_compute_network.main,
+  # google_compute_subnetwork.private, or google_compute_router_nat.main
+  # as they have count=0 for preview environments.
   depends_on = [
     google_project_service.required_apis,
-    google_service_account.vm,
-    google_compute_network.main,
-    google_compute_subnetwork.private,
-    google_compute_router_nat.main  # Ensure NAT is ready for internet access
+    google_service_account.vm
   ]
 }
 
