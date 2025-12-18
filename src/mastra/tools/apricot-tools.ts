@@ -1,66 +1,17 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { getUsers, authenticate, type UsersResponse, type UserData } from '../../lib/apricot-api';
-
-// ===== Input Schemas =====
-
-const getUsersSchema = z.object({
-  pageSize: z.number().optional().describe('Number of users to return per page (default: 25)'),
-  pageNumber: z.number().optional().describe('Page number to retrieve (default: 1)'),
-  sort: z.string().optional().describe('Field to sort by (e.g., "username", "-username" for descending)'),
-  filters: z.record(z.string()).optional().describe('Filters to apply (e.g., {"active": "1"})'),
-});
-
-const searchUsersByNameSchema = z.object({
-  firstName: z.string().optional().describe('First name to search for'),
-  lastName: z.string().optional().describe('Last name to search for'),
-  username: z.string().optional().describe('Username to search for'),
-});
-
-const getUserByIdSchema = z.object({
-  userId: z.number().describe('The unique ID of the user in Apricot360'),
-});
-
-// ===== Output Schemas =====
-
-const userSchema = z.object({
-  id: z.number(),
-  type: z.string(),
-  attributes: z.object({
-    org_id: z.number(),
-    username: z.string(),
-    user_type: z.string(),
-    name_first: z.string(),
-    name_middle: z.string(),
-    name_last: z.string(),
-    login_attempts: z.number(),
-    mod_time: z.string(),
-    mod_user: z.number(),
-    active: z.number(),
-    password_reset: z.string(),
-    additionalProp1: z.string().optional(),
-    additionalProp2: z.string().optional(),
-    additionalProp3: z.string().optional(),
-  }),
-  links: z.object({
-    additionalProp1: z.string().optional(),
-    additionalProp2: z.string().optional(),
-    additionalProp3: z.string().optional(),
-  }),
-});
-
-const getUsersResponseSchema = z.object({
-  users: z.array(userSchema),
-  count: z.number(),
-  success: z.boolean(),
-  error: z.string().optional(),
-});
-
-const getUserByIdResponseSchema = z.object({
-  user: userSchema.nullable(),
-  found: z.boolean(),
-  error: z.string().optional(),
-});
+import { getUsers, authenticate, getForms, type UsersResponse, type UserData, type FormsResponse, type FormData } from '../../lib/apricot-api';
+import {
+  getUsersSchema,
+  searchUsersByNameSchema,
+  getUserByIdSchema,
+  getFormsSchema,
+  getFormByIdSchema,
+  getUsersResponseSchema,
+  getUserByIdResponseSchema,
+  getFormsResponseSchema,
+  getFormByIdResponseSchema,
+} from '../types/apricot-types';
 
 // ===== Helper Functions =====
 
@@ -84,6 +35,27 @@ const transformUser = (user: UserData) => ({
     additionalProp3: user.attributes.additionalProp3,
   },
   links: user.links,
+});
+
+const transformForm = (form: FormData) => ({
+  id: form.id,
+  type: form.type,
+  attributes: {
+    name: form.attributes.name,
+    parent_id: form.attributes.parent_id,
+    description: form.attributes.description,
+    active: form.attributes.active,
+    creation_time: form.attributes.creation_time,
+    creation_user: form.attributes.creation_user,
+    mod_time: form.attributes.mod_time,
+    mod_user: form.attributes.mod_user,
+    sort_order: form.attributes.sort_order,
+    reference_tag: form.attributes.reference_tag,
+    program_assignment_type: form.attributes.program_assignment_type,
+    form_logic_enabled: form.attributes.form_logic_enabled,
+    guid: form.attributes.guid,
+    parent_guid: form.attributes.parent_guid,
+  },
 });
 
 // ===== Tools =====
@@ -254,11 +226,91 @@ export const testApricotAuth = createTool({
   },
 });
 
+/**
+ * Get forms from Apricot360 API with pagination and filtering
+ */
+export const getFormsFromApricot = createTool({
+  id: 'get-forms-from-apricot',
+  description: 'Fetch forms from Apricot360 API with optional pagination, sorting, and filtering. Use this to retrieve form information from the Apricot360 system.',
+  inputSchema: getFormsSchema,
+  outputSchema: getFormsResponseSchema,
+  execute: async ({ context }) => {
+    try {
+      const options = {
+        pageSize: context.pageSize,
+        pageNumber: context.pageNumber,
+        sort: context.sort,
+        filters: context.filters,
+      };
+
+      const response: FormsResponse = await getForms(options);
+      
+      const forms = response.data.map(transformForm);
+
+      return {
+        forms,
+        count: response.meta.count,
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error fetching forms from Apricot:', error);
+      return {
+        forms: [],
+        count: 0,
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch forms from Apricot360',
+      };
+    }
+  },
+});
+
+/**
+ * Get a specific form by ID from Apricot360
+ */
+export const getApricotFormById = createTool({
+  id: 'get-apricot-form-by-id',
+  description: 'Get a specific form from Apricot360 by its unique form ID.',
+  inputSchema: getFormByIdSchema,
+  outputSchema: getFormByIdResponseSchema,
+  execute: async ({ context }) => {
+    try {
+      const filters = {
+        id: context.formId.toString(),
+      };
+
+      const response: FormsResponse = await getForms({ filters });
+      
+      if (response.data.length === 0) {
+        return {
+          form: null,
+          found: false,
+        };
+      }
+
+      const form = transformForm(response.data[0]);
+
+      return {
+        form,
+        found: true,
+      };
+    } catch (error) {
+      console.error('Error fetching form from Apricot:', error);
+      return {
+        form: null,
+        found: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch form from Apricot360',
+      };
+    }
+  },
+});
+
 // Export all Apricot tools
 export const apricotTools = [
   getUsersFromApricot,
   searchApricotUsersByName,
   getApricotUserById,
   testApricotAuth,
+  getFormsFromApricot,
+  getApricotFormById,
 ];
 

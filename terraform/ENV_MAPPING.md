@@ -19,6 +19,9 @@ This document shows how environment variables from your local `.env` files map t
 | `MASTRA_JWT_TOKEN` | `mastra-jwt-token` | Both |
 | `AUTH_SECRET` | `auth-secret` | Chatbot |
 | `GOOGLE_APPLICATION_CREDENTIALS` | `vertex-ai-credentials` | Both |
+| `APRICOT_API_BASE_URL` | `apricot-api-base-url` | Both |
+| `APRICOT_CLIENT_ID` | `apricot-client-id` | Both |
+| `APRICOT_CLIENT_SECRET` | `apricot-client-secret` | Both |
 
 ## 🔧 **Computed Environment Variables**
 
