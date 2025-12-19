@@ -1,16 +1,18 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { getUsers, authenticate, getForms, type UsersResponse, type UserData, type FormsResponse, type FormData } from '../../lib/apricot-api';
+import { getUsers, authenticate, getForms, getRecords, type UsersResponse, type UserData, type FormsResponse, type FormData, type RecordsResponse, type RecordData } from '../../lib/apricot-api';
 import {
   getUsersSchema,
   searchUsersByNameSchema,
   getUserByIdSchema,
   getFormsSchema,
   getFormByIdSchema,
+  getRecordsSchema,
   getUsersResponseSchema,
   getUserByIdResponseSchema,
   getFormsResponseSchema,
   getFormByIdResponseSchema,
+  getRecordsResponseSchema,
 } from '../types/apricot-types';
 
 // ===== Helper Functions =====
@@ -58,14 +60,23 @@ const transformForm = (form: FormData) => ({
   },
 });
 
+const transformRecord = (record: RecordData) => ({
+  id: record.id,
+  type: record.type,
+  attributes: {
+    ...record.attributes,
+  },
+  links: record.links,
+});
+
 // ===== Tools =====
 
 /**
- * Get users from Apricot360 API with pagination and filtering
+ * Get case worker users from Apricot360 API with pagination and filtering
  */
 export const getUsersFromApricot = createTool({
   id: 'get-users-from-apricot',
-  description: 'Fetch users from Apricot360 API with optional pagination, sorting, and filtering. Use this to retrieve user information from the Apricot360 system.',
+  description: 'Fetch case worker users from Apricot360 API with optional pagination, sorting, and filtering. Use this to retrieve case worker/staff user information from the Apricot360 system. For participant or client records, use the records tools instead.',
   inputSchema: getUsersSchema,
   outputSchema: getUsersResponseSchema,
   execute: async ({ context }) => {
@@ -99,11 +110,11 @@ export const getUsersFromApricot = createTool({
 });
 
 /**
- * Search Apricot360 users by name
+ * Search Apricot360 case worker users by name
  */
 export const searchApricotUsersByName = createTool({
   id: 'search-apricot-users-by-name',
-  description: 'Search for users in Apricot360 by first name, last name, or username. Provide at least one search parameter.',
+  description: 'Search for case worker users in Apricot360 by first name, last name, or username. Provide at least one search parameter. This searches case workers/staff, not participants or clients.',
   inputSchema: searchUsersByNameSchema,
   outputSchema: getUsersResponseSchema,
   execute: async ({ context }) => {
@@ -155,11 +166,11 @@ export const searchApricotUsersByName = createTool({
 });
 
 /**
- * Get a specific user by ID from Apricot360
+ * Get a specific case worker user by ID from Apricot360
  */
 export const getApricotUserById = createTool({
   id: 'get-apricot-user-by-id',
-  description: 'Get a specific user from Apricot360 by their unique user ID.',
+  description: 'Get a specific case worker user from Apricot360 by their unique user ID. This retrieves case worker/staff information, not participant or client records.',
   inputSchema: getUserByIdSchema,
   outputSchema: getUserByIdResponseSchema,
   execute: async ({ context }) => {
@@ -304,6 +315,47 @@ export const getApricotFormById = createTool({
   },
 });
 
+/**
+ * Get records from Apricot360 API for a specific form
+ */
+export const getRecordsFromApricot = createTool({
+  id: 'get-records-from-apricot',
+  description: 'Fetch participant/client records from Apricot360 API for a specific form. Form ID 99 contains main client data and should be called FIRST. Form ID 98 contains household data. You can filter by id or name, and use pagination, sorting, and other filters.',
+  inputSchema: getRecordsSchema,
+  outputSchema: getRecordsResponseSchema,
+  execute: async ({ context }) => {
+    try {
+      const options = {
+        formId: context.formId,
+        pageSize: context.pageSize,
+        pageNumber: context.pageNumber,
+        sort: context.sort,
+        filters: context.filters,
+      };
+
+      const response: RecordsResponse = await getRecords(options);
+      
+      const records = response.data.map(transformRecord);
+
+      return {
+        records,
+        count: response.meta.count,
+        totalPages: response.meta['total-pages'],
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error fetching records from Apricot:', error);
+      return {
+        records: [],
+        count: 0,
+        totalPages: 0,
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch records from Apricot360',
+      };
+    }
+  },
+});
+
 // Export all Apricot tools
 export const apricotTools = [
   getUsersFromApricot,
@@ -312,5 +364,6 @@ export const apricotTools = [
   testApricotAuth,
   getFormsFromApricot,
   getApricotFormById,
+  getRecordsFromApricot,
 ];
 

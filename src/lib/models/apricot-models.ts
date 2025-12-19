@@ -91,3 +91,62 @@ export interface GetFormsOptions {
   sort?: string;
   filters?: Record<string, string>;
 }
+
+// ===== Record Types =====
+
+export interface RecordAttributes {
+  form_id: number;
+  parent_id: number;
+  active: number;
+  name: string;
+  creation_time: string;
+  creation_user: number;
+  mod_time: string;
+  mod_user: number;
+  owner: number;
+  additionalProp1?: string;
+  additionalProp2?: string;
+  additionalProp3?: string;
+  [key: string]: any; // For dynamic field attributes
+}
+
+export interface RecordLinks {
+  additionalProp1?: string;
+  additionalProp2?: string;
+  additionalProp3?: string;
+  [key: string]: string | undefined;
+}
+
+export interface RecordData {
+  id: number;
+  type: string;
+  attributes: RecordAttributes;
+  links: RecordLinks;
+}
+
+export interface RecordsResponseMeta {
+  count: number;
+  'total-pages': number;
+}
+
+export interface RecordsResponseLinks {
+  self: string;
+  first: string;
+  last: string;
+  next?: string;
+  prev?: string;
+}
+
+export interface RecordsResponse {
+  meta: RecordsResponseMeta;
+  links: RecordsResponseLinks;
+  data: RecordData[];
+}
+
+export interface GetRecordsOptions {
+  formId: number; // Required
+  pageSize?: number;
+  pageNumber?: number;
+  sort?: string;
+  filters?: Record<string, string>;
+}
