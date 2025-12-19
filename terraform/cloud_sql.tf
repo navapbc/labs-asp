@@ -49,7 +49,7 @@ resource "google_sql_database_instance" "dev" {
         
         # Auto-create PSC endpoint for preview shared VPC
         psc_auto_connections {
-          consumer_network            = "labs-asp-vpc-preview-shared"
+          consumer_network            = "projects/${local.project_id}/global/networks/labs-asp-vpc-preview-shared"
           consumer_service_project_id = local.project_id
         }
       }
