@@ -15,6 +15,10 @@ You'll need these installed on your computer:
 
 - **Node.js** (version 20 or higher): [Download here](https://nodejs.org/)
 - **pnpm**: Install by running: `npm install -g pnpm`
+- **Docker Desktop**: [Download here](https://www.docker.com/products/docker-desktop/) - Required for running the full stack locally
+- **gcloud CLI** (optional): [Install instructions](https://cloud.google.com/sdk/docs/install) - Only needed if working with GCP resources directly
+
+> **Note**: We use the `develop` branch as our primary working branch. Make sure to checkout `develop` after cloning.
 
 ## Step-by-Step Setup
 
@@ -27,6 +31,9 @@ This project uses Git submodules to manage the client frontend. You'll need to c
 # Clone the repository with submodules
 git clone --recurse-submodules https://github.com/navapbc/labs-asp.git
 cd labs-asp
+
+# Switch to the develop branch (our primary working branch)
+git checkout develop
 ```
 
 #### Option B: If You Already Cloned Without Submodules
@@ -57,19 +64,32 @@ pnpm install
 
 ### 4. Set Up Environment Variables
 
-Create a `.env` file in the root folder with your API keys:
+You'll need to create three configuration files. Ask your team lead for access to the 1Password secure notes containing the actual values.
 
-```env
-# Required API Keys (ask your team lead for these)
-OPENAI_API_KEY=your_openai_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
-EXA_API_KEY=your_exa_key_here
-
-# Database connection (ask your team lead for the DATABASE_URL)
-DATABASE_URL="{your_database_url_here}"
+#### Root `.env` file
+```bash
+cp .env.example .env
 ```
+Then update the values with the contents from the 1Password secure note shared by your team lead.
 
-> **Note**: The database is already set up in the cloud, so you just need the connection string!
+#### Client `.env.local` file
+```bash
+cp client/.env.example client/.env.local
+```
+Then update the values with the contents from the 1Password secure note for the client environment.
+
+> **Important**: If your `client/.env.local` contains a `BROWSER_WS_PROXY_URL` line, make sure it is **commented out** for local development:
+> ```
+> # BROWSER_WS_PROXY_URL=http://localhost:8080
+> ```
+
+#### Vertex AI Credentials
+```bash
+touch vertex-ai-credentials.json
+```
+Copy the service account JSON from the 1Password secure note. See `docs/VERTEX_AI_ANTHROPIC_SETUP.md` for details on creating your own credentials if needed.
+
+> **Warning about 1Password**: When copying from 1Password secure notes, ensure you're copying the **raw text** and not a markdown-rendered version. 1Password can convert files to markdown, which breaks commented lines (e.g., `# comment` becomes a heading). If you encounter unexpected behavior, verify your file contents match the original format.
 
 ### 5. Database Connection
 
@@ -78,12 +98,24 @@ DATABASE_URL="{your_database_url_here}"
 The database is ready to use with sample participant data already loaded. You'll be able to see this data once you start the app!
 
 ### 6. Start the App
+
+#### Option A: Docker Compose (Recommended for Full Stack)
+```bash
+# Build and start all services
+docker compose up -d --build
+```
+
+This starts the complete stack including the AI chatbot client, Mastra backend, and browser streaming service. Access the app at `http://localhost:3000`.
+
+#### Option B: Local Development (Mastra Playground Only)
 ```bash
 # Launch the Mastra playground
 pnpm dev
 ```
 
-**Success!** The app should now be running. You'll see a URL in your terminal (usually `http://localhost:4111`): click it to open the playground!
+This starts only the Mastra playground at `http://localhost:4111`.
+
+**Success!** The app should now be running. Click the URL in your terminal to open it!
 
 ## What Can You Do Now?
 
@@ -124,6 +156,31 @@ If the app displays errors or becomes unresponsive:
    - Try clearing the cache: `pnpm clean` (if available) and run `pnpm install` again
    - Check that all environment variables are correctly set in your `.env` file
 
+### Docker Troubleshooting
+
+#### Full Rebuild (Clean Slate)
+If you're seeing stale behavior or containers aren't syncing properly:
+```bash
+docker compose down && docker compose build --no-cache && docker compose up -d
+```
+> **Note**: This may take 5-10 minutes to rebuild all images from scratch.
+
+#### Quick Client Rebuild
+For client-side changes only (faster than full Docker rebuild):
+```bash
+cd client && pnpm build && pnpm dev
+```
+This starts the client on `http://localhost:3001` while still connecting to the Dockerized backend.
+
+#### View Container Logs
+```bash
+# All containers
+docker compose logs -f
+
+# Specific container
+docker logs --tail 100 labs-asp-browser-streaming-1
+```
+
 ### Database Connection Issues
 - Make sure you have the correct `DATABASE_URL` in your `.env` file
 - Contact your team lead if you're getting database connection errors
@@ -138,11 +195,20 @@ Contact your team lead if you need the database refreshed regular team members s
 ## Quick Reference Commands
 
 ```bash
-# Start the app
+# Start full stack with Docker (recommended)
+docker compose up -d --build
+
+# Start Mastra playground only
 pnpm dev
 
 # View database (read-only)
 pnpm db:studio
+
+# Full Docker rebuild
+docker compose down && docker compose build --no-cache && docker compose up -d
+
+# View Docker logs
+docker compose logs -f
 ```
 
 ## Git Submodule Management
