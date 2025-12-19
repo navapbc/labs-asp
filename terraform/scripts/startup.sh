@@ -112,6 +112,9 @@ docker run -d \
     -e GOOGLE_VERTEX_PROJECT="${project_id}" \
     -e GOOGLE_CLOUD_PROJECT="${project_id}" \
     -e CORS_ORIGINS="*" \
+    -e APRICOT_API_BASE_URL="${apricot_api_base_url}" \
+    -e APRICOT_CLIENT_ID="${apricot_client_id}" \
+    -e APRICOT_CLIENT_SECRET="${apricot_client_secret}" \
     "${mastra_image}"
 
 # Wait for mastra service to be running and healthy

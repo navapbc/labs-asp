@@ -91,6 +91,32 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # Apricot API Configuration
+      env {
+        name = "APRICOT_API_BASE_URL"
+        value = "https://f5r-api.iws.sidekick.solutions/apricot"
+      }
+
+      env {
+        name = "APRICOT_CLIENT_ID"
+        value_source {
+          secret_key_ref {
+            secret  = "apricot-client-id"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "APRICOT_CLIENT_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = "apricot-client-secret"
+            version = "latest"
+          }
+        }
+      }
+
       # PostHog Analytics
       env {
         name = "NEXT_PUBLIC_POSTHOG_KEY"
