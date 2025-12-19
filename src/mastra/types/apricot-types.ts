@@ -104,3 +104,45 @@ export const getFormByIdResponseSchema = z.object({
   found: z.boolean(),
   error: z.string().optional(),
 });
+
+// ===== Record Schemas =====
+
+export const getRecordsSchema = z.object({
+  formId: z.number().describe('The form ID to fetch records from (use form_id 98 or 99)'),
+  pageSize: z.number().optional().describe('Number of records to return per page (max: 200, default: 25)'),
+  pageNumber: z.number().optional().describe('Page number to retrieve (default: 1)'),
+  sort: z.string().optional().describe('Field to sort by (e.g., "name", "-name" for descending)'),
+  filters: z.record(z.string()).optional().describe('Filters to apply (e.g., {"id": "123"} or {"name": "John"})'),
+});
+
+export const recordSchema = z.object({
+  id: z.number(),
+  type: z.string(),
+  attributes: z.object({
+    form_id: z.number(),
+    parent_id: z.number(),
+    active: z.number(),
+    name: z.string(),
+    creation_time: z.string(),
+    creation_user: z.number(),
+    mod_time: z.string(),
+    mod_user: z.number(),
+    owner: z.number(),
+    additionalProp1: z.string().optional(),
+    additionalProp2: z.string().optional(),
+    additionalProp3: z.string().optional(),
+  }).passthrough(), // Allow additional dynamic fields
+  links: z.object({
+    additionalProp1: z.string().optional(),
+    additionalProp2: z.string().optional(),
+    additionalProp3: z.string().optional(),
+  }).passthrough(), // Allow additional links
+});
+
+export const getRecordsResponseSchema = z.object({
+  records: z.array(recordSchema),
+  count: z.number(),
+  totalPages: z.number(),
+  success: z.boolean(),
+  error: z.string().optional(),
+});
