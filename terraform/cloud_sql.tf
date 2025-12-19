@@ -39,7 +39,6 @@ resource "google_sql_database_instance" "dev" {
       ipv4_enabled                                  = false
       private_network                               = local.vpc_network.id
       enable_private_path_for_google_cloud_services = true
-      psc_enabled                                   = true  # Enable Private Service Connect
       
       # Allow preview VPC to connect via PSC
       psc_config {
@@ -228,22 +227,37 @@ resource "google_sql_user" "prod" {
 # Private Service Connect (PSC) Configuration
 # ============================================================================
 # Allows preview environments to connect to dev Cloud SQL instance
-# via Private Service Connect
+# via Private Service Connect instead of relying solely on VPC peering
 # Note: The preview VPC and subnets are managed in a separate terraform state
+
+# Data source for preview shared VPC (only when in dev environment)
+data "google_compute_network" "preview_shared_vpc" {
+  count   = var.environment == "dev" ? 1 : 0
+  name    = "labs-asp-vpc-preview-shared"
+  project = local.project_id
+}
+
+# Data source for preview shared private subnet
+data "google_compute_subnetwork" "preview_shared_private" {
+  count   = var.environment == "dev" ? 1 : 0
+  name    = "labs-asp-private-preview-shared"
+  region  = local.region
+  project = local.project_id
+}
 
 # PSC Connection Policy - Allows preview VPC to connect to Cloud SQL
 resource "google_compute_network_connectivity_service_connection_policy" "cloud_sql_preview" {
   count         = var.environment == "dev" ? 1 : 0
-  name          = "google-cloud-sql-${local.region}-labs-asp-vpc-preview-shared-policy"
+  name          = "labs-asp-cloudsql-psc-preview"
   location      = local.region
   project       = local.project_id
   description   = "PSC policy to allow preview environments to connect to dev Cloud SQL"
   
-  network       = "projects/${local.project_id}/global/networks/labs-asp-vpc-preview-shared"
+  network       = data.google_compute_network.preview_shared_vpc[0].id
   service_class = "google-cloud-sql"
   
   psc_config {
-    subnetworks = ["projects/${local.project_id}/regions/${local.region}/subnetworks/labs-asp-private-preview-shared"]
+    subnetworks = [data.google_compute_subnetwork.preview_shared_private[0].id]
   }
   
   labels = merge(local.common_labels, {
@@ -252,7 +266,9 @@ resource "google_compute_network_connectivity_service_connection_policy" "cloud_
   })
   
   depends_on = [
-    google_sql_database_instance.dev
+    google_sql_database_instance.dev,
+    data.google_compute_network.preview_shared_vpc,
+    data.google_compute_subnetwork.preview_shared_private
   ]
 }
 
