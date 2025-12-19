@@ -46,6 +46,12 @@ resource "google_sql_database_instance" "dev" {
       psc_config {
         psc_enabled               = true
         allowed_consumer_projects = [local.project_id]
+        
+        # Auto-create PSC endpoint for preview shared VPC
+        psc_auto_connections {
+          consumer_network            = "labs-asp-vpc-preview-shared"
+          consumer_service_project_id = local.project_id
+        }
       }
     }
 
