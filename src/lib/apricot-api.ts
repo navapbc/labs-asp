@@ -33,6 +33,10 @@ export type {
 let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
 
+// ===== Records API Debounce Management =====
+let lastRecordsCallTime: number | null = null;
+const RECORDS_DEBOUNCE_MS = 15000; // 15 seconds
+
 // Helper function to invalidate cached token
 export const invalidateToken = (): void => {
   cachedToken = null;
@@ -286,6 +290,20 @@ export const getForms = async (options?: GetFormsOptions): Promise<FormsResponse
 
 // Get Records function
 export const getRecords = async (options: GetRecordsOptions): Promise<RecordsResponse> => {
+  // Debounce: Wait if necessary to ensure 15 seconds between calls
+  if (lastRecordsCallTime !== null) {
+    const timeSinceLastCall = Date.now() - lastRecordsCallTime;
+    const remainingWaitTime = RECORDS_DEBOUNCE_MS - timeSinceLastCall;
+    
+    if (remainingWaitTime > 0) {
+      console.log(`Debouncing records API call. Waiting ${Math.ceil(remainingWaitTime / 1000)} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, remainingWaitTime));
+    }
+  }
+  
+  // Update the last call timestamp
+  lastRecordsCallTime = Date.now();
+  
   const baseUrl = process.env.APRICOT_API_BASE_URL;
 
   if (!baseUrl) {

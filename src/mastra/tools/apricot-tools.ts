@@ -320,7 +320,7 @@ export const getApricotFormById = createTool({
  */
 export const getRecordsFromApricot = createTool({
   id: 'get-records-from-apricot',
-  description: 'Fetch participant/client records from Apricot360 API for a specific form. Form ID 99 contains main client data and should be called FIRST. Form ID 98 contains household data. IMPORTANT: When calling both forms, you MUST wait 15 seconds between calls to avoid rate limiting. You can filter by id or name, and use pagination, sorting, and other filters.',
+  description: 'Fetch participant/client records from Apricot360 API for a specific form. Form ID 99 contains main client data and should be called FIRST. Form ID 98 contains household data. You can filter by id or name, and use pagination, sorting, and other filters.',
   inputSchema: getRecordsSchema,
   outputSchema: getRecordsResponseSchema,
   execute: async ({ context }) => {
