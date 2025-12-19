@@ -34,11 +34,18 @@ resource "google_sql_database_instance" "dev" {
       }
     }
 
-    # IP configuration - Private IP only via VPC peering
+    # IP configuration - Private IP via VPC peering + PSC for preview environments
     ip_configuration {
       ipv4_enabled                                  = false
       private_network                               = local.vpc_network.id
       enable_private_path_for_google_cloud_services = true
+      psc_enabled                                   = true  # Enable Private Service Connect
+      
+      # Allow preview VPC to connect via PSC
+      psc_config {
+        psc_enabled               = true
+        allowed_consumer_projects = [local.project_id]
+      }
     }
 
     # Database flags
@@ -216,4 +223,36 @@ resource "google_sql_user" "prod" {
 
 # Note: VPC Peering configuration has been moved to vpc.tf for better organization
 # See vpc.tf for preview-to-dev and dev-to-preview peering resources
+
+# ============================================================================
+# Private Service Connect (PSC) Configuration
+# ============================================================================
+# Allows preview environments to connect to dev Cloud SQL instance
+# via Private Service Connect
+# Note: The preview VPC and subnets are managed in a separate terraform state
+
+# PSC Connection Policy - Allows preview VPC to connect to Cloud SQL
+resource "google_compute_network_connectivity_service_connection_policy" "cloud_sql_preview" {
+  count         = var.environment == "dev" ? 1 : 0
+  name          = "google-cloud-sql-${local.region}-labs-asp-vpc-preview-shared-policy"
+  location      = local.region
+  project       = local.project_id
+  description   = "PSC policy to allow preview environments to connect to dev Cloud SQL"
+  
+  network       = "projects/${local.project_id}/global/networks/labs-asp-vpc-preview-shared"
+  service_class = "google-cloud-sql"
+  
+  psc_config {
+    subnetworks = ["projects/${local.project_id}/regions/${local.region}/subnetworks/labs-asp-private-preview-shared"]
+  }
+  
+  labels = merge(local.common_labels, {
+    environment = "dev"
+    purpose     = "cloud-sql-preview-access"
+  })
+  
+  depends_on = [
+    google_sql_database_instance.dev
+  ]
+}
 
