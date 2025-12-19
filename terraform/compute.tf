@@ -11,8 +11,9 @@ locals {
   vm_database_url = "postgresql://${local.db_user}:${urlencode(data.google_secret_manager_secret_version.database_password.secret_data)}@cloud-sql-proxy:5432/${local.db_name}"
 
   # Cloud Run uses built-in Cloud SQL socket mount
-  # Format: postgresql://user:pass@/dbname?host=/cloudsql/project:region:instance
-  cloudrun_database_url = "postgresql://${local.db_user}:${urlencode(data.google_secret_manager_secret_version.database_password.secret_data)}@/${local.db_name}?host=/cloudsql/${local.cloud_sql_connection_name}"
+  # Format: postgresql://user:pass@localhost/dbname?host=/cloudsql/project:region:instance
+  # Note: 'localhost' is a placeholder - the 'host' query param overrides it with the socket path
+  cloudrun_database_url = "postgresql://${local.db_user}:${urlencode(data.google_secret_manager_secret_version.database_password.secret_data)}@localhost/${local.db_name}?host=/cloudsql/${local.cloud_sql_connection_name}"
 }
 
 data "google_secret_manager_secret_version" "openai_api_key" {
