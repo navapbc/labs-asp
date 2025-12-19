@@ -44,8 +44,31 @@ docker network create mastra-network 2>/dev/null || log "Network already exists"
 
 # Stop and remove existing containers
 log "Cleaning up existing containers..."
-docker stop browser-streaming mastra-app 2>/dev/null || true
-docker rm browser-streaming mastra-app 2>/dev/null || true
+docker stop cloud-sql-proxy browser-streaming mastra-app 2>/dev/null || true
+docker rm cloud-sql-proxy browser-streaming mastra-app 2>/dev/null || true
+
+# Start Cloud SQL Auth Proxy sidecar
+# This enables secure connection to Cloud SQL without VPC peering for the servicenetworking range
+log "Starting Cloud SQL Auth Proxy..."
+docker run -d \
+    --name cloud-sql-proxy \
+    --restart unless-stopped \
+    --network mastra-network \
+    -p 5432:5432 \
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1 \
+    --address 0.0.0.0 \
+    --port 5432 \
+    "${cloud_sql_connection_name}"
+
+# Wait for Cloud SQL proxy to be ready
+log "Waiting for Cloud SQL Auth Proxy to start..."
+sleep 5
+if ! docker ps | grep -q cloud-sql-proxy; then
+    log "Cloud SQL Auth Proxy failed to start"
+    docker logs cloud-sql-proxy
+    exit 1
+fi
+log "Cloud SQL Auth Proxy is running"
 
 # Create artifacts directory
 mkdir -p /tmp/artifacts

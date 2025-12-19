@@ -1,6 +1,18 @@
 # Secret data sources for VM startup script
-data "google_secret_manager_secret_version" "database_url" {
-  secret = var.environment == "prod" ? "database-url-production" : "database-url-dev"
+# dev/preview use nava-db-password-dev (preview shares dev database)
+# prod uses nava-db-password-prod
+data "google_secret_manager_secret_version" "database_password" {
+  secret = "nava-db-password-${local.base_environment == "preview" ? "dev" : local.base_environment}"
+}
+
+locals {
+  # VM's mastra-app container connects to Cloud SQL Auth Proxy sidecar via Docker network
+  # Use container name 'cloud-sql-proxy' as host since both are on 'mastra-network'
+  vm_database_url = "postgresql://${local.db_user}:${urlencode(data.google_secret_manager_secret_version.database_password.secret_data)}@cloud-sql-proxy:5432/${local.db_name}"
+
+  # Cloud Run uses built-in Cloud SQL socket mount
+  # Format: postgresql://user:pass@/dbname?host=/cloudsql/project:region:instance
+  cloudrun_database_url = "postgresql://${local.db_user}:${urlencode(data.google_secret_manager_secret_version.database_password.secret_data)}@/${local.db_name}?host=/cloudsql/${local.cloud_sql_connection_name}"
 }
 
 data "google_secret_manager_secret_version" "openai_api_key" {
@@ -82,21 +94,22 @@ resource "google_compute_instance" "app_vm" {
     browser-image-version = var.browser_image_url
     mastra-image-version  = var.mastra_image_url
     startup-script = templatefile("${path.module}/scripts/startup.sh", {
-      browser_image           = var.browser_image_url
-      mastra_image            = var.mastra_image_url
-      project_id              = local.project_id
-      environment             = var.environment
-      database_url            = data.google_secret_manager_secret_version.database_url.secret_data
-      openai_api_key          = data.google_secret_manager_secret_version.openai_api_key.secret_data
-      anthropic_api_key       = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
-      exa_api_key             = data.google_secret_manager_secret_version.exa_api_key.secret_data
-      google_ai_key           = data.google_secret_manager_secret_version.google_ai_key.secret_data
-      grok_api_key            = data.google_secret_manager_secret_version.grok_api_key.secret_data
-      xai_api_key             = data.google_secret_manager_secret_version.xai_api_key.secret_data
-      mastra_jwt_secret       = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
-      mastra_app_password     = data.google_secret_manager_secret_version.mastra_app_password.secret_data
-      mastra_jwt_token        = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
-      vertex_ai_credentials   = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
+      browser_image             = var.browser_image_url
+      mastra_image              = var.mastra_image_url
+      project_id                = local.project_id
+      environment               = var.environment
+      database_url              = local.vm_database_url
+      cloud_sql_connection_name = local.cloud_sql_connection_name
+      openai_api_key            = data.google_secret_manager_secret_version.openai_api_key.secret_data
+      anthropic_api_key         = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
+      exa_api_key               = data.google_secret_manager_secret_version.exa_api_key.secret_data
+      google_ai_key             = data.google_secret_manager_secret_version.google_ai_key.secret_data
+      grok_api_key              = data.google_secret_manager_secret_version.grok_api_key.secret_data
+      xai_api_key               = data.google_secret_manager_secret_version.xai_api_key.secret_data
+      mastra_jwt_secret         = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
+      mastra_app_password       = data.google_secret_manager_secret_version.mastra_app_password.secret_data
+      mastra_jwt_token          = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
+      vertex_ai_credentials     = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
     })
   }
 

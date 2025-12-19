@@ -29,15 +29,10 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
-      # Database (Cloud SQL PostgreSQL)
+      # Database (Cloud SQL PostgreSQL) - uses Cloud SQL socket mount
       env {
-        name = "DATABASE_URL"
-        value_source {
-          secret_key_ref {
-            secret  = var.environment == "prod" ? "database-url-production" : "database-url-dev"
-            version = "latest"
-          }
-        }
+        name  = "DATABASE_URL"
+        value = local.cloudrun_database_url
       }
 
       # AI API Keys
@@ -288,7 +283,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "CLOUD_SQL_INSTANCE"
-        value = var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"
+        value = local.cloud_sql_connection_name
       }
 
       # Port configuration - Next.js port
@@ -317,7 +312,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     volumes {
       name = "cloudsql"
       cloud_sql_instance {
-        instances = [var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"]
+        instances = [local.cloud_sql_connection_name]
       }
     }
   }

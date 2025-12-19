@@ -69,6 +69,14 @@ locals {
   # Get current environment config using base_environment as key
   env_config = local.environments[local.base_environment]
 
+  # Cloud SQL connection configuration
+  # Format: project:region:instance
+  cloud_sql_connection_name = "${local.project_id}:${local.region}:${local.env_config.sql_instance_name}"
+
+  # Database configuration
+  db_name = "app_db"
+  db_user = "app_user"
+
   # Common labels
   common_labels = {
     project     = "labs-asp"
