@@ -34,11 +34,25 @@ resource "google_sql_database_instance" "dev" {
       }
     }
 
-    # IP configuration - Private IP only via VPC peering
+    # IP configuration - Private IP via VPC peering + PSC for preview environments
     ip_configuration {
       ipv4_enabled                                  = false
       private_network                               = local.vpc_network.id
       enable_private_path_for_google_cloud_services = true
+      
+      # Enable Private Service Connect for preview environments
+      # PSC allows the preview VPC (labs-asp-vpc-preview-shared) to create endpoints
+      # Connection policy must exist: google-cloud-sql-us-central1-labs-asp-vpc-preview-shared-policy
+      psc_config {
+        psc_enabled               = true
+        allowed_consumer_projects = [local.project_id]
+        
+        # Auto-create PSC endpoint for preview shared VPC
+        psc_auto_connections {
+          consumer_network            = "labs-asp-vpc-preview-shared"
+          consumer_service_project_id = local.project_id
+        }
+      }
     }
 
     # Database flags
