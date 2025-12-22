@@ -126,6 +126,11 @@ resource "google_compute_instance" "app_vm" {
     component   = "app-vm"
   })
 
+  # Recreate VM when container images change
+  lifecycle {
+    replace_triggered_by = [terraform_data.image_versions]
+  }
+
   depends_on = [
     google_project_service.required_apis,
     google_service_account.vm,
@@ -143,22 +148,6 @@ resource "terraform_data" "image_versions" {
   }
 }
 
-# Restart VM when image versions change to apply new containers
-resource "terraform_data" "vm_restart" {
-  # This resource is replaced whenever image versions change
-  triggers_replace = [
-    terraform_data.image_versions.output
-  ]
-
-  # Restart the VM after metadata is updated
-  provisioner "local-exec" {
-    command = "gcloud compute instances reset ${google_compute_instance.app_vm.name} --zone=${local.zone} --project=${local.project_id}"
-  }
-
-  depends_on = [
-    google_compute_instance.app_vm
-  ]
-}
 
 # Service account for VM
 resource "google_service_account" "vm" {
