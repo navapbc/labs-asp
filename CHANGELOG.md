@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/navapbc/labs-asp/compare/v1.1.0...v1.1.1) (2025-12-22)
+
+
+### Bug Fixes
+
+* **terraform:** allow VM stopping for updates ([006d612](https://github.com/navapbc/labs-asp/commit/006d612d11d49e213e413f74eb65cac843cd7f43))
+
 # [1.1.0](https://github.com/navapbc/labs-asp/compare/v1.0.0...v1.1.0) (2025-12-22)
 
 
