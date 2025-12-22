@@ -1,3 +1,67 @@
+# [1.1.0](https://github.com/navapbc/labs-asp/compare/v1.0.0...v1.1.0) (2025-12-22)
+
+
+* refactor(infra)!: implement shared VPC architecture for preview environments ([18f098a](https://github.com/navapbc/labs-asp/commit/18f098af3cbc6f58eb256ea43a6edc9e27e4767b))
+* refactor(infra)!: implement shared VPC architecture for preview environments ([8ba7adb](https://github.com/navapbc/labs-asp/commit/8ba7adb51ca57ff5639cc7610c82ba8b8dc11661))
+
+
+### Bug Fixes
+
+* add @mastra/mcp to bundler externals ([59f4954](https://github.com/navapbc/labs-asp/commit/59f4954f3f8c3f865d969cc0bc887a8ffc773742))
+* agent prompt changes ([94445e4](https://github.com/navapbc/labs-asp/commit/94445e41516a0d78cc7861eae7a47a1e4a4e5586))
+* browser session isolation - prevent cross-session visibility ([73a889f](https://github.com/navapbc/labs-asp/commit/73a889f2bf74488a9d00ea461ca14ab4ecf565c2))
+* clean up vertex-ai-credentials path before writing ([77d66b6](https://github.com/navapbc/labs-asp/commit/77d66b6af9a865c274c7a86734891b106f16cf14))
+* configure Vertex AI Anthropic credentials ([40bbd1a](https://github.com/navapbc/labs-asp/commit/40bbd1a71bc1b80fc367e7583d37fa1bd53d7ca3))
+* fix for input cutoff ([fdeae04](https://github.com/navapbc/labs-asp/commit/fdeae048c13f7ece7c3d6a9d1c8510e692fc7c89))
+* increase chatbot memory to 4Gi ([0328ad6](https://github.com/navapbc/labs-asp/commit/0328ad6cbf5ec2d4d4869072c9d2e3a7c472a830))
+* language prompt updates ([f203de1](https://github.com/navapbc/labs-asp/commit/f203de18f2eb123056a9be3312c2d11d89bb9406))
+* outputs ([8269f21](https://github.com/navapbc/labs-asp/commit/8269f21581048bd944405ef5760adee59f99e56b))
+* override @modelcontextprotocol/sdk (coming from @mastra/mcp) to >1.24.0 ([c2a41e7](https://github.com/navapbc/labs-asp/commit/c2a41e78d28f1ee1f1922fe697fbef9fedc81258))
+* react and vercel update ([6a7b4f2](https://github.com/navapbc/labs-asp/commit/6a7b4f2a943a48b73d98eda5c288a759a0a22ada))
+* remove semantic-release from develop branch ([e35972f](https://github.com/navapbc/labs-asp/commit/e35972fdb8fa99a45922cb34a558a709321744db))
+* resolve key issues causing overflow on mobile viewport ([4629621](https://github.com/navapbc/labs-asp/commit/4629621ecf1b67064e6165c0f5227380ac1b3fa1))
+* resolve merge conflicts with main ([ddc82f7](https://github.com/navapbc/labs-asp/commit/ddc82f797c2af96a7b21c02f4fefbf25002dd462))
+* set world-readable permissions on vertex credentials file for docker container ([925ad67](https://github.com/navapbc/labs-asp/commit/925ad6718bd9f809781f24d2b3a68bf0ade595ea))
+* stop chat stream on chat ui and mastra ([0cdea97](https://github.com/navapbc/labs-asp/commit/0cdea97eaa0fa5860c6d368d6c00133dc16496f5))
+* **terraform:** add Cloud SQL admin permissions to GitHub Actions SA ([4aa0f19](https://github.com/navapbc/labs-asp/commit/4aa0f19584cbc2cc80593a765568e79efcc35950))
+* **terraform:** remove unsupported PSC connection policy resource ([c119d11](https://github.com/navapbc/labs-asp/commit/c119d1174027aa4ad70ac83c0a0fa65ba1046486))
+* **terraform:** use full VPC path in PSC auto-connection ([434d254](https://github.com/navapbc/labs-asp/commit/434d25488791f0219b6924e042675df6240540a4))
+* test for tablet and mobile views ([e962c50](https://github.com/navapbc/labs-asp/commit/e962c50571a5a131c8b9344cbaf2d38c613dc3f3))
+* update client submodule with cacheComponents fix for WebSocket env vars ([61f20cb](https://github.com/navapbc/labs-asp/commit/61f20cbc8adfacceca3dd9277b047d07cc246f1b))
+* use Host header for [@authority](https://github.com/authority) in HTTP message signature ([cc203a8](https://github.com/navapbc/labs-asp/commit/cc203a86e48198ba23f9bc0db9c4d3204a9eca83))
+* use pnpm.overrides syntax for @modelcontextprotocol/sdk ([5bce744](https://github.com/navapbc/labs-asp/commit/5bce7445eda5766c7f913dcd3d6f25f7e19cbf4e))
+
+
+### Features
+
+* add .well-known credentials to .gitignore and update client ([649fe15](https://github.com/navapbc/labs-asp/commit/649fe1505ebd14da3209ddaff30f8f500ed2b880))
+* add CLOUDFLARE_BOT_PRIVATE_KEY secret to Cloud Run config ([ae68fba](https://github.com/navapbc/labs-asp/commit/ae68fbaa34c3a234df4d48137da0cdce28a71f9e))
+* add HTTP message signature to key directory for Cloudflare verification ([fb08902](https://github.com/navapbc/labs-asp/commit/fb089029a56a79c56e2158f02c812e6905ad74d5))
+* add static IP for external API whitelisting ([fe21879](https://github.com/navapbc/labs-asp/commit/fe2187996d42edb0eb2bea3810d277190de41daa))
+* add zone to API whitelisting info ([5a97aa4](https://github.com/navapbc/labs-asp/commit/5a97aa4072624050766d1e6e662a37186f5071c7))
+* apricot API call to recieve participate information ([045c123](https://github.com/navapbc/labs-asp/commit/045c12380f4ea6996c6ec83a048976c232935049))
+* apricot API integration ([bbc4a7d](https://github.com/navapbc/labs-asp/commit/bbc4a7dbd0980fce4e5076941887c2d22394acfd))
+* **cloud-sql:** enable high availability for production instance ([3a65ad9](https://github.com/navapbc/labs-asp/commit/3a65ad98765806c9d685bb28ce4436c9615c3d23))
+* **infra:** add Cloud SQL with VPC peering for preview environments ([18c6178](https://github.com/navapbc/labs-asp/commit/18c61787a2fa0cf6ddec4d2079a34ed2a2cc3de5))
+* **infra:** add static IP for Cloud NAT for external API whitelisting ([03bccd3](https://github.com/navapbc/labs-asp/commit/03bccd30196231335eb10dbb9a58597dbf30022b))
+* **infra:** configure production-grade Cloud SQL tiers ([ef73aad](https://github.com/navapbc/labs-asp/commit/ef73aad8f9d1605115eda9baab735640013aeae5))
+* **terraform:** add PSC auto-connection for preview shared VPC ([750308d](https://github.com/navapbc/labs-asp/commit/750308dee648eafd97070f0d167414b3d8afe688))
+* **terraform:** enable Private Service Connect for Cloud SQL preview access ([2d8ec9d](https://github.com/navapbc/labs-asp/commit/2d8ec9d5bdf87311422fbf991cc3bc87df756484))
+* **terraform:** enable Private Service Connect for Cloud SQL preview access ([25f8598](https://github.com/navapbc/labs-asp/commit/25f8598608949dd4402250f3ca4d024318cee4aa))
+* **terraform:** enable Private Service Connect for Cloud SQL preview access ([012959d](https://github.com/navapbc/labs-asp/commit/012959db807eeb97fbf7c0776a3bab77e1725100))
+
+
+### BREAKING CHANGES
+
+* Preview environments now require shared VPC to be deployed
+first. Run `terraform apply` in terraform/shared-preview-vpc/ before deploying
+any preview environment. Existing preview environments with individual VPCs
+must be destroyed and redeployed.
+* Preview environments now require shared VPC to be deployed
+first. Run `terraform apply` in terraform/shared-preview-vpc/ before deploying
+any preview environment. Existing preview environments with individual VPCs
+must be destroyed and redeployed.
+
 # 1.0.0 (2025-11-20)
 
 
