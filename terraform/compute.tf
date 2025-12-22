@@ -65,6 +65,9 @@ resource "google_compute_instance" "app_vm" {
   machine_type = var.vm_machine_type
   zone         = local.zone
 
+  # Allow Terraform to stop the VM for updates (e.g., network changes)
+  allow_stopping_for_update = true
+
   # Container-Optimized OS for running Docker containers
   boot_disk {
     initialize_params {
