@@ -39,6 +39,26 @@ data "google_secret_manager_secret_version" "mastra_jwt_token" {
   secret = "mastra-jwt-token"
 }
 
+data "google_secret_manager_secret_version" "vertex_ai_credentials" {
+  secret = "vertex-ai-credentials"
+}
+
+data "google_secret_manager_secret_version" "apricot_api_base_url" {
+  secret = "apricot-api-base-url"
+}
+
+data "google_secret_manager_secret_version" "apricot_client_id" {
+  secret = "apricot-client-id"
+}
+
+data "google_secret_manager_secret_version" "apricot_client_secret" {
+  secret = "apricot-client-secret"
+}
+
+# Note: VM uses private subnet without external IP
+# Internet access is provided via Cloud NAT
+# If external IP is needed for API whitelisting, consider using Cloud NAT's external IPs
+
 # Compute VM - Runs browser-streaming and mastra-app containers
 resource "google_compute_instance" "app_vm" {
   name         = "app-vm-${var.environment}"
@@ -54,12 +74,12 @@ resource "google_compute_instance" "app_vm" {
     }
   }
 
-  # Network configuration
+  # Network configuration - Use private subnet without external IP
+  # Internet access via Cloud NAT (configured in vpc.tf)
   network_interface {
-    network = "default"
-    access_config {
-      # Ephemeral external IP
-    }
+    network    = local.vpc_network.id
+    subnetwork = local.private_subnet.id
+    # No access_config - VM uses Cloud NAT for outbound internet access
   }
 
   # Service account for VM
@@ -74,20 +94,24 @@ resource "google_compute_instance" "app_vm" {
     browser-image-version = var.browser_image_url
     mastra-image-version  = var.mastra_image_url
     startup-script = templatefile("${path.module}/scripts/startup.sh", {
-      browser_image       = var.browser_image_url
-      mastra_image        = var.mastra_image_url
-      project_id          = local.project_id
-      environment         = var.environment
-      database_url        = data.google_secret_manager_secret_version.database_url.secret_data
-      openai_api_key      = data.google_secret_manager_secret_version.openai_api_key.secret_data
-      anthropic_api_key   = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
-      exa_api_key         = data.google_secret_manager_secret_version.exa_api_key.secret_data
-      google_ai_key       = data.google_secret_manager_secret_version.google_ai_key.secret_data
-      grok_api_key        = data.google_secret_manager_secret_version.grok_api_key.secret_data
-      xai_api_key         = data.google_secret_manager_secret_version.xai_api_key.secret_data
-      mastra_jwt_secret   = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
-      mastra_app_password = data.google_secret_manager_secret_version.mastra_app_password.secret_data
-      mastra_jwt_token    = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
+      browser_image           = var.browser_image_url
+      mastra_image            = var.mastra_image_url
+      project_id              = local.project_id
+      environment             = var.environment
+      database_url            = data.google_secret_manager_secret_version.database_url.secret_data
+      openai_api_key          = data.google_secret_manager_secret_version.openai_api_key.secret_data
+      anthropic_api_key       = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
+      exa_api_key             = data.google_secret_manager_secret_version.exa_api_key.secret_data
+      google_ai_key           = data.google_secret_manager_secret_version.google_ai_key.secret_data
+      grok_api_key            = data.google_secret_manager_secret_version.grok_api_key.secret_data
+      xai_api_key             = data.google_secret_manager_secret_version.xai_api_key.secret_data
+      mastra_jwt_secret       = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
+      mastra_app_password     = data.google_secret_manager_secret_version.mastra_app_password.secret_data
+      mastra_jwt_token        = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
+      vertex_ai_credentials   = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
+      apricot_api_base_url    = data.google_secret_manager_secret_version.apricot_api_base_url.secret_data
+      apricot_client_id       = data.google_secret_manager_secret_version.apricot_client_id.secret_data
+      apricot_client_secret   = data.google_secret_manager_secret_version.apricot_client_secret.secret_data
     })
   }
 
@@ -101,7 +125,10 @@ resource "google_compute_instance" "app_vm" {
 
   depends_on = [
     google_project_service.required_apis,
-    google_service_account.vm
+    google_service_account.vm,
+    google_compute_network.main,
+    google_compute_subnetwork.private,
+    google_compute_router_nat.main  # Ensure NAT is ready for internet access
   ]
 }
 
@@ -128,55 +155,6 @@ resource "terraform_data" "vm_restart" {
   depends_on = [
     google_compute_instance.app_vm
   ]
-}
-
-# Firewall rules for browser service
-resource "google_compute_firewall" "browser_mcp" {
-  name    = "allow-browser-mcp-${var.environment}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["8931"]  # Playwright MCP port
-  }
-
-  source_ranges = ["0.0.0.0/0"]  # Allow from anywhere (Cloud Run uses dynamic IPs)
-
-  target_tags = ["browser-mcp"]
-
-  description = "Allow MCP access from Cloud Run services to browser VM (dev uses external IP)"
-}
-
-resource "google_compute_firewall" "browser_streaming" {
-  name    = "allow-browser-streaming-${var.environment}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["8933"]  # Browser streaming WebSocket port
-  }
-
-  source_ranges = ["0.0.0.0/0"]  # Allow from anywhere
-
-  target_tags = ["browser-streaming"]
-
-  description = "Allow browser streaming WebSocket access"
-}
-
-resource "google_compute_firewall" "mastra_app" {
-  name    = "allow-mastra-app-${var.environment}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["4112"]  # Mastra API port
-  }
-
-  source_ranges = ["0.0.0.0/0"]  # Allow from anywhere (Cloud Run uses dynamic IPs)
-
-  target_tags = ["mastra-app"]
-
-  description = "Allow Mastra API access from Cloud Run"
 }
 
 # Service account for VM

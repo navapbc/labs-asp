@@ -197,6 +197,25 @@ jobs:
         with:
           terraform_version: "1.9.0"
 
+      # Deploy shared preview VPC first (only for preview environments, before anything else)
+      - name: Deploy Shared Preview VPC
+        if: startsWith(needs.setup.outputs.environment, 'preview-')
+        working-directory: ./terraform/shared-preview-vpc
+        run: |
+          echo "🔧 Ensuring shared preview VPC exists..."
+          
+          # Initialize shared VPC terraform
+          terraform init
+          
+          # Check if VPC already exists
+          if gcloud compute networks describe labs-asp-vpc-preview-shared --project=nava-labs 2>/dev/null; then
+            echo "✅ Shared preview VPC already exists, skipping creation"
+          else
+            echo "🚀 Creating shared preview VPC (first preview deployment)..."
+            terraform apply -auto-approve
+            echo "✅ Shared preview VPC created successfully"
+          fi
+
       - name: Terraform Init
         working-directory: ./terraform
         run: |
@@ -208,6 +227,79 @@ jobs:
         run: |
           echo "Checking Terraform state for environment: ${{ needs.setup.outputs.environment }}"
           terraform state list || echo "No existing state found (expected for first deployment)"
+
+      # Establish VPC peering on dev environment deployment
+      - name: Establish VPC Peering with Shared Preview VPC
+        if: needs.setup.outputs.environment == 'dev'
+        working-directory: ./terraform/shared-preview-vpc
+        run: |
+          echo "🔗 Ensuring VPC peering between dev and shared preview VPC..."
+          
+          # Initialize shared VPC terraform
+          terraform init
+          
+          # Check if shared preview VPC exists
+          if gcloud compute networks describe labs-asp-vpc-preview-shared --project=nava-labs 2>/dev/null; then
+            echo "✅ Shared preview VPC exists, ensuring peering is configured..."
+            terraform apply -auto-approve
+            echo "✅ VPC peering established/updated successfully"
+          else
+            echo "⚠️  Shared preview VPC does not exist yet (will be created on first preview deployment)"
+          fi
+
+      - name: Set VPC CIDR blocks and Firewall rules
+        id: vpc_cidrs
+        run: |
+          ENV="${{ needs.setup.outputs.environment }}"
+          
+          # Set VPC CIDR blocks based on environment
+          # Pattern: 10.X.0.0/16 where X is determined by environment
+          # Note: Preview environments use shared VPC (10.1.0.0/16) but still need CIDR values for Terraform variables
+          case ${ENV} in
+            dev)
+              # Dev: 10.0.0.0/16
+              echo "vpc_cidr_public=10.0.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.0.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.0.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.0.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Dev: Allow public access for all services (JSON in single line)
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
+              ;;
+            preview|preview-*)
+              # Preview: Uses shared VPC (10.1.0.0/16) - values for reference only
+              echo "vpc_cidr_public=10.1.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.1.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.1.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.1.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Preview: Allow public access for testing (JSON in single line)
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              # Production: 10.2.0.0/16
+              echo "vpc_cidr_public=10.2.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.2.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.2.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.2.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Prod: Granular firewall rules per service (JSON in single line)
+              # TODO: Update with your production IP ranges and ports
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":false,"allowed_ip_ranges":["203.0.113.0/24"]},"browser_streaming":{"port":8933,"allow_public_access":false,"allowed_ip_ranges":["203.0.113.0/24","198.51.100.0/24"]},"mastra_api":{"port":4112,"allow_public_access":false,"allowed_ip_ranges":["203.0.113.0/24"]}}' >> $GITHUB_OUTPUT
+              ;;
+            *)
+              # Default to dev range
+              echo "vpc_cidr_public=10.0.0.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_private=10.0.16.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_cidr_db=10.0.32.0/20" >> $GITHUB_OUTPUT
+              echo "vpc_connector_cidr=10.0.48.0/28" >> $GITHUB_OUTPUT
+              
+              # Default: Public access (JSON in single line)
+              echo 'firewall_rules={"browser_mcp":{"port":8931,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"browser_streaming":{"port":8933,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]},"mastra_api":{"port":4112,"allow_public_access":true,"allowed_ip_ranges":["0.0.0.0/0"]}}' >> $GITHUB_OUTPUT
+              ;;
+          esac
+          
+          echo "VPC CIDRs and Firewall rules configured for ${ENV}"
 
       - name: Terraform Plan
         working-directory: ./terraform
@@ -225,16 +317,17 @@ jobs:
             -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
             -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
             -var="enable_custom_domain=${ENABLE_DOMAIN}" \
+            -var="vpc_cidr_public=${{ steps.vpc_cidrs.outputs.vpc_cidr_public }}" \
+            -var="vpc_cidr_private=${{ steps.vpc_cidrs.outputs.vpc_cidr_private }}" \
+            -var="vpc_cidr_db=${{ steps.vpc_cidrs.outputs.vpc_cidr_db }}" \
+            -var="vpc_connector_cidr=${{ steps.vpc_cidrs.outputs.vpc_connector_cidr }}" \
+            -var='firewall_rules=${{ steps.vpc_cidrs.outputs.firewall_rules }}' \
             -out=tfplan
 
       - name: Terraform Apply
         if: needs.setup.outputs.should_deploy == 'true'
         working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
-
-      # REMOVED: Automatic rollback with terraform destroy is too dangerous
-      # It can destroy global resources like IAM bindings and workload identity pools
-      # Manual cleanup should be done if deployment fails
 
       - name: Get Terraform Outputs
         if: needs.setup.outputs.should_deploy == 'true'
@@ -243,7 +336,7 @@ jobs:
         run: |
           echo "chatbot_url=$(terraform output -raw chatbot_public_url)" >> $GITHUB_OUTPUT
           echo "custom_domain=$(terraform output -raw custom_domain)" >> $GITHUB_OUTPUT
-          echo "vm_ip=$(terraform output -raw vm_external_ip)" >> $GITHUB_OUTPUT
+          echo "vm_ip=$(terraform output -raw vm_internal_ip)" >> $GITHUB_OUTPUT
 
       - name: Comment on PR with deployment info
         if: github.event_name == 'pull_request'
@@ -261,9 +354,9 @@ jobs:
 
             ### Access URLs
             - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
-            - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
-            - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
-            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+            - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112 (internal IP, accessible via VPC)
+            - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp (internal IP, accessible via VPC)
+            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933 (internal IP, accessible via VPC)
 
             ${hasCustomDomain ? `**Custom Domain**: https://${customDomain}\n\n**Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.` : '**Note:** Custom domain not configured for preview environments. Use Cloud Run URL to access the application.'}`
               : `## Terraform Plan Complete
@@ -295,9 +388,9 @@ jobs:
 
           ### Access URLs
           - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
-          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112
-          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp
-          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933
+          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112 (internal IP)
+          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp (internal IP)
+          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933 (internal IP)
           EOF
 
           if [ -n "$CUSTOM_DOMAIN" ]; then
@@ -313,8 +406,9 @@ jobs:
           cat >> $GITHUB_STEP_SUMMARY <<EOF
 
           ### VM Information
-          - **External IP**: ${{ steps.tf_outputs.outputs.vm_ip }}
+          - **Internal IP**: ${{ steps.tf_outputs.outputs.vm_ip }} (private subnet, accessible via VPC)
           - **Environment**: ${{ needs.setup.outputs.environment }}
+          - **Internet Access**: Via Cloud NAT
           EOF
 
       - name: Deployment Summary (console)

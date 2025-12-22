@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "~> 6.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.1"
+    }
   }
 
   # Use existing GCS backend for state storage
@@ -45,19 +49,19 @@ locals {
     dev = {
       mastra_service_name = "mastra-app-dev"
       chatbot_service_name = "ai-chatbot-dev"
-      sql_instance_name = "app-dev"  # dev database
+      sql_instance_name = "nava-db-dev"  # dev database
       domain_prefix = "dev"
     }
     preview = {
       mastra_service_name = "mastra-app-${var.environment}"  # Use full env name for unique resources
       chatbot_service_name = "ai-chatbot-${var.environment}"
-      sql_instance_name = "app-dev"  # ALL preview environments use dev database
+      sql_instance_name = "nava-db-dev"  # ALL preview environments use dev database
       domain_prefix = var.environment  # preview-pr-123 gets preview-pr-123.labs-asp.com
     }
     prod = {
       mastra_service_name = "mastra-app-prod"
       chatbot_service_name = "ai-chatbot-prod"
-      sql_instance_name = "app-prod"  # prod database
+      sql_instance_name = "nava-db-prod"  # prod database
       domain_prefix = "app"
     }
   }
@@ -71,9 +75,21 @@ locals {
     managed_by  = "terraform"
     deployment  = "client-server-architecture"
   }
+
+  # VPC Connector name - must be max 25 chars, start/end with alphanumeric
+  # Pattern: ^[a-z][-a-z0-9]{0,23}[a-z0-9]$
+  # Map environments to short names that fit the pattern
+  connector_names = {
+    dev     = "labs-conn-dev"
+    preview = "labs-conn-prev"
+    prod    = "labs-conn-prod"
+  }
+  # For preview-pr-N, use prN format (e.g., preview-pr-114 -> labs-conn-pr114)
+  connector_env_short = startswith(var.environment, "preview-pr-") ? "pr${replace(var.environment, "preview-pr-", "")}" : var.environment
+  vpc_connector_name = lookup(local.connector_names, local.connector_env_short, "labs-conn-${substr(local.connector_env_short, 0, 14)}")
 }
 
-# Enable required APIs (reuse existing pattern)
+# Enable required APIs
 resource "google_project_service" "required_apis" {
   for_each = toset([
     "run.googleapis.com",
@@ -84,7 +100,9 @@ resource "google_project_service" "required_apis" {
     "compute.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
-    "iamcredentials.googleapis.com"
+    "iamcredentials.googleapis.com",
+    "vpcaccess.googleapis.com",
+    "servicenetworking.googleapis.com"
   ])
 
   service = each.key

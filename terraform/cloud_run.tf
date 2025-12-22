@@ -12,6 +12,12 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   template {
     service_account = google_service_account.cloud_run.email
 
+    # VPC Access - Connect to VPC network
+    vpc_access {
+      connector = local.vpc_connector.id
+      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+    }
+
     containers {
       image = var.chatbot_image_url
 
@@ -80,6 +86,32 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value_source {
           secret_key_ref {
             secret  = "xai-api-key"
+            version = "latest"
+          }
+        }
+      }
+
+      # Apricot API Configuration
+      env {
+        name = "APRICOT_API_BASE_URL"
+        value = "https://f5r-api.iws.sidekick.solutions/apricot"
+      }
+
+      env {
+        name = "APRICOT_CLIENT_ID"
+        value_source {
+          secret_key_ref {
+            secret  = "apricot-client-id"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "APRICOT_CLIENT_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = "apricot-client-secret"
             version = "latest"
           }
         }
@@ -212,22 +244,34 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # Cloudflare Verified Bots - Ed25519 private key for signing key directory
+      env {
+        name = "CLOUDFLARE_BOT_PRIVATE_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = "cloudflare-bot-private-key"
+            version = "latest"
+          }
+        }
+      }
+
       # Mastra server connection (server-side env var, not NEXT_PUBLIC_*)
+      # Uses internal IP - VM is in private subnet, accessible via VPC Connector
       env {
         name  = "MASTRA_SERVER_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112"
       }
 
       # Keep NEXT_PUBLIC_ version for backwards compatibility
       env {
         name  = "NEXT_PUBLIC_MASTRA_SERVER_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:4112"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112"
       }
 
       # Browser service connection (for direct client access if needed)
       env {
         name  = "PLAYWRIGHT_MCP_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8931/mcp"
+        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:8931/mcp"
       }
 
       # Browser WebSocket Proxy URL (server-side runtime config)
@@ -239,7 +283,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Legacy browser streaming env vars (keeping for backwards compatibility)
       env {
         name  = "BROWSER_STREAMING_URL"
-        value = "ws://${google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip}:8933"
+        value = "ws://${google_compute_instance.app_vm.network_interface[0].network_ip}:8933"
       }
 
       env {
@@ -249,7 +293,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "BROWSER_STREAMING_HOST"
-        value = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+        value = google_compute_instance.app_vm.network_interface[0].network_ip
       }
 
       # Runtime configuration
@@ -270,7 +314,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "CLOUD_SQL_INSTANCE"
-        value = var.environment == "prod" ? "nava-labs:us-central1:app-prod" : "nava-labs:us-central1:app-dev"
+        value = var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"
       }
 
       # Port configuration - Next.js port
@@ -299,7 +343,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     volumes {
       name = "cloudsql"
       cloud_sql_instance {
-        instances = [var.environment == "prod" ? "nava-labs:us-central1:app-prod" : "nava-labs:us-central1:app-dev"]
+        instances = [var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"]
       }
     }
   }
@@ -318,7 +362,8 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   depends_on = [
     google_project_service.required_apis,
     google_service_account.cloud_run,
-    google_compute_instance.app_vm
+    google_compute_instance.app_vm,
+    google_vpc_access_connector.cloud_run
   ]
 }
 
@@ -332,6 +377,12 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
 
   template {
     service_account = google_service_account.cloud_run.email
+
+    # VPC Access - Connect to VPC network
+    vpc_access {
+      connector = local.vpc_connector.id
+      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+    }
 
     containers {
       image = var.browser_ws_proxy_image_url
@@ -347,7 +398,7 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
       # Backend browser-streaming configuration
       env {
         name  = "BROWSER_STREAMING_HOST"
-        value = google_compute_instance.app_vm.network_interface[0].access_config[0].nat_ip
+        value = google_compute_instance.app_vm.network_interface[0].network_ip
       }
 
       env {
@@ -390,7 +441,8 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
   depends_on = [
     google_project_service.required_apis,
     google_service_account.cloud_run,
-    google_compute_instance.app_vm
+    google_compute_instance.app_vm,
+    google_vpc_access_connector.cloud_run
   ]
 }
 

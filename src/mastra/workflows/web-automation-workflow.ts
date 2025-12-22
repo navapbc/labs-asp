@@ -235,12 +235,16 @@ const actionExecutionStep = createStep({
 
     Please:
     1. Perform the requested action
-    2. If you're adding an address field and a suggested address is displayed, always select and use the suggested address
-    3. Analyze if the action was successful
-    4. Determine if we've achieved the objective or if more actions are needed
-    5. If more actions are needed, describe the current state of the page
+    2. For fields that might have format masks (date fields, SSN, phone fields):
+       - Click the field first to activate it and reveal any format masks
+       - Then type the data in the appropriate format
+    3. If a field doesn't accept input on first try, click it to activate before typing
+    4. If you're adding an address field and a suggested address is displayed, always select and use the suggested address
+    5. Analyze if the action was successful
+    6. Determine if we've achieved the objective or if more actions are needed
+    7. If more actions are needed, describe the current state of the page
 
-    Follow the Address Handling Protocol and Form Field Handling Protocol from your instructions.
+    Follow the Form Field Protocol from your instructions.
 
     Be precise and report exactly what happened.`;
     

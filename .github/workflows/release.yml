@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - develop
 
 # Prevent concurrent releases on the same branch
 concurrency:
