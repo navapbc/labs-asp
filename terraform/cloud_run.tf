@@ -30,11 +30,14 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       }
 
       # Database (Cloud SQL PostgreSQL)
+      # - dev: uses private IP within dev VPC
+      # - preview: uses PSC endpoint to reach dev DB from preview VPC
+      # - prod: uses private IP within prod VPC
       env {
         name = "DATABASE_URL"
         value_source {
           secret_key_ref {
-            secret  = var.environment == "prod" ? "database-url-production" : "database-url-dev"
+            secret  = var.environment == "prod" ? "database-url-production" : (startswith(var.environment, "preview") ? "database-url-preview" : "database-url-dev")
             version = "latest"
           }
         }

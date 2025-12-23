@@ -1,6 +1,9 @@
 # Secret data sources for VM startup script
+# - dev: uses private IP within dev VPC
+# - preview: uses PSC endpoint to reach dev DB from preview VPC
+# - prod: uses private IP within prod VPC
 data "google_secret_manager_secret_version" "database_url" {
-  secret = var.environment == "prod" ? "database-url-production" : "database-url-dev"
+  secret = var.environment == "prod" ? "database-url-production" : (startswith(var.environment, "preview") ? "database-url-preview" : "database-url-dev")
 }
 
 data "google_secret_manager_secret_version" "openai_api_key" {
