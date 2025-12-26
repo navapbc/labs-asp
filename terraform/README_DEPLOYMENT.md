@@ -7,3 +7,5 @@ triggering the workflow manually will deploy the infrastructure and the browser 
 # Testing PostHog integration with clean preview environment
 
 # Testing fresh preview state downstream of PR 135
+
+# Testing preview env CloudSQL connectivity via shared VPC and PSC
