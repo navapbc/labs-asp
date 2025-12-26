@@ -139,7 +139,12 @@ resource "google_compute_instance" "app_vm" {
     google_service_account.vm,
     google_compute_network.main,
     google_compute_subnetwork.private,
-    google_compute_router_nat.main  # Ensure NAT is ready for internet access
+    google_compute_router_nat.main,  # Ensure NAT is ready for internet access
+    # Wait for database URL secrets to be created before starting VM
+    # The startup script fetches DATABASE_URL from Secret Manager
+    google_secret_manager_secret_version.database_url_dev,
+    google_secret_manager_secret_version.database_url_preview,
+    google_secret_manager_secret_version.database_url_prod
   ]
 }
 
