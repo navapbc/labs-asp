@@ -366,7 +366,12 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     google_project_service.required_apis,
     google_service_account.cloud_run,
     google_compute_instance.app_vm,
-    google_vpc_access_connector.cloud_run
+    google_vpc_access_connector.cloud_run,
+    # Wait for database URL secrets to be created before starting Cloud Run
+    # This ensures the DATABASE_URL env var can be resolved on startup
+    google_secret_manager_secret_version.database_url_dev,
+    google_secret_manager_secret_version.database_url_preview,
+    google_secret_manager_secret_version.database_url_prod
   ]
 }
 
