@@ -42,7 +42,6 @@ resource "google_sql_database_instance" "dev" {
       
       # Enable Private Service Connect for preview environments
       # PSC allows the preview VPC (labs-asp-vpc-preview-shared) to create endpoints
-      # Connection policy must exist: google-cloud-sql-us-central1-labs-asp-vpc-preview-shared-policy
       psc_config {
         psc_enabled               = true
         allowed_consumer_projects = [local.project_id]
@@ -155,9 +154,22 @@ resource "google_secret_manager_secret_version" "database_url_dev" {
   depends_on = [google_sql_user.dev]
 }
 
-# DATABASE_URL for preview environments (uses PSC endpoint to reach dev DB from preview VPC)
+# =============================================================================
+# DATABASE_URL for preview environments
+# =============================================================================
+# Preview environments use PSC (Private Service Connect) to access dev DB
+# 
+# With provider 7.0+ (PR #24201), psc_auto_connections now exposes ip_address attribute
+# Structure: settings[0].ip_configuration[0].psc_config[0].psc_auto_connections[0].ip_address
+# 
+# Example from gcloud CLI:
+#   pscAutoConnections:
+#     - ipAddress: 10.1.16.11
+#       status: ACTIVE
+#       consumerNetworkStatus: VALID
+
 resource "google_secret_manager_secret" "database_url_preview" {
-  count     = var.environment == "dev" ? 1 : 0  # Created during dev deployment
+  count     = var.environment == "dev" ? 1 : 0
   secret_id = "database-url-preview"
   project   = local.project_id
 
@@ -175,11 +187,13 @@ resource "google_secret_manager_secret" "database_url_preview" {
   })
 }
 
+# Use PSC endpoint IP from psc_auto_connections
+# This IP (e.g., 10.1.16.11) is in the preview VPC and routes to dev Cloud SQL
 resource "google_secret_manager_secret_version" "database_url_preview" {
   count       = var.environment == "dev" ? 1 : 0
   secret      = google_secret_manager_secret.database_url_preview[0].id
-  # Uses PSC endpoint IP from the auto-connection to preview shared VPC
-  secret_data = "postgresql://app_user:${urlencode(random_password.dev_password[0].result)}@${one(one(google_sql_database_instance.dev[0].settings[0].ip_configuration[0].psc_config).psc_auto_connections).ip_address}:5432/app_db"
+  # Access the PSC connection IP using ip_address attribute (available in provider 7.0+)
+  secret_data = "postgresql://app_user:${urlencode(random_password.dev_password[0].result)}@${google_sql_database_instance.dev[0].settings[0].ip_configuration[0].psc_config[0].psc_auto_connections[0].ip_address}:5432/app_db"
 
   depends_on = [google_sql_user.dev]
 }
