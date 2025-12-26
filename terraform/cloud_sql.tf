@@ -179,7 +179,7 @@ resource "google_secret_manager_secret_version" "database_url_preview" {
   count       = var.environment == "dev" ? 1 : 0
   secret      = google_secret_manager_secret.database_url_preview[0].id
   # Uses PSC endpoint IP from the auto-connection to preview shared VPC
-  secret_data = "postgresql://app_user:${urlencode(random_password.dev_password[0].result)}@${google_sql_database_instance.dev[0].settings[0].ip_configuration[0].psc_config[0].psc_auto_connections[0].ip_address}:5432/app_db"
+  secret_data = "postgresql://app_user:${urlencode(random_password.dev_password[0].result)}@${one(one(google_sql_database_instance.dev[0].settings[0].ip_configuration[0].psc_config).psc_auto_connections).ip_address}:5432/app_db"
 
   depends_on = [google_sql_user.dev]
 }
