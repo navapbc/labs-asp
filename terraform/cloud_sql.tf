@@ -42,7 +42,6 @@ resource "google_sql_database_instance" "dev" {
       
       # Enable Private Service Connect for preview environments
       # PSC allows the preview VPC (labs-asp-vpc-preview-shared) to create endpoints
-      # Connection policy must exist: google-cloud-sql-us-central1-labs-asp-vpc-preview-shared-policy
       psc_config {
         psc_enabled               = true
         allowed_consumer_projects = [local.project_id]
@@ -123,6 +122,82 @@ resource "google_sql_user" "dev" {
   type     = "BUILT_IN"
 }
 
+# =============================================================================
+# DATABASE_URL Secrets for DEV environment
+# =============================================================================
+
+# DATABASE_URL for dev environment (uses private IP within dev VPC)
+resource "google_secret_manager_secret" "database_url_dev" {
+  count     = var.environment == "dev" ? 1 : 0
+  secret_id = "database-url-dev"
+  project   = local.project_id
+
+  replication {
+    user_managed {
+      replicas {
+        location = local.region
+      }
+    }
+  }
+
+  labels = merge(local.common_labels, {
+    environment = "dev"
+    purpose     = "database-url"
+  })
+}
+
+resource "google_secret_manager_secret_version" "database_url_dev" {
+  count       = var.environment == "dev" ? 1 : 0
+  secret      = google_secret_manager_secret.database_url_dev[0].id
+  secret_data = "postgresql://app_user:${urlencode(random_password.dev_password[0].result)}@${google_sql_database_instance.dev[0].private_ip_address}:5432/app_db"
+
+  depends_on = [google_sql_user.dev]
+}
+
+# =============================================================================
+# DATABASE_URL for preview environments
+# =============================================================================
+# Preview environments use PSC (Private Service Connect) to access dev DB
+# 
+# With provider 7.0+ (PR #24201), psc_auto_connections now exposes ip_address attribute
+# Structure: settings[0].ip_configuration[0].psc_config[0].psc_auto_connections[0].ip_address
+# 
+# Example from gcloud CLI:
+#   pscAutoConnections:
+#     - ipAddress: 10.1.16.11
+#       status: ACTIVE
+#       consumerNetworkStatus: VALID
+
+resource "google_secret_manager_secret" "database_url_preview" {
+  count     = var.environment == "dev" ? 1 : 0
+  secret_id = "database-url-preview"
+  project   = local.project_id
+
+  replication {
+    user_managed {
+      replicas {
+        location = local.region
+      }
+    }
+  }
+
+  labels = merge(local.common_labels, {
+    environment = "preview"
+    purpose     = "database-url"
+  })
+}
+
+# Use PSC endpoint IP from psc_auto_connections
+# This IP (e.g., 10.1.16.11) is in the preview VPC and routes to dev Cloud SQL
+resource "google_secret_manager_secret_version" "database_url_preview" {
+  count       = var.environment == "dev" ? 1 : 0
+  secret      = google_secret_manager_secret.database_url_preview[0].id
+  # Access the PSC connection IP using ip_address attribute (available in provider 7.0+)
+  # Note: psc_config and psc_auto_connections are sets, not lists - use one() to extract the single element
+  secret_data = "postgresql://app_user:${urlencode(random_password.dev_password[0].result)}@${one(one(google_sql_database_instance.dev[0].settings[0].ip_configuration[0].psc_config).psc_auto_connections).ip_address}:5432/app_db"
+
+  depends_on = [google_sql_user.dev]
+}
 
 # Cloud SQL Instance for PROD environment (completely isolated)
 resource "google_sql_database_instance" "prod" {
@@ -226,6 +301,37 @@ resource "google_sql_user" "prod" {
   instance = google_sql_database_instance.prod[0].name
   password = random_password.prod_password[0].result
   type     = "BUILT_IN"
+}
+
+# =============================================================================
+# DATABASE_URL Secret for PROD environment
+# =============================================================================
+
+resource "google_secret_manager_secret" "database_url_prod" {
+  count     = var.environment == "prod" ? 1 : 0
+  secret_id = "database-url-production"
+  project   = local.project_id
+
+  replication {
+    user_managed {
+      replicas {
+        location = local.region
+      }
+    }
+  }
+
+  labels = merge(local.common_labels, {
+    environment = "prod"
+    purpose     = "database-url"
+  })
+}
+
+resource "google_secret_manager_secret_version" "database_url_prod" {
+  count       = var.environment == "prod" ? 1 : 0
+  secret      = google_secret_manager_secret.database_url_prod[0].id
+  secret_data = "postgresql://app_user:${urlencode(random_password.prod_password[0].result)}@${google_sql_database_instance.prod[0].private_ip_address}:5432/app_db"
+
+  depends_on = [google_sql_user.prod]
 }
 
 # Note: VPC Peering configuration has been moved to vpc.tf for better organization

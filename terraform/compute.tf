@@ -1,6 +1,24 @@
 # Secret data sources for VM startup script
-data "google_secret_manager_secret_version" "database_url" {
-  secret = var.environment == "prod" ? "database-url-production" : "database-url-dev"
+# - dev: uses private IP within dev VPC
+# - preview: uses PSC endpoint to reach dev DB from preview VPC
+# - prod: uses private IP within prod VPC
+
+# Data source ONLY for preview (secret created by dev deployment, already exists)
+data "google_secret_manager_secret_version" "database_url_for_preview" {
+  count  = startswith(var.environment, "preview") ? 1 : 0
+  secret = "database-url-preview"
+}
+
+# Local to pick the right database URL based on environment
+locals {
+  database_url_secret_data = (
+    var.environment == "prod"
+    ? google_secret_manager_secret_version.database_url_prod[0].secret_data
+    : (startswith(var.environment, "preview")
+      ? data.google_secret_manager_secret_version.database_url_for_preview[0].secret_data
+      : google_secret_manager_secret_version.database_url_dev[0].secret_data
+    )
+  )
 }
 
 data "google_secret_manager_secret_version" "openai_api_key" {
@@ -101,7 +119,7 @@ resource "google_compute_instance" "app_vm" {
       mastra_image            = var.mastra_image_url
       project_id              = local.project_id
       environment             = var.environment
-      database_url            = data.google_secret_manager_secret_version.database_url.secret_data
+      database_url            = local.database_url_secret_data
       openai_api_key          = data.google_secret_manager_secret_version.openai_api_key.secret_data
       anthropic_api_key       = data.google_secret_manager_secret_version.anthropic_api_key.secret_data
       exa_api_key             = data.google_secret_manager_secret_version.exa_api_key.secret_data
