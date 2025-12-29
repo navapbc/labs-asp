@@ -150,3 +150,11 @@ export interface GetRecordsOptions {
   sort?: string;
   filters?: Record<string, string>;
 }
+
+// Response type for single record by ID
+export interface RecordByIdResponse {
+  meta: {
+    count: number;
+  };
+  data: RecordData[];
+}

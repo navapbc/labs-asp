@@ -1,6 +1,6 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { getUsers, authenticate, getForms, getRecords, type UsersResponse, type UserData, type FormsResponse, type FormData, type RecordsResponse, type RecordData } from '../../lib/apricot-api';
+import { getUsers, authenticate, getForms, getRecords, getRecordById, type UsersResponse, type UserData, type FormsResponse, type FormData, type RecordsResponse, type RecordData, type RecordByIdResponse } from '../../lib/apricot-api';
 import {
   getUsersSchema,
   searchUsersByNameSchema,
@@ -8,11 +8,13 @@ import {
   getFormsSchema,
   getFormByIdSchema,
   getRecordsSchema,
+  getRecordByIdSchema,
   getUsersResponseSchema,
   getUserByIdResponseSchema,
   getFormsResponseSchema,
   getFormByIdResponseSchema,
   getRecordsResponseSchema,
+  getRecordByIdResponseSchema,
 } from '../types/apricot-types';
 
 // ===== Helper Functions =====
@@ -356,6 +358,42 @@ export const getRecordsFromApricot = createTool({
   },
 });
 
+/**
+ * Get a specific record by ID from Apricot360
+ */
+export const getApricotRecordById = createTool({
+  id: 'get-apricot-record-by-id',
+  description: 'Get a specific participant/client record from Apricot360 by its unique record ID. This retrieves detailed information about a single record.',
+  inputSchema: getRecordByIdSchema,
+  outputSchema: getRecordByIdResponseSchema,
+  execute: async ({ context }) => {
+    try {
+      const response: RecordByIdResponse = await getRecordById(context.recordId);
+      
+      if (response.data.length === 0) {
+        return {
+          record: null,
+          found: false,
+        };
+      }
+
+      const record = transformRecord(response.data[0]);
+
+      return {
+        record,
+        found: true,
+      };
+    } catch (error) {
+      console.error('Error fetching record from Apricot:', error);
+      return {
+        record: null,
+        found: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch record from Apricot360',
+      };
+    }
+  },
+});
+
 // Export all Apricot tools
 export const apricotTools = [
   getUsersFromApricot,
@@ -365,5 +403,6 @@ export const apricotTools = [
   getFormsFromApricot,
   getApricotFormById,
   getRecordsFromApricot,
+  getApricotRecordById,
 ];
 

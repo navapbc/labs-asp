@@ -30,6 +30,10 @@ export const getFormByIdSchema = z.object({
   formId: z.number().describe('The unique ID of the form in Apricot360'),
 });
 
+export const getRecordByIdSchema = z.object({
+  recordId: z.number().describe('The unique ID of the record in Apricot360'),
+});
+
 // ===== Output Schemas for Tools =====
 
 export const userSchema = z.object({
@@ -144,5 +148,11 @@ export const getRecordsResponseSchema = z.object({
   count: z.number(),
   totalPages: z.number(),
   success: z.boolean(),
+  error: z.string().optional(),
+});
+
+export const getRecordByIdResponseSchema = z.object({
+  record: recordSchema.nullable(),
+  found: z.boolean(),
   error: z.string().optional(),
 });

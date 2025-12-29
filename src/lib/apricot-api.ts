@@ -6,6 +6,7 @@ import type {
   FormsResponse,
   GetRecordsOptions,
   RecordsResponse,
+  RecordByIdResponse,
 } from './models/apricot-models';
 
 // Re-export types for convenience
@@ -27,6 +28,7 @@ export type {
   RecordsResponseMeta,
   RecordsResponseLinks,
   GetRecordsOptions,
+  RecordByIdResponse,
 } from './models/apricot-models';
 
 // ===== Token Management =====
@@ -364,4 +366,66 @@ export const getRecords = async (options: GetRecordsOptions): Promise<RecordsRes
 
   // This should never be reached, but TypeScript needs it
   throw new Error('Failed to get records after retries');
+};
+
+// Get Record by ID function
+export const getRecordById = async (recordId: number): Promise<RecordByIdResponse> => {
+  const baseUrl = process.env.APRICOT_API_BASE_URL;
+
+  if (!baseUrl) {
+    throw new Error('Missing required environment variable: APRICOT_API_BASE_URL');
+  }
+
+  // Get access token (with retry logic)
+  let accessToken: string;
+  let retryCount = 0;
+  const maxRetries = 1;
+
+  while (retryCount <= maxRetries) {
+    try {
+      accessToken = await authenticate();
+
+      const url = `${baseUrl}/sandbox/records/${recordId}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Handle 401 errors by invalidating token and retrying once
+      if (response.status === 401 && retryCount < maxRetries) {
+        invalidateToken();
+        retryCount++;
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to fetch record with status ${response.status}: ${errorText}`
+        );
+      }
+
+      const data: RecordByIdResponse = await response.json();
+      return data;
+    } catch (error) {
+      // If it's a 401 and we haven't retried yet, continue the loop
+      if (retryCount < maxRetries && error instanceof Error && error.message.includes('401')) {
+        invalidateToken();
+        retryCount++;
+        continue;
+      }
+
+      // Otherwise, throw the error
+      if (error instanceof Error) {
+        throw new Error(`Failed to get record from Apricot API: ${error.message}`);
+      }
+      throw new Error('Failed to get record from Apricot API: Unknown error');
+    }
+  }
+
+  // This should never be reached, but TypeScript needs it
+  throw new Error('Failed to get record after retries');
 };
