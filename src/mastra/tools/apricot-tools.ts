@@ -1,18 +1,18 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { getUsers, authenticate, getForms, getRecords, type UsersResponse, type UserData, type FormsResponse, type FormData, type RecordsResponse, type RecordData } from '../../lib/apricot-api';
+import { getUsers, authenticate, getForms, getRecordById, type UsersResponse, type UserData, type FormsResponse, type FormData, type RecordData, type RecordByIdResponse } from '../../lib/apricot-api';
 import {
   getUsersSchema,
   searchUsersByNameSchema,
   getUserByIdSchema,
   getFormsSchema,
   getFormByIdSchema,
-  getRecordsSchema,
+  getRecordByIdSchema,
   getUsersResponseSchema,
   getUserByIdResponseSchema,
   getFormsResponseSchema,
   getFormByIdResponseSchema,
-  getRecordsResponseSchema,
+  getRecordByIdResponseSchema,
 } from '../types/apricot-types';
 
 // ===== Helper Functions =====
@@ -316,41 +316,36 @@ export const getApricotFormById = createTool({
 });
 
 /**
- * Get records from Apricot360 API for a specific form
+ * Get a specific record by ID from Apricot360
  */
-export const getRecordsFromApricot = createTool({
-  id: 'get-records-from-apricot',
-  description: 'Fetch participant/client records from Apricot360 API for a specific form. Form ID 99 contains main client data and should be called FIRST. Form ID 98 contains household data. You can filter by id or name, and use pagination, sorting, and other filters.',
-  inputSchema: getRecordsSchema,
-  outputSchema: getRecordsResponseSchema,
+export const getApricotRecordById = createTool({
+  id: 'get-apricot-record-by-id',
+  description: 'Get a specific participant/client record from Apricot360 by its unique record ID. This retrieves detailed information about a single record.',
+  inputSchema: getRecordByIdSchema,
+  outputSchema: getRecordByIdResponseSchema,
   execute: async ({ context }) => {
     try {
-      const options = {
-        formId: context.formId,
-        pageSize: context.pageSize,
-        pageNumber: context.pageNumber,
-        sort: context.sort,
-        filters: context.filters,
-      };
-
-      const response: RecordsResponse = await getRecords(options);
+      const response: RecordByIdResponse = await getRecordById(context.recordId);
       
-      const records = response.data.map(transformRecord);
+      if (response.data.length === 0) {
+        return {
+          record: null,
+          found: false,
+        };
+      }
+
+      const record = transformRecord(response.data[0]);
 
       return {
-        records,
-        count: response.meta.count,
-        totalPages: response.meta['total-pages'],
-        success: true,
+        record,
+        found: true,
       };
     } catch (error) {
-      console.error('Error fetching records from Apricot:', error);
+      console.error('Error fetching record from Apricot:', error);
       return {
-        records: [],
-        count: 0,
-        totalPages: 0,
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch records from Apricot360',
+        record: null,
+        found: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch record from Apricot360',
       };
     }
   },
@@ -364,6 +359,6 @@ export const apricotTools = [
   testApricotAuth,
   getFormsFromApricot,
   getApricotFormById,
-  getRecordsFromApricot,
+  getApricotRecordById,
 ];
 

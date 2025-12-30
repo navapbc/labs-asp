@@ -4,8 +4,7 @@ import type {
   UsersResponse,
   GetFormsOptions,
   FormsResponse,
-  GetRecordsOptions,
-  RecordsResponse,
+  RecordByIdResponse,
 } from './models/apricot-models';
 
 // Re-export types for convenience
@@ -23,19 +22,12 @@ export type {
   RecordAttributes,
   RecordLinks,
   RecordData,
-  RecordsResponse,
-  RecordsResponseMeta,
-  RecordsResponseLinks,
-  GetRecordsOptions,
+  RecordByIdResponse,
 } from './models/apricot-models';
 
 // ===== Token Management =====
 let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
-
-// ===== Records API Debounce Management =====
-let lastRecordsCallTime: number | null = null;
-const RECORDS_DEBOUNCE_MS = 15000; // 15 seconds
 
 // Helper function to invalidate cached token
 export const invalidateToken = (): void => {
@@ -48,35 +40,6 @@ const buildQueryString = (options?: GetUsersOptions | GetFormsOptions): string =
   if (!options) return '';
 
   const params = new URLSearchParams();
-
-  if (options.pageSize !== undefined) {
-    params.append('page[size]', options.pageSize.toString());
-  }
-
-  if (options.pageNumber !== undefined) {
-    params.append('page[number]', options.pageNumber.toString());
-  }
-
-  if (options.sort) {
-    params.append('sort', options.sort);
-  }
-
-  if (options.filters) {
-    Object.entries(options.filters).forEach(([key, value]) => {
-      params.append(`filter[${key}]`, value);
-    });
-  }
-
-  const queryString = params.toString();
-  return queryString ? `?${queryString}` : '';
-};
-
-// Helper function to build query string for records (includes required form_id)
-const buildRecordsQueryString = (options: GetRecordsOptions): string => {
-  const params = new URLSearchParams();
-
-  // form_id is required
-  params.append('form_id', options.formId.toString());
 
   if (options.pageSize !== undefined) {
     params.append('page[size]', options.pageSize.toString());
@@ -288,22 +251,8 @@ export const getForms = async (options?: GetFormsOptions): Promise<FormsResponse
   throw new Error('Failed to get forms after retries');
 };
 
-// Get Records function
-export const getRecords = async (options: GetRecordsOptions): Promise<RecordsResponse> => {
-  // Debounce: Wait if necessary to ensure 15 seconds between calls
-  if (lastRecordsCallTime !== null) {
-    const timeSinceLastCall = Date.now() - lastRecordsCallTime;
-    const remainingWaitTime = RECORDS_DEBOUNCE_MS - timeSinceLastCall;
-    
-    if (remainingWaitTime > 0) {
-      console.log(`Debouncing records API call. Waiting ${Math.ceil(remainingWaitTime / 1000)} seconds...`);
-      await new Promise(resolve => setTimeout(resolve, remainingWaitTime));
-    }
-  }
-  
-  // Update the last call timestamp
-  lastRecordsCallTime = Date.now();
-  
+// Get Record by ID function
+export const getRecordById = async (recordId: number): Promise<RecordByIdResponse> => {
   const baseUrl = process.env.APRICOT_API_BASE_URL;
 
   if (!baseUrl) {
@@ -319,13 +268,11 @@ export const getRecords = async (options: GetRecordsOptions): Promise<RecordsRes
     try {
       accessToken = await authenticate();
 
-      const queryString = buildRecordsQueryString(options);
-      const url = `${baseUrl}/sandbox/records${queryString}`;
+      const url = `${baseUrl}/sandbox/records/${recordId}`;
 
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
       });
@@ -340,11 +287,11 @@ export const getRecords = async (options: GetRecordsOptions): Promise<RecordsRes
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(
-          `Failed to fetch records with status ${response.status}: ${errorText}`
+          `Failed to fetch record with status ${response.status}: ${errorText}`
         );
       }
 
-      const data: RecordsResponse = await response.json();
+      const data: RecordByIdResponse = await response.json();
       return data;
     } catch (error) {
       // If it's a 401 and we haven't retried yet, continue the loop
@@ -356,12 +303,12 @@ export const getRecords = async (options: GetRecordsOptions): Promise<RecordsRes
 
       // Otherwise, throw the error
       if (error instanceof Error) {
-        throw new Error(`Failed to get records from Apricot API: ${error.message}`);
+        throw new Error(`Failed to get record from Apricot API: ${error.message}`);
       }
-      throw new Error('Failed to get records from Apricot API: Unknown error');
+      throw new Error('Failed to get record from Apricot API: Unknown error');
     }
   }
 
   // This should never be reached, but TypeScript needs it
-  throw new Error('Failed to get records after retries');
+  throw new Error('Failed to get record after retries');
 };
