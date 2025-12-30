@@ -124,33 +124,6 @@ export interface RecordData {
   links: RecordLinks;
 }
 
-export interface RecordsResponseMeta {
-  count: number;
-  'total-pages': number;
-}
-
-export interface RecordsResponseLinks {
-  self: string;
-  first: string;
-  last: string;
-  next?: string;
-  prev?: string;
-}
-
-export interface RecordsResponse {
-  meta: RecordsResponseMeta;
-  links: RecordsResponseLinks;
-  data: RecordData[];
-}
-
-export interface GetRecordsOptions {
-  formId: number; // Required
-  pageSize?: number;
-  pageNumber?: number;
-  sort?: string;
-  filters?: Record<string, string>;
-}
-
 // Response type for single record by ID
 export interface RecordByIdResponse {
   meta: {
