@@ -137,9 +137,10 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       }
 
       # Next.js Auth configuration
+      # Preview envs don't have custom domains, use Cloud Run URL directly
       env {
         name  = "NEXTAUTH_URL"
-        value = var.environment == "prod" ? "https://${var.domain_name}" : "https://${local.env_config.domain_prefix}.${var.domain_name}"
+        value = var.environment == "prod" ? "https://${var.domain_name}" : (startswith(var.environment, "preview-") ? google_cloud_run_v2_service.ai_chatbot.uri : "https://${local.env_config.domain_prefix}.${var.domain_name}")
       }
 
       env {
