@@ -137,9 +137,13 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       }
 
       # Next.js Auth configuration
-      env {
-        name  = "NEXTAUTH_URL"
-        value = var.environment == "prod" ? "https://${var.domain_name}" : "https://${local.env_config.domain_prefix}.${var.domain_name}"
+      # Preview envs: NEXTAUTH_URL not set, code falls back to x-forwarded-host header
+      dynamic "env" {
+        for_each = startswith(var.environment, "preview-") ? [] : [1]
+        content {
+          name  = "NEXTAUTH_URL"
+          value = var.environment == "prod" ? "https://${var.domain_name}" : "https://${local.env_config.domain_prefix}.${var.domain_name}"
+        }
       }
 
       env {
