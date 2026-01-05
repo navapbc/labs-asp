@@ -44,9 +44,48 @@ class BrowserStreamingService extends EventEmitter {
     this.cdpPort = cdpPort; // Chrome DevTools Protocol port (fallback)
     this.wss = new WebSocketServer({ port });
     this.activeSessions = new Map(); // Map<sessionId, {ws, client, cdpEndpoint, controlMode, targetId}>
+    
+    // NEW: Persistent session storage for reconnection
+    this.persistentSessions = new Map(); // Map<sessionId, {targetId, controlMode, lastActivity, cdpEndpoint}>
     this.sessionToTarget = new Map(); // Map<sessionId, targetId> - tracks which session owns which CDP target
+    
     // Mutex to prevent race conditions in target assignment
     this._targetAssignmentLock = Promise.resolve();
+    
+    // Session expiration - clean up sessions inactive
+    // this.sessionExpirationTime = 30 * 60 * 1000; // 30 minutes in milliseconds (production)
+    this.sessionExpirationTime = 2 * 60 * 1000; // 2 minutes in milliseconds (testing)
+    this.startSessionCleanupTimer();
+  }
+
+  /**
+   * Periodic cleanup of expired sessions
+   */
+  startSessionCleanupTimer() {
+    this.cleanupTimer = setInterval(() => {
+      const now = Date.now();
+      for (const [sessionId, session] of this.persistentSessions.entries()) {
+        if (now - session.lastActivity > this.sessionExpirationTime) {
+          console.log(`Expiring inactive session: ${sessionId} (inactive for ${Math.round((now - session.lastActivity) / 60000)} minutes)`);
+          this.expireSession(sessionId);
+        }
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+  }
+
+  /**
+   * Completely remove an expired session
+   */
+  expireSession(sessionId) {
+    this.persistentSessions.delete(sessionId);
+    this.sessionToTarget.delete(sessionId);
+    
+    // If still active, stop it
+    if (this.activeSessions.has(sessionId)) {
+      this.disconnectSession(sessionId);
+    }
+    
+    console.log(`Session ${sessionId} expired and removed`);
   }
 
   async start() {
@@ -65,11 +104,21 @@ class BrowserStreamingService extends EventEmitter {
 
       ws.on('close', () => {
         console.log('Browser streaming client disconnected');
-        // Clean up sessions for this client
+        // Preserve sessions for reconnection instead of deleting them
         for (const [sessionId, session] of this.activeSessions) {
           if (session.ws === ws) {
-            this.stopBrowserCapture(sessionId);
-            this.activeSessions.delete(sessionId);
+            console.log(`WebSocket disconnected for session ${sessionId}, preserving session for reconnection`);
+            
+            // Update persistent session with latest state
+            this.persistentSessions.set(sessionId, {
+              targetId: session.targetId,
+              controlMode: session.controlMode,
+              cdpEndpoint: session.cdpEndpoint,
+              lastActivity: Date.now()
+            });
+            
+            // Stop the screencast but preserve session data
+            this.disconnectSession(sessionId);
           }
         }
       });
@@ -139,6 +188,27 @@ class BrowserStreamingService extends EventEmitter {
 
   async startBrowserCapture(ws, sessionId) {
     try {
+      // Check if this is a reconnection to an existing session
+      const existingSession = this.persistentSessions.get(sessionId);
+      
+      if (existingSession) {
+        console.log(`Reconnecting to existing session: ${sessionId} (target: ${existingSession.targetId})`);
+        
+        // Update last activity
+        existingSession.lastActivity = Date.now();
+        
+        // Try to reconnect to the existing target
+        const reconnected = await this.reconnectToExistingTarget(ws, sessionId, existingSession);
+        
+        if (reconnected) {
+          console.log(`Successfully reconnected to session ${sessionId}`);
+          return;
+        } else {
+          console.log(`Could not reconnect to previous target, starting new capture for session ${sessionId}`);
+          // Fall through to create new connection
+        }
+      }
+      
       // Connect to the Playwright MCP server's CDP endpoint with retry logic
       let cdpEndpoint = null;
       let retries = 0;
@@ -234,8 +304,16 @@ class BrowserStreamingService extends EventEmitter {
         ws,
         client,
         cdpEndpoint,
-        controlMode: 'agent', // Default to agent control
+        controlMode: existingSession?.controlMode || 'agent', // Use existing control mode if reconnecting
         targetId, // Store the target ID for this session
+      });
+
+      // Store in persistent sessions for reconnection support
+      this.persistentSessions.set(sessionId, {
+        targetId,
+        controlMode: existingSession?.controlMode || 'agent',
+        cdpEndpoint,
+        lastActivity: Date.now()
       });
 
       // Notify client that streaming started
@@ -243,7 +321,8 @@ class BrowserStreamingService extends EventEmitter {
         type: 'streaming-started',
         sessionId,
         cdpEndpoint,
-        targetId
+        targetId,
+        reconnected: !!existingSession
       }));
 
       console.log(`Browser capture started for session: ${sessionId} (target: ${targetId})`);
@@ -255,6 +334,143 @@ class BrowserStreamingService extends EventEmitter {
         type: 'error',
         error: `Failed to start browser capture: ${errorMessage}`
       }));
+    }
+  }
+
+  /**
+   * Reconnect to an existing target from a previous session
+   */
+  async reconnectToExistingTarget(ws, sessionId, existingSession) {
+    try {
+      const { targetId, cdpEndpoint, controlMode } = existingSession;
+      
+      // Check if the target still exists
+      const detectedPort = await this.findChromePort();
+      if (!detectedPort) {
+        console.log('No Chrome process detected for reconnection');
+        return false;
+      }
+
+      const CDP = require('chrome-remote-interface');
+      const targets = await CDP.List({ port: detectedPort });
+      const targetExists = targets.find(t => t.id === targetId && t.type === 'page');
+
+      if (!targetExists) {
+        console.log(`Target ${targetId} no longer exists, cannot reconnect`);
+        return false;
+      }
+
+      // Connect to the existing target
+      const client = await CDP({ target: targetExists.webSocketDebuggerUrl });
+      const { Page, Runtime } = client;
+
+      await Page.enable();
+      await Runtime.enable();
+
+      // Start screencast
+      await Page.startScreencast({
+        format: 'jpeg',
+        quality: 80,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        everyNthFrame: 1
+      });
+
+      // Handle screencast frames
+      Page.screencastFrame((params) => {
+        try {
+          const currentSession = this.activeSessions.get(sessionId);
+          const expectedTargetId = this.sessionToTarget.get(sessionId);
+
+          if (!currentSession) {
+            console.warn(`[SESSION VALIDATION] Session ${sessionId} no longer active, skipping frame`);
+            Page.screencastFrameAck({ sessionId: params.sessionId });
+            return;
+          }
+
+          if (currentSession.targetId !== expectedTargetId) {
+            console.warn(`[SESSION VALIDATION] Target mismatch for session ${sessionId}`);
+            Page.screencastFrameAck({ sessionId: params.sessionId });
+            return;
+          }
+
+          const frame = {
+            type: 'frame',
+            data: params.data,
+            timestamp: Date.now(),
+            sessionId
+          };
+
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify(frame));
+          } else if (ws.readyState === 3) {
+            console.log(`WebSocket closed for session ${sessionId}, stopping capture`);
+            this.disconnectSession(sessionId);
+            return;
+          }
+
+          Page.screencastFrameAck({ sessionId: params.sessionId });
+        } catch (error) {
+          console.error('Error handling screencast frame on reconnection:', error);
+        }
+      });
+
+      // Restore active session
+      this.activeSessions.set(sessionId, {
+        ws,
+        client,
+        cdpEndpoint: targetExists.webSocketDebuggerUrl,
+        controlMode,
+        targetId,
+      });
+
+      // Update persistent session
+      existingSession.lastActivity = Date.now();
+      existingSession.cdpEndpoint = targetExists.webSocketDebuggerUrl;
+
+      ws.send(JSON.stringify({
+        type: 'streaming-started',
+        sessionId,
+        cdpEndpoint: targetExists.webSocketDebuggerUrl,
+        targetId,
+        reconnected: true
+      }));
+
+      console.log(`Successfully reconnected to target ${targetId} for session ${sessionId}`);
+      return true;
+    } catch (error) {
+      console.error('Error reconnecting to existing target:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Disconnect session without deleting persistent data
+   */
+  async disconnectSession(sessionId) {
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    try {
+      // Stop screencast
+      if (session.client && session.client.Page) {
+        await session.client.Page.stopScreencast();
+      }
+
+      // Close CDP connection
+      if (session.client) {
+        await session.client.close();
+      }
+
+      // Remove from active sessions (but keep persistent session)
+      this.activeSessions.delete(sessionId);
+
+      console.log(`Session ${sessionId} disconnected (persistent data preserved for reconnection)`);
+
+    } catch (error) {
+      console.error('Error disconnecting session:', error);
     }
   }
 
@@ -281,12 +497,10 @@ class BrowserStreamingService extends EventEmitter {
       // Remove from active sessions
       this.activeSessions.delete(sessionId);
 
-      // Clean up session-to-target mapping
-      // NOTE: We keep the target alive for agent control, but release the claim
-      if (this.sessionToTarget.has(sessionId)) {
-        const targetId = this.sessionToTarget.get(sessionId);
-        console.log(`Releasing target ${targetId} from session ${sessionId}`);
-        this.sessionToTarget.delete(sessionId);
+      // Update persistent session data for reconnection (keep session-to-target mapping)
+      const persistentSession = this.persistentSessions.get(sessionId);
+      if (persistentSession) {
+        persistentSession.lastActivity = Date.now();
       }
 
       // Notify client that streaming stopped
@@ -297,7 +511,7 @@ class BrowserStreamingService extends EventEmitter {
         }));
       }
 
-      console.log(`Browser capture stopped for session: ${sessionId} (Chrome process remains alive)`);
+      console.log(`Browser capture stopped for session: ${sessionId} (session preserved for reconnection)`);
 
     } catch (error) {
       console.error('Error stopping browser capture:', error);
@@ -313,6 +527,14 @@ class BrowserStreamingService extends EventEmitter {
 
     if (newMode === 'agent' || newMode === 'user') {
       session.controlMode = newMode;
+      
+      // Update persistent session
+      const persistentSession = this.persistentSessions.get(sessionId);
+      if (persistentSession) {
+        persistentSession.controlMode = newMode;
+        persistentSession.lastActivity = Date.now();
+      }
+      
       console.log(`Control mode for session ${sessionId} changed to: ${newMode}`);
 
       // Notify the client of the change
@@ -333,6 +555,12 @@ class BrowserStreamingService extends EventEmitter {
     if (!session || session.controlMode !== 'user') {
       // Ignore user input if not in user control mode
       return;
+    }
+
+    // Update last activity on user input
+    const persistentSession = this.persistentSessions.get(sessionId);
+    if (persistentSession) {
+      persistentSession.lastActivity = Date.now();
     }
 
     try {
@@ -609,9 +837,14 @@ class BrowserStreamingService extends EventEmitter {
   }
 
   async stop() {
+    // Clear cleanup timer
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+    }
+
     // Stop all active sessions
     for (const sessionId of this.activeSessions.keys()) {
-      await this.stopBrowserCapture(sessionId);
+      await this.disconnectSession(sessionId);
     }
     this.activeSessions.clear();
 
