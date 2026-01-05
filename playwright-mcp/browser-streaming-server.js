@@ -153,7 +153,8 @@ class BrowserStreamingService extends EventEmitter {
           ws.send(JSON.stringify({ type: 'error', error: 'Missing required sessionId' }));
           return;
         }
-        await this.stopBrowserCapture(message.sessionId);
+        // Disconnect but preserve session for reconnection
+        await this.disconnectSession(message.sessionId);
         break;
 
       case 'control-mode':
@@ -462,6 +463,15 @@ class BrowserStreamingService extends EventEmitter {
       // Close CDP connection
       if (session.client) {
         await session.client.close();
+      }
+
+      // Notify client that streaming stopped but session is preserved
+      if (session.ws && session.ws.readyState === 1) {
+        session.ws.send(JSON.stringify({
+          type: 'streaming-stopped',
+          sessionId,
+          canResume: true // Indicates session can be resumed
+        }));
       }
 
       // Remove from active sessions (but keep persistent session)
