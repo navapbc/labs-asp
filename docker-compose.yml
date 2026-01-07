@@ -66,7 +66,6 @@ services:
       - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
       - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/labs_asp_dev
     env_file:
       - .env
     volumes:
@@ -108,7 +107,6 @@ services:
       - MASTRA_SERVER_URL=http://mastra-app:4112
       - BROWSER_STREAMING_HOST=browser-streaming
       - BROWSER_STREAMING_PORT=8933
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/labs_asp_dev
     env_file:
       - client/.env.local
     volumes:
