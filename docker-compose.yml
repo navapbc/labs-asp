@@ -1,4 +1,25 @@
 services:
+  # PostgreSQL Database for local development
+  postgres:
+    image: postgres:16-alpine
+    container_name: labs-asp-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=labs_asp_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - mastra-network
+
   # Browser Streaming Service (includes Playwright MCP)
   browser-streaming:
     build:
@@ -112,3 +133,7 @@ services:
 networks:
   mastra-network:
     driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local

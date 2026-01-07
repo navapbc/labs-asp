@@ -127,5 +127,5 @@ CREATE TRIGGER update_mastra_artifacts_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Insert a comment to track migration version
-COMMENT ON DATABASE CURRENT_DATABASE() IS 'WIC Benefits DB - Schema version 001 - Created from Prisma migrations';
+-- Migration completed successfully
+-- Note: Database comment not set (requires database name, not function call)
