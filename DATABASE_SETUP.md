@@ -38,6 +38,11 @@ Add this to:
 - `Vote` / `Vote_v2` - User votes
 - `Stream` - Streaming data
 
+### Mastra Framework Tables
+- `mastra_threads` - Conversation threads
+- `mastra_messages` - Thread messages
+- `mastra_traces` - Observability traces
+
 ### System Tables
 - `_migrations` - Migration tracking
 

@@ -66,6 +66,7 @@ services:
       - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
       - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/labs_asp_dev
     env_file:
       - .env
     volumes:
@@ -76,6 +77,7 @@ services:
       - ./artifacts:/app/artifacts
     depends_on:
       - browser-streaming
+      - postgres
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:4112/health || exit 1"]
       interval: 30s
@@ -106,6 +108,7 @@ services:
       - MASTRA_SERVER_URL=http://mastra-app:4112
       - BROWSER_STREAMING_HOST=browser-streaming
       - BROWSER_STREAMING_PORT=8933
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/labs_asp_dev
     env_file:
       - client/.env.local
     volumes:
@@ -120,6 +123,7 @@ services:
     depends_on:
       - browser-streaming
       - mastra-app
+      - postgres
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health", "||", "curl", "-f", "http://localhost:3000"]
       interval: 30s
