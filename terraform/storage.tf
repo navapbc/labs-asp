@@ -2,12 +2,12 @@
 # 
 # Strategy:
 # - Dev: Creates and manages nava-storage-dev bucket
-# - Preview: Does NOT create bucket, uses data source to reference dev bucket
+# - Preview: Also creates nava-storage-dev bucket if it doesn't exist (shared with dev)
 # - Prod: Creates and manages nava-storage-prod bucket (completely isolated from dev/preview)
 
-# Storage Bucket for DEV environment
+# Storage Bucket for DEV environment (also created by preview if dev hasn't run yet)
 resource "google_storage_bucket" "dev" {
-  count         = var.environment == "dev" ? 1 : 0
+  count         = var.environment == "dev" || startswith(var.environment, "preview-") ? 1 : 0
   name          = "nava-storage-dev"
   location      = local.region
   force_destroy = false  # Prevent accidental deletion in dev
@@ -36,12 +36,6 @@ resource "google_storage_bucket" "dev" {
   })
 
   depends_on = [google_project_service.required_apis]
-}
-
-# Data source for DEV bucket (used by preview environments)
-data "google_storage_bucket" "dev" {
-  count = startswith(var.environment, "preview-") ? 1 : 0
-  name  = "nava-storage-dev"
 }
 
 # Storage Bucket for PROD environment (completely isolated)
@@ -81,16 +75,14 @@ resource "google_storage_bucket" "prod" {
 locals {
   storage_bucket_name = var.environment == "prod" ? (
     google_storage_bucket.prod[0].name
-  ) : startswith(var.environment, "preview-") ? (
-    data.google_storage_bucket.dev[0].name
   ) : (
-    google_storage_bucket.dev[0].name
+    google_storage_bucket.dev[0].name  # Both dev and preview use the same bucket
   )
 }
 
-# IAM binding for Cloud Run services to access DEV bucket
+# IAM binding for Cloud Run services to access DEV bucket (dev and preview)
 resource "google_storage_bucket_iam_member" "cloud_run_dev_access" {
-  count  = var.environment == "dev" ? 1 : 0
+  count  = var.environment == "dev" || startswith(var.environment, "preview-") ? 1 : 0
   bucket = google_storage_bucket.dev[0].name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.cloud_run.email}"
@@ -106,14 +98,4 @@ resource "google_storage_bucket_iam_member" "cloud_run_prod_access" {
   member = "serviceAccount:${google_service_account.cloud_run.email}"
 
   depends_on = [google_storage_bucket.prod]
-}
-
-# IAM binding for preview environments to access DEV bucket
-resource "google_storage_bucket_iam_member" "cloud_run_preview_dev_access" {
-  count  = startswith(var.environment, "preview-") ? 1 : 0
-  bucket = data.google_storage_bucket.dev[0].name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.cloud_run.email}"
-
-  depends_on = [data.google_storage_bucket.dev]
 }
