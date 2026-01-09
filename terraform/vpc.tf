@@ -297,7 +297,7 @@ resource "google_compute_firewall" "allow_health_checks" {
   description = "Allow health checks from Google Cloud load balancers"
 }
 
-# Browser MCP access (configurable port, only for dev/prod)
+# Browser MCP access (internal only - accessed via Cloud Run → VPC → VM)
 # Preview environments use shared VPC firewall rules
 resource "google_compute_firewall" "browser_mcp" {
   count   = startswith(var.environment, "preview-") ? 0 : 1
@@ -309,22 +309,20 @@ resource "google_compute_firewall" "browser_mcp" {
     ports    = [tostring(var.firewall_rules.browser_mcp.port)]
   }
 
-  # Combine internal VPC ranges with allowed external ranges
-  source_ranges = concat(
-    [
-      var.vpc_cidr_public,
-      var.vpc_cidr_private,
-      var.vpc_connector_cidr
-    ],
-    var.firewall_rules.browser_mcp.allow_public_access ? ["0.0.0.0/0"] : var.firewall_rules.browser_mcp.allowed_ip_ranges
-  )
+  # Internal VPC access only - Cloud Run accesses via VPC Connector
+  source_ranges = [
+    var.vpc_cidr_public,
+    var.vpc_cidr_private,
+    var.vpc_cidr_db,
+    var.vpc_connector_cidr
+  ]
 
   target_tags = ["browser-mcp"]
 
-  description = "Allow Playwright MCP access on port ${var.firewall_rules.browser_mcp.port} from VPC and approved external IPs"
+  description = "Allow Playwright MCP access on port ${var.firewall_rules.browser_mcp.port} from internal VPC only (internal service)"
 }
 
-# Browser Streaming WebSocket access (configurable port, only for dev/prod)
+# Browser Streaming WebSocket access (internal only - accessed via Cloud Run browser-ws-proxy → VPC → VM)
 resource "google_compute_firewall" "browser_streaming" {
   count   = startswith(var.environment, "preview-") ? 0 : 1
   name    = "labs-asp-browser-streaming-${var.environment}"
@@ -335,19 +333,17 @@ resource "google_compute_firewall" "browser_streaming" {
     ports    = [tostring(var.firewall_rules.browser_streaming.port)]
   }
 
-  # Combine internal VPC ranges with allowed external ranges
-  source_ranges = concat(
-    [
-      var.vpc_cidr_public,
-      var.vpc_cidr_private,
-      var.vpc_connector_cidr
-    ],
-    var.firewall_rules.browser_streaming.allow_public_access ? ["0.0.0.0/0"] : var.firewall_rules.browser_streaming.allowed_ip_ranges
-  )
+  # Internal VPC access only - browser-ws-proxy Cloud Run accesses via VPC Connector
+  source_ranges = [
+    var.vpc_cidr_public,
+    var.vpc_cidr_private,
+    var.vpc_cidr_db,
+    var.vpc_connector_cidr
+  ]
 
   target_tags = ["browser-streaming"]
 
-  description = "Allow browser streaming WebSocket access on port ${var.firewall_rules.browser_streaming.port} from VPC and approved external IPs"
+  description = "Allow browser streaming WebSocket access on port ${var.firewall_rules.browser_streaming.port} from internal VPC only (internal service)"
 }
 
 # Mastra API access (configurable port, only for dev/prod)
