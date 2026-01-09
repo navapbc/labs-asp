@@ -237,7 +237,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Google Cloud Storage
       env {
         name  = "GCS_BUCKET_NAME"
-        value = var.environment == "prod" ? "labs-asp-artifacts-prod" : "labs-asp-artifacts-dev"
+        value = local.storage_bucket_name
       }
 
       # Mastra authentication
