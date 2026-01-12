@@ -3,16 +3,16 @@ import { pgVector, postgresStore } from '../storage';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { ToolCallFilter, TokenLimiter } from '@mastra/memory/processors';
-import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
-import { createAutonomousProgressionScorer } from "../scorers/autonomousProgression";
-import { createDeductionScorer } from "../scorers/deduction";
-import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
-
-// AI SDK imports for scorer models (scorers require LanguageModel objects, not strings)
-import { google } from '@ai-sdk/google';
 import { apricotTools } from '../tools/apricot-tools';
+
+// Scorer imports temporarily removed - scorers disabled due to AI SDK v5 incompatibility
+// import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
+// import { createAutonomousProgressionScorer } from "../scorers/autonomousProgression";
+// import { createDeductionScorer } from "../scorers/deduction";
+// import { createAskQuestionsScorer } from "../scorers/askQuestions";
+// import { google } from '@ai-sdk/google';
 
 const storage = postgresStore;
 
@@ -64,12 +64,6 @@ const memory = new Memory({
         // IMPORTANT: Use 'thread' scope to only search current conversation
         // 'resource' scope would search across ALL user conversations and pull in old context
         scope: "thread"
-     },
-     threads: {
-       generateTitle: {
-         model: 'google/gemini-flash-latest', // Use faster/cheaper model for titles
-         instructions: "Generate a concise title based on the web automation task or website being accessed.",
-       },
      },
   },
 });
@@ -193,32 +187,34 @@ export const webAutomationAgent = new Agent({
     webAutomationWorkflow: webAutomationWorkflow,
   },
   memory: memory,
-  scorers: {
-    languagePreference: {
-      scorer: createLanguagePreferenceScorer({
-        model: google('gemini-flash-latest'),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    autonomousProgression: {
-      scorer: createAutonomousProgressionScorer({
-        model: google('gemini-flash-latest'),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    deduction: {
-      scorer: createDeductionScorer({
-        model: google('gemini-flash-latest'),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    askQuestions: {
-      scorer: createAskQuestionsScorer({
-        model: google('gemini-flash-latest'),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-  },
+  // Scorers temporarily disabled - Mastra's scorer system uses generateLegacy() internally
+  // which doesn't support AI SDK v5 models. Re-enable once Mastra updates to use generate()
+  // scorers: {
+  //   languagePreference: {
+  //     scorer: createLanguagePreferenceScorer({
+  //       model: google('gemini-flash-latest'),
+  //     }),
+  //     sampling: { rate: 1, type: "ratio" },
+  //   },
+  //   autonomousProgression: {
+  //     scorer: createAutonomousProgressionScorer({
+  //       model: google('gemini-flash-latest'),
+  //     }),
+  //     sampling: { rate: 1, type: "ratio" },
+  //   },
+  //   deduction: {
+  //     scorer: createDeductionScorer({
+  //       model: google('gemini-flash-latest'),
+  //     }),
+  //     sampling: { rate: 1, type: "ratio" },
+  //   },
+  //   askQuestions: {
+  //     scorer: createAskQuestionsScorer({
+  //       model: google('gemini-flash-latest'),
+  //     }),
+  //     sampling: { rate: 1, type: "ratio" },
+  //   },
+  // },
   defaultStreamOptions: {
     maxSteps: 50,
     maxRetries: 3,
