@@ -10,11 +10,8 @@ import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 
-// AI SDK imports removed - using Mastra model router format instead
-// import { google } from '@ai-sdk/google';
-// import { openai } from '@ai-sdk/openai';
-// import { anthropic } from '@ai-sdk/anthropic';
-// import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+// AI SDK imports for scorer models (scorers require LanguageModel objects, not strings)
+import { google } from '@ai-sdk/google';
 import { apricotTools } from '../tools/apricot-tools';
 
 const storage = postgresStore;
@@ -70,7 +67,7 @@ const memory = new Memory({
      },
      threads: {
        generateTitle: {
-         model: 'google/gemini-flash-latest', // Use faster/cheaper model for titles
+         model: google('gemini-flash-latest'), // Use faster/cheaper model for titles
          instructions: "Generate a concise title based on the web automation task or website being accessed.",
        },
      },
@@ -199,25 +196,25 @@ export const webAutomationAgent = new Agent({
   scorers: {
     languagePreference: {
       scorer: createLanguagePreferenceScorer({
-        model: 'google/gemini-flash-latest',
+        model: google('gemini-flash-latest'),
       }),
       sampling: { rate: 1, type: "ratio" },
     },
     autonomousProgression: {
       scorer: createAutonomousProgressionScorer({
-        model: 'google/gemini-flash-latest',
+        model: google('gemini-flash-latest'),
       }),
       sampling: { rate: 1, type: "ratio" },
     },
     deduction: {
       scorer: createDeductionScorer({
-        model: 'google/gemini-flash-latest',
+        model: google('gemini-flash-latest'),
       }),
       sampling: { rate: 1, type: "ratio" },
     },
     askQuestions: {
       scorer: createAskQuestionsScorer({
-        model: 'google/gemini-flash-latest',
+        model: google('gemini-flash-latest'),
       }),
       sampling: { rate: 1, type: "ratio" },
     },
