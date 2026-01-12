@@ -9,3 +9,4 @@ triggering the workflow manually will deploy the infrastructure and the browser 
 # Testing fresh preview state downstream of PR 135
 # Testing fresh preview state  for shared-link-json-format 
 # Testing empty commit for merging from develop
+# Testing empty commit for doubling vm size
