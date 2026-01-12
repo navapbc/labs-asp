@@ -2,12 +2,12 @@
 # 
 # Strategy:
 # - Dev: Creates and manages nava-storage-dev bucket
-# - Preview: Also creates nava-storage-dev bucket if it doesn't exist (shared with dev)
+# - Preview: Uses dev bucket name directly (bucket must exist, created by dev)
 # - Prod: Creates and manages nava-storage-prod bucket (completely isolated from dev/preview)
 
-# Storage Bucket for DEV environment (also created by preview if dev hasn't run yet)
+# Storage Bucket for DEV environment
 resource "google_storage_bucket" "dev" {
-  count         = var.environment == "dev" || startswith(var.environment, "preview-") ? 1 : 0
+  count         = var.environment == "dev" ? 1 : 0
   name          = "nava-storage-dev"
   location      = local.region
   force_destroy = false  # Prevent accidental deletion in dev
@@ -75,19 +75,30 @@ resource "google_storage_bucket" "prod" {
 locals {
   storage_bucket_name = var.environment == "prod" ? (
     google_storage_bucket.prod[0].name
+  ) : startswith(var.environment, "preview-") ? (
+    "nava-storage-dev"  # Preview uses dev bucket name directly (bucket must exist)
   ) : (
-    google_storage_bucket.dev[0].name  # Both dev and preview use the same bucket
+    google_storage_bucket.dev[0].name
   )
 }
 
-# IAM binding for Cloud Run services to access DEV bucket (dev and preview)
+# IAM binding for Cloud Run services to access DEV bucket
 resource "google_storage_bucket_iam_member" "cloud_run_dev_access" {
-  count  = var.environment == "dev" || startswith(var.environment, "preview-") ? 1 : 0
+  count  = var.environment == "dev" ? 1 : 0
   bucket = google_storage_bucket.dev[0].name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.cloud_run.email}"
 
   depends_on = [google_storage_bucket.dev]
+}
+
+# IAM binding for preview environments to access DEV bucket
+# Note: Bucket must exist (created by dev) before preview can apply IAM binding
+resource "google_storage_bucket_iam_member" "cloud_run_preview_dev_access" {
+  count  = startswith(var.environment, "preview-") ? 1 : 0
+  bucket = "nava-storage-dev"  # Use bucket name directly - bucket must exist from dev
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.cloud_run.email}"
 }
 
 # IAM binding for Cloud Run services to access PROD bucket
