@@ -1,4 +1,24 @@
 services:
+  # PostgreSQL Database with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5434:5432"   # Using 5434 externally to avoid conflicts
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=benefits_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - mastra-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Browser Streaming Service (includes Playwright MCP)
   browser-streaming:
     build:
@@ -40,11 +60,12 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "4111:4112"   # Mastra dev server (external:internal)  
+      - "4111:4112"   # Mastra dev server (external:internal)
     environment:
       - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
       - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/vertex-ai-credentials.json
     env_file:
       - .env
     volumes:
@@ -85,6 +106,7 @@ services:
       - MASTRA_SERVER_URL=http://mastra-app:4112
       - BROWSER_STREAMING_HOST=browser-streaming
       - BROWSER_STREAMING_PORT=8933
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/client/vertex-ai-credentials.json
     env_file:
       - client/.env.local
     volumes:
@@ -100,7 +122,7 @@ services:
       - browser-streaming
       - mastra-app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health", "||", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || curl -f http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,3 +134,6 @@ services:
 networks:
   mastra-network:
     driver: bridge
+
+volumes:
+  postgres_data:

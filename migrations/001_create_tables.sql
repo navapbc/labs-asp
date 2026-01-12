@@ -8,6 +8,10 @@
 -- Enable UUID generation (if not already enabled)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Enable pgvector extension for AI embeddings and vector similarity search
+-- Required by Mastra for agent memory and semantic search
+CREATE EXTENSION IF NOT EXISTS "vector";
+
 -- Create participants table
 CREATE TABLE IF NOT EXISTS participants (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -128,4 +132,5 @@ CREATE TRIGGER update_mastra_artifacts_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert a comment to track migration version
-COMMENT ON DATABASE CURRENT_DATABASE() IS 'WIC Benefits DB - Schema version 001 - Created from Prisma migrations';
+-- Note: COMMENT ON DATABASE requires explicit database name, not CURRENT_DATABASE()
+-- This is informational only and can be skipped if needed

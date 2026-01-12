@@ -1,20 +1,59 @@
 # Mastra Test App Quick Setup Guide
 
-Welcome! This guide will help you get the Mastra test app running on your computer in just a few steps. The database is already set up in the cloud, so you'll just be connecting to it!
+Welcome! This guide will help you get the Mastra test app running on your computer in just a few steps.
 
 ## What You'll Have After Setup
 
 - **AI Agents**: Smart assistants that can help with web automation
 - **Web Automation**: AI that can visit websites and extract information
-- **Database**: A cloud database with sample participant data for testing
+- **Database**: PostgreSQL database with sample participant data for testing
 - **Playground**: A web interface to interact with all the AI features
+- **AI Chatbot**: Interactive chat interface on port 3000
 
-## Prerequisites
+## Choose Your Setup Method
+
+### 🐳 Docker Setup (Recommended)
+
+**Best for**: Quick setup, avoiding local PostgreSQL installation issues, team consistency
+
+**What you need**: Just Docker Desktop
+
+**Time to setup**: ~5 minutes
+
+👉 **[Go to Docker Setup Guide](./docs/DOCKER_SETUP.md)**
+
+Quick start:
+```bash
+git clone --recurse-submodules https://github.com/navapbc/labs-asp.git
+cd labs-asp
+# Set up .env files (see docs/DOCKER_SETUP.md)
+docker-compose up -d
+# Visit http://localhost:3000
+```
+
+📋 **[Docker Commands Cheat Sheet](./docs/DOCKER_COMMANDS.md)** - Quick reference for daily use
+
+---
+
+### 💻 Local Development Setup
+
+**Best for**: Active development with faster iteration cycles
+
+**What you need**: Node.js, pnpm, PostgreSQL
+
+**Time to setup**: ~15 minutes
+
+Continue reading below for local setup instructions.
+
+---
+
+## Prerequisites for Local Development
 
 You'll need these installed on your computer:
 
 - **Node.js** (version 20 or higher): [Download here](https://nodejs.org/)
 - **pnpm**: Install by running: `npm install -g pnpm`
+- **PostgreSQL** (version 14 or higher): [Download here](https://www.postgresql.org/download/) or use Docker
 
 ## Step-by-Step Setup
 
@@ -245,6 +284,6 @@ pnpm db:migrate
 
 ## Learn More
 
-- **Detailed Database Guide**: See `DATABASE_SETUP.md`
+- **Detailed Database Guide**: See `docs/DATABASE_SETUP.md`
 - **Web Automation Features**: See `PLAYWRIGHT_MCP_GUIDE.md`
 - **Need Help?**: Ask your team lead or create an issue

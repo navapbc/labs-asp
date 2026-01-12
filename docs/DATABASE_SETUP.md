@@ -1,6 +1,6 @@
 # Benefits Database Setup Guide
 
-This guide covers setting up and managing the PostgreSQL database for the WIC Benefits application using Prisma.
+This guide covers setting up and managing the PostgreSQL database for the WIC Benefits application.
 
 ## Database Overview
 
@@ -8,20 +8,48 @@ The database is designed to store participant information for the WIC (Women, In
 
 - **Participants**: Main applicants with personal info, income, and WIC-specific data
 - **HouseholdDependents**: Children and family members associated with participants
+- **Mastra Artifacts**: Playwright screenshots and automation artifacts
 
-## Initial Setup
+## Setup Options
 
-### 1. Install PostgreSQL
+### Option 1: Docker (Recommended)
+
+See **[DOCKER_SETUP.md](DOCKER_SETUP.md)** for complete instructions.
+
+Quick start:
+```bash
+# Start PostgreSQL in Docker
+docker-compose up -d postgres
+
+# Database will be available at localhost:5434
+# Connection: postgresql://postgres:postgres@localhost:5434/benefits_db
+
+# Run migrations
+node migrations/run-migrations.js
+```
+
+Benefits:
+- ✅ No local PostgreSQL installation needed
+- ✅ Includes pgvector extension for AI embeddings (required by Mastra)
+- ✅ Consistent across team
+- ✅ Easy to reset/clean up
+- ✅ Isolated from host system
+
+**Note:** The Docker setup uses `pgvector/pgvector:pg16` which includes the pgvector extension pre-installed. This extension is required for Mastra's agent memory and semantic search capabilities.
+
+### Option 2: Local PostgreSQL Installation
+
+#### 1. Install PostgreSQL
 
 ```bash
 # Install PostgreSQL using Homebrew (macOS)
-brew install postgresql
+brew install postgresql@16
 
 # Start PostgreSQL service
-brew services start postgresql@14
+brew services start postgresql@16
 ```
 
-### 2. Create Database
+#### 2. Create Database
 
 ```bash
 # Create the benefits database
@@ -183,7 +211,7 @@ Error: could not connect to server
 
 **Solution**: Start PostgreSQL:
 ```bash
-brew services start postgresql@14
+brew services start postgresql@16
 ```
 
 ### Useful Debugging Commands
