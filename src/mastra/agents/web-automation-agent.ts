@@ -7,13 +7,6 @@ import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 import { apricotTools } from '../tools/apricot-tools';
 
-// Scorer imports temporarily removed - scorers disabled due to AI SDK v5 incompatibility
-// import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
-// import { createAutonomousProgressionScorer } from "../scorers/autonomousProgression";
-// import { createDeductionScorer } from "../scorers/deduction";
-// import { createAskQuestionsScorer } from "../scorers/askQuestions";
-// import { google } from '@ai-sdk/google';
-
 const storage = postgresStore;
 
 const vectorStore = pgVector;
@@ -187,34 +180,6 @@ export const webAutomationAgent = new Agent({
     webAutomationWorkflow: webAutomationWorkflow,
   },
   memory: memory,
-  // Scorers temporarily disabled - Mastra's scorer system uses generateLegacy() internally
-  // which doesn't support AI SDK v5 models. Re-enable once Mastra updates to use generate()
-  // scorers: {
-  //   languagePreference: {
-  //     scorer: createLanguagePreferenceScorer({
-  //       model: google('gemini-flash-latest'),
-  //     }),
-  //     sampling: { rate: 1, type: "ratio" },
-  //   },
-  //   autonomousProgression: {
-  //     scorer: createAutonomousProgressionScorer({
-  //       model: google('gemini-flash-latest'),
-  //     }),
-  //     sampling: { rate: 1, type: "ratio" },
-  //   },
-  //   deduction: {
-  //     scorer: createDeductionScorer({
-  //       model: google('gemini-flash-latest'),
-  //     }),
-  //     sampling: { rate: 1, type: "ratio" },
-  //   },
-  //   askQuestions: {
-  //     scorer: createAskQuestionsScorer({
-  //       model: google('gemini-flash-latest'),
-  //     }),
-  //     sampling: { rate: 1, type: "ratio" },
-  //   },
-  // },
   defaultStreamOptions: {
     maxSteps: 50,
     maxRetries: 3,
