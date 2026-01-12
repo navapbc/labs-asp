@@ -67,7 +67,7 @@ const memory = new Memory({
      },
      threads: {
        generateTitle: {
-         model: google('gemini-flash-latest'), // Use faster/cheaper model for titles
+         model: 'google/gemini-flash-latest', // Use faster/cheaper model for titles
          instructions: "Generate a concise title based on the web automation task or website being accessed.",
        },
      },
