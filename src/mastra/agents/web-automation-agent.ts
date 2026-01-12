@@ -183,7 +183,8 @@ export const webAutomationAgent = new Agent({
   // model: google('gemini-2.5-pro'),
   // model: anthropic('claude-sonnet-4-5-20250929'),
   // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
-  model: google('gemini-3-pro-preview'),
+  // Use Mastra's model router format for proper v5 support
+  model: 'google/gemini-3-pro-preview',
   tools: {
     // Only include database tools statically
     // Playwright tools will be added dynamically per session via toolsets
