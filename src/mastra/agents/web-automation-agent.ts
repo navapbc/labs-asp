@@ -10,10 +10,11 @@ import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 
-import { google } from '@ai-sdk/google';
-import { openai } from '@ai-sdk/openai';
-// import { anthropic } from '@ai-sdk/anthropic'; // Keeping for reference - direct Anthropic API
-import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+// AI SDK imports removed - using Mastra model router format instead
+// import { google } from '@ai-sdk/google';
+// import { openai } from '@ai-sdk/openai';
+// import { anthropic } from '@ai-sdk/anthropic';
+// import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import { apricotTools } from '../tools/apricot-tools';
 
 const storage = postgresStore;
@@ -22,7 +23,7 @@ const vectorStore = pgVector;
 const memory = new Memory({
   storage: storage,
   vector: vectorStore,
-  embedder: openai.embedding('text-embedding-3-small'),
+  embedder: 'openai/text-embedding-3-small',
   processors: [
     // Remove tool calls from memory to save tokens, but keep working memory updates
     // This excludes verbose Playwright, database, and Exa tool interactions from memory context
@@ -69,7 +70,7 @@ const memory = new Memory({
      },
      threads: {
        generateTitle: {
-         model: google("gemini-2.5-flash"), // Use faster/cheaper model for titles
+         model: 'google/gemini-flash-latest', // Use faster/cheaper model for titles
          instructions: "Generate a concise title based on the web automation task or website being accessed.",
        },
      },
@@ -198,25 +199,25 @@ export const webAutomationAgent = new Agent({
   scorers: {
     languagePreference: {
       scorer: createLanguagePreferenceScorer({
-        model: google("gemini-2.5-pro"),
+        model: 'google/gemini-flash-latest',
       }),
       sampling: { rate: 1, type: "ratio" },
     },
     autonomousProgression: {
       scorer: createAutonomousProgressionScorer({
-        model: google("gemini-2.5-pro"),
+        model: 'google/gemini-flash-latest',
       }),
       sampling: { rate: 1, type: "ratio" },
     },
     deduction: {
       scorer: createDeductionScorer({
-        model: google("gemini-2.5-pro"),
+        model: 'google/gemini-flash-latest',
       }),
       sampling: { rate: 1, type: "ratio" },
     },
     askQuestions: {
       scorer: createAskQuestionsScorer({
-        model: google("gemini-2.5-pro"),
+        model: 'google/gemini-flash-latest',
       }),
       sampling: { rate: 1, type: "ratio" },
     },
