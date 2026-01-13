@@ -4,12 +4,6 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:a360": "tsx scripts/test-a360.ts",
-    "test:a360:language": "tsx scripts/test-a360.ts languagePreference",
-    "test:a360:progression": "tsx scripts/test-a360.ts autonomousProgression",
-    "test:a360:deduction": "tsx scripts/test-a360.ts deduction",
-    "test:a360:questions": "tsx scripts/test-a360.ts askQuestions",
-    "test:a360:all": "tsx scripts/test-a360.ts all",
     "dev": "mastra dev",
     "dev:pretty": "mastra dev --inspect | npx pino-pretty",
     "build": "mastra build",
