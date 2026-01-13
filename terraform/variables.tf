@@ -34,13 +34,13 @@ variable "enable_custom_domain" {
 variable "vm_machine_type" {
   description = "Machine type for application VM"
   type        = string
-  default     = "e2-standard-4"  # 4 vCPUs, 16GB RAM - runs both containers
+  default     = "e2-standard-16"  # 16 vCPUs, 64GB RAM
 }
 
 variable "vm_disk_size" {
   description = "Boot disk size for VM in GB"
   type        = number
-  default     = 100  # Increased for Docker image storage and accumulated layers
+  default     = 200  # Increased for Docker image storage and accumulated layers
 }
 
 variable "browser_image_url" {
