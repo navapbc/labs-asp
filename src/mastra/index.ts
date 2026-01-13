@@ -2,7 +2,6 @@ import { postgresStore } from './storage';
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
-import { chatRoute } from '@mastra/ai-sdk';
 import { createSessionPlaywrightMCP } from './mcp';
 
 // Track active streams by sessionId for stop functionality
