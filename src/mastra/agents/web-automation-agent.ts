@@ -162,13 +162,8 @@ export const webAutomationAgent = new Agent({
 
     Take action immediately. Don't ask for permission to proceed with your core function.
   `,
-  // model: openai('gpt-5-2025-08-07'),
-  // model: openai('gpt-4.1-mini'),
-  // model: anthropic('claude-sonnet-4-20250514'),
-  // model: google('gemini-2.5-pro'),
-  // model: anthropic('claude-sonnet-4-5-20250929'),
-  // model: vertexAnthropic('claude-sonnet-4-5@20250929'),
-  // Use Mastra's model router format for proper v5 support
+
+  // Use Mastra's model router format for proper v5 support (https://mastra.ai/models/providers/)
   model: 'google/gemini-3-pro-preview',
   tools: {
     // Only include database tools statically
@@ -199,6 +194,5 @@ export const webAutomationAgent = new Agent({
     maxSteps: 50,
     maxRetries: 3,
     temperature: 0.1,
-    // Telemetry removed - using AI Tracing instead (configured in mastra/index.ts)
   }
 });
