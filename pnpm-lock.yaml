@@ -36,9 +36,6 @@ importers:
       '@mastra/core':
         specifier: ^0.24.1
         version: 0.24.1(effect@3.16.12)(openapi-types@12.1.3)(react@19.1.1)(zod@3.25.76)
-      '@mastra/evals':
-        specifier: ^0.14.3
-        version: 0.14.3(@mastra/core@0.24.1(effect@3.16.12)(openapi-types@12.1.3)(react@19.1.1)(zod@3.25.76))(ai@5.0.95(zod@3.25.76))(zod@3.25.76)
       '@mastra/libsql':
         specifier: ^0.16.2
         version: 0.16.2(@mastra/core@0.24.1(effect@3.16.12)(openapi-types@12.1.3)(react@19.1.1)(zod@3.25.76))
@@ -979,13 +976,6 @@ packages:
     resolution: {integrity: sha512-Uxekoeij6TAxrPya7WxUqQdmnyiVk2JRhkfvmvsP9caKzkiHFcZC0rTG/rAUKW7Si/WNWXKeBhoqNnnVRYxB1w==}
     peerDependencies:
       '@mastra/core': '>=0.24.0-0 <0.25.0-0'
-      zod: ^3.25.0 || ^4.0.0
-
-  '@mastra/evals@0.14.3':
-    resolution: {integrity: sha512-LH0dyF3xOnTXynXWiJs7QKpS0oRrWXmBJ/DuAjCwl6zNYvfpYIyPM6mR7v19JRQPMpEpgY5WFiaws+XnRE3pGw==}
-    peerDependencies:
-      '@mastra/core': '>=0.21.0-0 <0.25.0-0'
-      ai: ^4.0.0 || ^5.0.0
       zod: ^3.25.0 || ^4.0.0
 
   '@mastra/libsql@0.16.2':
@@ -2137,10 +2127,6 @@ packages:
   commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
 
-  compromise@14.14.4:
-    resolution: {integrity: sha512-QdbJwronwxeqb7a5KFK/+Y5YieZ4PE1f7ai0vU58Pp4jih+soDCBMuKVbhDEPQ+6+vI3vSiG4UAAjTAXLJw1Qw==}
-    engines: {node: '>=12.0.0'}
-
   confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
 
@@ -2281,9 +2267,6 @@ packages:
   diff-match-patch@1.0.5:
     resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
 
-  difflib@0.2.4:
-    resolution: {integrity: sha512-9YVwmMb0wQHQNr5J9m6BSj6fk4pfGITGQOOs+D9Fl+INODWFOfvhIU1hNv6GgR1RBoC/9NJcwu77zShxV0kT7w==}
-
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
     engines: {node: '>=12'}
@@ -2307,10 +2290,6 @@ packages:
 
   effect@3.16.12:
     resolution: {integrity: sha512-N39iBk0K71F9nb442TLbTkjl24FLUzuvx2i1I2RsEAQsdAdUTuUoW0vlfUXgkMTUOnYqKnWcFfqw4hK4Pw27hg==}
-
-  efrt@2.7.0:
-    resolution: {integrity: sha512-/RInbCy1d4P6Zdfa+TMVsf/ufZVotat5hCw3QXmWtjU+3pFEOvOQ7ibo3aIxyCJw2leIeAMjmPj+1SLJiCpdrQ==}
-    engines: {node: '>=12.0.0'}
 
   electron-to-chromium@1.5.256:
     resolution: {integrity: sha512-uqYq1IQhpXXLX+HgiXdyOZml7spy4xfy42yPxcCCRjswp0fYM2X+JwCON07lqnpLEGVCj739B7Yr+FngmHBMEQ==}
@@ -2620,10 +2599,6 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  grad-school@0.0.5:
-    resolution: {integrity: sha512-rXunEHF9M9EkMydTBux7+IryYXEZinRk6g8OBOGDBzo/qWJjhTxy86i5q7lQYpCLHN8Sqv1XX3OIOc7ka2gtvQ==}
-    engines: {node: '>=8.0.0'}
-
   gtoken@8.0.0:
     resolution: {integrity: sha512-+CqsMbHPiSTdtSO14O51eMNlrp9N79gmeqmXeouJOhfucAedHw9noVe/n5uJk3tbKE6a+6ZCQg3RPhVhHByAIw==}
     engines: {node: '>=18'}
@@ -2639,9 +2614,6 @@ packages:
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
-
-  heap@0.2.7:
-    resolution: {integrity: sha512-2bsegYkkHO+h/9MGbn6KWcE45cHZgPANo5LXF7EvWdT0yT2EguSVO1nDgU5c8+ZOPwp2vMNa7YFsJhVcDR9Sdg==}
 
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
@@ -2873,10 +2845,6 @@ packages:
 
   jws@4.0.1:
     resolution: {integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==}
-
-  keyword-extractor@0.0.28:
-    resolution: {integrity: sha512-oi7dSPpYtW/3fE0vZiqQgZ8mW3F1V9K4+rBJ0FcVrdXBEQuhZ0zKj7sX74eqGASuepLHf9aYdeonyKHWhYpHQA==}
-    engines: {node: '>= 0.10.0'}
 
   libsql@0.5.22:
     resolution: {integrity: sha512-NscWthMQt7fpU8lqd7LXMvT9pi+KhhmTHAJWUB/Lj6MWa0MKFv0F2V4C6WKKpjCVZl0VwcDz4nOI3CyaT1DDiA==}
@@ -3408,10 +3376,6 @@ packages:
     resolution: {integrity: sha512-uaW0WwXKpL9blXE2o0bRhoL2EGXIrZxQ2ZQ4mgcfoBxdFmQold+qWsD2jLrfZ0trjKL6vOw0j//eAwcALFjKSw==}
     engines: {node: '>= 18'}
 
-  sentiment@5.0.2:
-    resolution: {integrity: sha512-ZeC3y0JsOYTdwujt5uOd7ILJNilbgFzUtg/LEG4wUv43LayFNLZ28ec8+Su+h3saHlJmIwYxBzfDHHZuiMA15g==}
-    engines: {node: '>=8.0'}
-
   serve-static@1.16.2:
     resolution: {integrity: sha512-VqpjJZKadQB/PEbEwvFdO43Ax5dFBZ2UECszz8bQ7pi7wt//PWe1P6MN7eCnjsatYtBT6EuiClbjSWP2WrIoTw==}
     engines: {node: '>= 0.8.0'}
@@ -3480,10 +3444,6 @@ packages:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
 
-  string-similarity@4.0.4:
-    resolution: {integrity: sha512-/q/8Q4Bl4ZKAPjj8WerIBJWALKkaPRfrvhfF8k/B23i4nzrlRj2/go1m90In7nG/3XDSbOo0+pu6RvCTM9RGMQ==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
     engines: {node: '>=8'}
@@ -3507,9 +3467,6 @@ packages:
   strip-json-comments@5.0.3:
     resolution: {integrity: sha512-1tB5mhVo7U+ETBKNf92xT4hrQa3pm0MZ0PQvuDnWgAAGHDsfp4lPSpiS6psrSiet87wyGPh9ft6wmhOMQ0hDiw==}
     engines: {node: '>=14.16'}
-
-  suffix-thumb@5.0.2:
-    resolution: {integrity: sha512-I5PWXAFKx3FYnI9a+dQMWNqTxoRt6vdBdb0O+BJ1sxXCWtSoQCusc13E58f+9p4MYx/qCnEMkD5jac6K2j3dgA==}
 
   supports-preserve-symlinks-flag@1.0.0:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
@@ -4646,18 +4603,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
-
-  '@mastra/evals@0.14.3(@mastra/core@0.24.1(effect@3.16.12)(openapi-types@12.1.3)(react@19.1.1)(zod@3.25.76))(ai@5.0.95(zod@3.25.76))(zod@3.25.76)':
-    dependencies:
-      '@mastra/core': 0.24.1(effect@3.16.12)(openapi-types@12.1.3)(react@19.1.1)(zod@3.25.76)
-      ai: 5.0.95(zod@3.25.76)
-      compromise: 14.14.4
-      difflib: 0.2.4
-      fs-extra: 11.3.2
-      keyword-extractor: 0.0.28
-      sentiment: 5.0.2
-      string-similarity: 4.0.4
-      zod: 3.25.76
 
   '@mastra/libsql@0.16.2(@mastra/core@0.24.1(effect@3.16.12)(openapi-types@12.1.3)(react@19.1.1)(zod@3.25.76))':
     dependencies:
@@ -6024,12 +5969,6 @@ snapshots:
 
   commondir@1.0.1: {}
 
-  compromise@14.14.4:
-    dependencies:
-      efrt: 2.7.0
-      grad-school: 0.0.5
-      suffix-thumb: 5.0.2
-
   confbox@0.1.8: {}
 
   confbox@0.2.2: {}
@@ -6118,10 +6057,6 @@ snapshots:
 
   diff-match-patch@1.0.5: {}
 
-  difflib@0.2.4:
-    dependencies:
-      heap: 0.2.7
-
   dotenv@16.6.1: {}
 
   dotenv@17.2.2: {}
@@ -6145,8 +6080,6 @@ snapshots:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
     optional: true
-
-  efrt@2.7.0: {}
 
   electron-to-chromium@1.5.256: {}
 
@@ -6612,8 +6545,6 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  grad-school@0.0.5: {}
-
   gtoken@8.0.0:
     dependencies:
       gaxios: 7.1.1
@@ -6630,8 +6561,6 @@ snapshots:
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
-
-  heap@0.2.7: {}
 
   help-me@5.0.0: {}
 
@@ -6816,8 +6745,6 @@ snapshots:
     dependencies:
       jwa: 2.0.1
       safe-buffer: 5.2.1
-
-  keyword-extractor@0.0.28: {}
 
   libsql@0.5.22:
     dependencies:
@@ -7389,8 +7316,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  sentiment@5.0.2: {}
-
   serve-static@1.16.2:
     dependencies:
       encodeurl: 2.0.0
@@ -7465,8 +7390,6 @@ snapshots:
 
   statuses@2.0.2: {}
 
-  string-similarity@4.0.4: {}
-
   string-width@4.2.3:
     dependencies:
       emoji-regex: 8.0.0
@@ -7490,8 +7413,6 @@ snapshots:
   strip-final-newline@4.0.0: {}
 
   strip-json-comments@5.0.3: {}
-
-  suffix-thumb@5.0.2: {}
 
   supports-preserve-symlinks-flag@1.0.0: {}
 

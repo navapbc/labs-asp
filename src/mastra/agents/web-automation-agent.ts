@@ -3,10 +3,6 @@ import { pgVector, postgresStore } from '../storage';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { ToolCallFilter, TokenLimiter } from '@mastra/memory/processors';
-import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
-import { createAutonomousProgressionScorer } from "../scorers/autonomousProgression";
-import { createDeductionScorer } from "../scorers/deduction";
-import { createAskQuestionsScorer } from "../scorers/askQuestions";
 import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 
@@ -193,32 +189,6 @@ export const webAutomationAgent = new Agent({
     webAutomationWorkflow: webAutomationWorkflow,
   },
   memory: memory,
-  scorers: {
-    languagePreference: {
-      scorer: createLanguagePreferenceScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    autonomousProgression: {
-      scorer: createAutonomousProgressionScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    deduction: {
-      scorer: createDeductionScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    askQuestions: {
-      scorer: createAskQuestionsScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-  },
   defaultStreamOptions: {
     maxSteps: 50,
     maxRetries: 3,
