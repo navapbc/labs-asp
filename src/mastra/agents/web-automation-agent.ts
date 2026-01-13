@@ -5,11 +5,6 @@ import { Memory } from '@mastra/memory';
 import { ToolCallFilter, TokenLimiter } from '@mastra/memory/processors';
 import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
-
-import { google } from '@ai-sdk/google';
-import { openai } from '@ai-sdk/openai';
-// import { anthropic } from '@ai-sdk/anthropic'; // Keeping for reference - direct Anthropic API
-import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import { apricotTools } from '../tools/apricot-tools';
 
 const storage = postgresStore;
@@ -18,7 +13,7 @@ const vectorStore = pgVector;
 const memory = new Memory({
   storage: storage,
   vector: vectorStore,
-  embedder: openai.embedding('text-embedding-3-small'),
+  embedder: 'openai/text-embedding-3-small',
   processors: [
     // Remove tool calls from memory to save tokens, but keep working memory updates
     // This excludes verbose Playwright, database, and Exa tool interactions from memory context
@@ -62,12 +57,6 @@ const memory = new Memory({
         // IMPORTANT: Use 'thread' scope to only search current conversation
         // 'resource' scope would search across ALL user conversations and pull in old context
         scope: "thread"
-     },
-     threads: {
-       generateTitle: {
-         model: google("gemini-2.5-flash"), // Use faster/cheaper model for titles
-         instructions: "Generate a concise title based on the web automation task or website being accessed.",
-       },
      },
   },
 });
@@ -173,12 +162,9 @@ export const webAutomationAgent = new Agent({
 
     Take action immediately. Don't ask for permission to proceed with your core function.
   `,
-  // model: openai('gpt-5-2025-08-07'),
-  // model: openai('gpt-4.1-mini'),
-  // model: anthropic('claude-sonnet-4-20250514'),
-  // model: google('gemini-2.5-pro'),
-  // model: anthropic('claude-sonnet-4-5-20250929'),
-  model: vertexAnthropic('claude-sonnet-4-5@20250929'),
+
+  // Use Mastra's model router format for proper v5 support (https://mastra.ai/models/providers/)
+  model: 'google/gemini-3-pro-preview',
   tools: {
     // Only include database tools statically
     // Playwright tools will be added dynamically per session via toolsets
@@ -208,6 +194,5 @@ export const webAutomationAgent = new Agent({
     maxSteps: 50,
     maxRetries: 3,
     temperature: 0.1,
-    // Telemetry removed - using AI Tracing instead (configured in mastra/index.ts)
   }
 });
