@@ -3,109 +3,111 @@ updates:
   # Root npm dependencies
   - package-ecosystem: "npm"
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    groups:
-      production-dependencies:
-        dependency-type: "production"
-        update-types:
-          - "minor"
-          - "patch"
-      development-dependencies:
-        dependency-type: "development"
-    labels:
-      - "dependencies"
-      - "security"
-    commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
-
-  # Client npm dependencies (submodule)
-  - package-ecosystem: "npm"
-    directory: "/client"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 5
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - "dependencies"
-      - "client"
-      - "security"
     commit-message:
       prefix: "chore(deps)"
-      include: "scope"
 
   # Playwright MCP npm dependencies
   - package-ecosystem: "npm"
     directory: "/playwright-mcp"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "playwright"
-      - "security"
     commit-message:
       prefix: "chore(deps)"
-      include: "scope"
 
   # Browser WebSocket Proxy npm dependencies
   - package-ecosystem: "npm"
     directory: "/browser-ws-proxy"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "proxy"
-      - "security"
     commit-message:
       prefix: "chore(deps)"
-      include: "scope"
 
-  # Docker images
+  # Docker images (root)
   - package-ecosystem: "docker"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "docker"
-      - "security"
     commit-message:
       prefix: "chore(docker)"
-      include: "scope"
 
   # Playwright MCP Dockerfile
   - package-ecosystem: "docker"
     directory: "/playwright-mcp"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     labels:
       - "dependencies"
       - "docker"
-      - "playwright"
     commit-message:
       prefix: "chore(docker)"
-      include: "scope"
 
   # Browser WebSocket Proxy Dockerfile
   - package-ecosystem: "docker"
     directory: "/browser-ws-proxy"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+
+  # Terraform modules
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -113,40 +115,21 @@ updates:
     open-pull-requests-limit: 3
     labels:
       - "dependencies"
-      - "docker"
-      - "proxy"
-    commit-message:
-      prefix: "chore(docker)"
-      include: "scope"
-
-  # Terraform modules
-  - package-ecosystem: "terraform"
-    directory: "/terraform"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
       - "terraform"
-      - "infrastructure"
     commit-message:
       prefix: "chore(terraform)"
-      include: "scope"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
-      - "github-actions"
       - "ci"
     commit-message:
       prefix: "chore(ci)"
-      include: "scope"
