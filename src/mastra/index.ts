@@ -83,7 +83,7 @@ export const mastra = new Mastra({
               // Playwright MCP doesn't support tool filtering at the server level,
               // so we filter after retrieval to prevent the agent from using certain tools
               const filteredToolsets: Record<string, Record<string, any>> = {};
-              const excludedTools = ['browser_take_screenshot', 'browser_run_code'];
+              const excludedTools = ['browser_take_screenshot', 'browser_run_code', 'browser_file_upload', 'browser_network_requests', 'browser_pdf_save', 'browser_evaluate'];
 
               for (const [namespace, tools] of Object.entries(playwrightToolsets)) {
                 filteredToolsets[namespace] = {};
