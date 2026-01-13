@@ -1,0 +1,152 @@
+version: 2
+updates:
+  # Root npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        dependency-type: "development"
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Client npm dependencies (submodule)
+  - package-ecosystem: "npm"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "client"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Playwright MCP npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/playwright-mcp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "playwright"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Browser WebSocket Proxy npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/browser-ws-proxy"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "proxy"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Docker images
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Playwright MCP Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/playwright-mcp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+      - "playwright"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Browser WebSocket Proxy Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/browser-ws-proxy"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+      - "proxy"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Terraform modules
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "infrastructure"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
