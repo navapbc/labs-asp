@@ -1,3 +1,25 @@
+/**
+ * @deprecated These database tools are deprecated in favor of the Apricot360 API tools.
+ *
+ * This file is kept for reference and potential future use with new clients that may need
+ * local database storage for participant data.
+ *
+ * To re-enable these tools:
+ * 1. Import databaseTools in your agent file:
+ *    import { databaseTools } from '../tools/database-tools';
+ *
+ * 2. Add to your agent's tools:
+ *    tools: {
+ *      ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
+ *    }
+ *
+ * 3. Run the seed scripts to populate test data:
+ *    pnpm seed:apricot360  # For Apricot360 CSV format
+ *    pnpm seed:wic         # For WIC test data
+ *
+ * See scripts/seed/README.md for more details on seeding the database.
+ */
+
 import { createTool } from '@mastra/core/tools';
 import { query } from '../../lib/db';
 import {

@@ -1,5 +1,12 @@
 # Database Seed Scripts
 
+> **Note:** These seed scripts and the associated database tools (`src/mastra/tools/database-tools.ts`)
+> are currently **deprecated** in favor of the Apricot360 API integration. They are kept for potential
+> future use with new clients that may need local database storage for participant data.
+>
+> See the deprecation comment in `src/mastra/tools/database-tools.ts` for instructions on how to
+> re-enable these tools in an agent.
+
 This directory contains scripts for seeding the database with test and demo data.
 
 ## Available Scripts

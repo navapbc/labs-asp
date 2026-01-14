@@ -3,7 +3,6 @@ import { pgVector, postgresStore } from '../storage';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { ToolCallFilter, TokenLimiter } from '@mastra/memory/processors';
-import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
 import { apricotTools } from '../tools/apricot-tools';
 
@@ -82,7 +81,7 @@ export const webAutomationAgent = new Agent({
     - Always provide a meaningful response even if you can't complete everything
 
     **When given database participant information:**
-    - If the name does not return a user, inform the caseworker that the participant is not in the database
+    - If the participant ID does not return a user, inform the caseworker that the participant is not in the database
     - Immediately use the data to assess the fields requested, identify the relevant fields in the database, and populate the web form
     - Navigate to the appropriate website (research if URL unknown)
     - Fill all available fields with the participant data, carefully identifying fields that have different names but identical purposes (examples: sex and gender, two or more races and mixed ethnicity)
@@ -166,9 +165,8 @@ export const webAutomationAgent = new Agent({
   // Use Mastra's model router format for proper v5 support (https://mastra.ai/models/providers/)
   model: 'google/gemini-3-pro-preview',
   tools: {
-    // Only include database tools statically
+    // Only include external API tools statically
     // Playwright tools will be added dynamically per session via toolsets
-    ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
     ...Object.fromEntries(apricotTools.map(tool => [tool.id, tool])),
   },
   workflows: {
