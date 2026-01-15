@@ -23,9 +23,16 @@ const navigationStep = createStep({
     availableActions: z.array(z.string()).describe('List of possible actions identified on the page'),
   }),
   execute: async ({ inputData, mastra }) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/624975d0-c70b-4d8a-90a6-4e1893d76c36',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'web-automation-workflow.ts:25',message:'Navigation step execute entry',data:{hasInputData:!!inputData,inputDataKeys:inputData?Object.keys(inputData):[],hasMastra:!!mastra},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,E'})}).catch(()=>{});
+    // #endregion
+    
     if (!inputData) {
       const error = new Error('Input data not found');
       logger.error('Navigation step failed: Input data not found', { error });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/624975d0-c70b-4d8a-90a6-4e1893d76c36',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'web-automation-workflow.ts:30',message:'Navigation step - no input data',data:{error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       throw error;
     }
 
@@ -33,8 +40,15 @@ const navigationStep = createStep({
     if (!agent) {
       const error = new Error('Web automation agent not found');
       logger.error('Navigation step failed: Agent not found', { error });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/624975d0-c70b-4d8a-90a6-4e1893d76c36',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'web-automation-workflow.ts:38',message:'Navigation step - agent not found',data:{hasMastra:!!mastra,error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       throw error;
     }
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/624975d0-c70b-4d8a-90a6-4e1893d76c36',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'web-automation-workflow.ts:44',message:'Navigation step - before agent.stream',data:{url:inputData.url,objective:inputData.objective},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
 
     logger.info(`Starting navigation to URL: ${inputData.url} with objective: ${inputData.objective}`, { url: inputData.url, objective: inputData.objective });
 
@@ -50,6 +64,10 @@ const navigationStep = createStep({
     Provide a clear analysis of what you see and what actions are available.`;
     
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/624975d0-c70b-4d8a-90a6-4e1893d76c36',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'web-automation-workflow.ts:52',message:'Navigation step - calling agent.stream',data:{promptLength:prompt.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      
       const response = await agent.stream([
         {
           role: 'user',
@@ -57,11 +75,19 @@ const navigationStep = createStep({
         },
       ]);
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/624975d0-c70b-4d8a-90a6-4e1893d76c36',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'web-automation-workflow.ts:63',message:'Navigation step - agent.stream returned',data:{hasResponse:!!response,hasTextStream:!!(response as any)?.textStream},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+
       let analysisText = '';
       for await (const chunk of response.textStream) {
         process.stdout.write(chunk);
         analysisText += chunk;
       }
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/624975d0-c70b-4d8a-90a6-4e1893d76c36',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'web-automation-workflow.ts:72',message:'Navigation step - stream consumed',data:{analysisLength:analysisText.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
 
       // Extract available actions (in a real implementation, this could parse the agent's response)
       const availableActions = [
