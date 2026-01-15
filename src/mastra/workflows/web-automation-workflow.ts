@@ -655,8 +655,7 @@ export const webAutomationWorkflow = createWorkflow({
   .then(actionExecutionStep)
   .then(formDataCheckStep)
   .then(applicationSummaryStep)
-  .then(completionStep);
-
-webAutomationWorkflow.commit();
+  .then(completionStep)
+  .commit();
 
 export { actionPlanningStep, formDataCheckStep, applicationSummaryStep }; 
