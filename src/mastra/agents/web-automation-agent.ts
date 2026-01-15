@@ -169,9 +169,9 @@ export const webAutomationAgent = new Agent({
     // Playwright tools will be added dynamically per session via toolsets
     ...Object.fromEntries(apricotTools.map(tool => [tool.id, tool])),
   },
-  workflows: {
-    webAutomationWorkflow,
-  },
+  // workflows: {
+  //   webAutomationWorkflow,
+  // },
   memory: memory,
   defaultStreamOptions: {
     maxSteps: 50,
