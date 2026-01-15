@@ -170,7 +170,7 @@ export const webAutomationAgent = new Agent({
     ...Object.fromEntries(apricotTools.map(tool => [tool.id, tool])),
   },
   workflows: {
-    webAutomationWorkflow: webAutomationWorkflow,
+    webAutomationWorkflow,
   },
   memory: memory,
   defaultStreamOptions: {
