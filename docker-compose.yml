@@ -21,62 +21,24 @@ services:
     networks:
       - mastra-network
 
-  # Browser Streaming Service (includes Playwright MCP)
-  browser-streaming:
-    build:
-      context: ./playwright-mcp
-      dockerfile: Dockerfile
-    ports:
-      - "8931:8931"   # Playwright MCP server
-      - "8933:8933"   # Browser streaming WebSocket port
-    restart: unless-stopped
-    networks:
-      - mastra-network
-
-  # Browser WebSocket Proxy (optional - for testing production setup locally)
-  # In production, this runs on Cloud Run to upgrade ws:// to wss://
-  # In local dev, client connects directly to ws://localhost:8933 (no proxy needed)
-  browser-ws-proxy:
-    build:
-      context: ./browser-ws-proxy
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"   # Proxy port
-    environment:
-      - BROWSER_STREAMING_HOST=browser-streaming
-      - BROWSER_STREAMING_PORT=8933
-      - PORT=8080
-      - NODE_ENV=development
-    depends_on:
-      - browser-streaming
-    restart: unless-stopped
-    networks:
-      - mastra-network
-    profiles:
-      - proxy-test  # Only start with: docker-compose --profile proxy-test up
-
-
   # Main Mastra Application
   mastra-app:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "4111:4112"   # Mastra dev server (external:internal)  
+      - "4111:4112"   # Mastra dev server (external:internal)
     environment:
-      - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
-      - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
     env_file:
       - .env
     volumes:
       # Mount Google credentials if using local file
       - ./vertex-ai-credentials.json:/app/vertex-ai-credentials.json:ro
-      
+
       # Mount artifacts directory for local development
       - ./artifacts:/app/artifacts
     depends_on:
-      - browser-streaming
       - postgres
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:4112/health || exit 1"]
@@ -94,33 +56,26 @@ services:
       context: .
       dockerfile: Dockerfile.ai-chatbot
       args:
-        PLAYWRIGHT_MCP_URL: http://host.docker.internal:8931/mcp
-        BROWSER_STREAMING_URL: ws://host.docker.internal:8933
         NEXT_PUBLIC_MASTRA_SERVER_URL: http://localhost:4111
     ports:
       - "3000:3000"   # Next.js application
     environment:
-      - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
-      - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
       - NEXTAUTH_URL=http://localhost:3000
       - NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
       - MASTRA_SERVER_URL=http://mastra-app:4112
-      - BROWSER_STREAMING_HOST=browser-streaming
-      - BROWSER_STREAMING_PORT=8933
     env_file:
       - client/.env.local
     volumes:
       # Mount Google credentials if using local file
       - ./vertex-ai-credentials.json:/app/vertex-ai-credentials.json:ro
-      
+
       # Mount artifacts directory for local development
       - ./artifacts:/app/artifacts
-      
+
       # Mount client vertex ai credentials
       - ./client/vertex-ai-credentials.json:/app/client/vertex-ai-credentials.json:ro
     depends_on:
-      - browser-streaming
       - mastra-app
       - postgres
     healthcheck:
