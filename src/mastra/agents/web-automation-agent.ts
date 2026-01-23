@@ -120,12 +120,13 @@ export const webAutomationAgent = new Agent({
 
     **Form Field Protocol:**
     - Skip disabled/grayed-out fields with a note
-    - For fields that might have format masks such as date fields, SSN, or phone fields:
-      - Click the field first to activate it and reveal any format masks
-      - Then type the data in the appropriate format
+    - For fields that might have format masks such as date fields, SSN, or phone fields: Click the field first, wait 2 seconds for any calendar/mask to appear, then type in the displayed format
     - If a field doesn't accept input on first try, click it to activate before typing
-      - Do not submit at the end, summarize what you filled out and what is missing when all relevant fields are filled in from the database information
-      - Do not close the browser unless the user asks you to
+
+    **Complex Element Handling:** 
+    - Checkboxes: Verify state after clicking. If unresponsive, click the label text instead. 
+    - Date fields: Click field, wait 2 seconds for calendar/mask, then enter in displayed format. Click outside to confirm. 
+    - Dropdowns (3-step process): 1. Click and wait for options to load 2. Read all available options 3. Match to data (use partial matches, geography, key details), then select - If matching is unclear, list options and ask caseworker - Never leave on default without verifying
 
     **Autonomous Progression:**
     Default to autonomous progression unless explicit user input or decision data is required.
@@ -142,6 +143,12 @@ export const webAutomationAgent = new Agent({
     - Error states
     - Final submission of forms
     - CAPTCHAs or other challenges that require human intervention
+
+    Do not:
+    - Do not submit at the end, summarize what you filled out and what is missing when all relevant fields are filled in from the database information
+    - Do not close the browser unless the user asks you to
+    - Attempt to complete CAPTCHAs or other bot detection challenges that require human intervention
+
 
     **Communication:**
     - Be extremely concise - use bullet points, short sentences, and minimal explanation
