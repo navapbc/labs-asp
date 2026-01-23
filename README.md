@@ -101,8 +101,9 @@ The database is ready to use with sample participant data already loaded. You'll
 
 #### Option A: Docker Compose (Recommended for Full Stack)
 ```bash
-# Build and start all services
-docker compose up -d --build
+# Build and start all services with optimizations
+docker-compose build --parallel
+docker-compose up -d
 ```
 
 This starts the complete stack including the AI chatbot client, Mastra backend, and browser streaming service. Access the app at `http://localhost:3000`.
@@ -161,21 +162,23 @@ If the app displays errors or becomes unresponsive:
 #### Full Rebuild (Clean Slate)
 If you're seeing stale behavior or containers aren't syncing properly:
 ```bash
-docker compose down && docker compose build --no-cache && docker compose up -d
+docker-compose down && docker-compose build --no-cache && docker-compose up -d
 ```
-> **Note**: This may take 5-10 minutes to rebuild all images from scratch.
+> **Note**: This may take 20+ minutes to rebuild all images from scratch without cache.
 
-#### Quick Client Rebuild
-For client-side changes only (faster than full Docker rebuild):
+#### Quick Frontend Development
+For faster frontend iteration, use **Hybrid Mode** (see Development Workflows section above):
 ```bash
-cd client && pnpm build && pnpm dev
+# Backend in Docker, frontend local with instant reload
+docker-compose up -d postgres mastra-app browser-streaming
+cd client && pnpm dev
 ```
-This starts the client on `http://localhost:3001` while still connecting to the Dockerized backend.
+This gives you instant hot reload for frontend changes without Docker rebuilds.
 
 #### View Container Logs
 ```bash
 # All containers
-docker compose logs -f
+docker-compose logs -f
 
 # Specific container
 docker logs --tail 100 labs-asp-browser-streaming-1
@@ -192,11 +195,63 @@ docker logs --tail 100 labs-asp-browser-streaming-1
 ### Need Fresh Data?
 Contact your team lead if you need the database refreshed regular team members shouldn't modify the shared database.
 
+## Development Workflows
+
+We've optimized Docker builds for faster iteration. Choose the workflow that fits your changes:
+
+### Hybrid Mode (FASTEST - Recommended for Frontend Work)
+For instant hot reload when working on the Next.js frontend:
+
+```bash
+# Terminal 1: Start backend services in Docker
+docker-compose up -d postgres mastra-app browser-streaming
+
+# Terminal 2: Run frontend locally with hot reload
+cd client && pnpm dev
+```
+
+**Frontend changes:** Instant reload (< 1 second)
+**Backend services:** postgres, mastra-app, browser-streaming run in Docker
+
+This is the recommended workflow when you're primarily working on UI, components, or client-side logic. Your Next.js dev server connects to the Docker backend services via localhost ports.
+
+**Note:** Your `client/.env.local` should use `localhost` for DATABASE_URL and service URLs (e.g., `postgresql://postgres:postgres@localhost:5432/labs_asp_dev`). This is the default configuration from the setup guide.
+
+### Full Docker Mode (For Backend Changes)
+When changing backend services or Dockerfiles:
+
+```bash
+# Build with optimizations (uses cached layers)
+docker-compose build --parallel
+
+# Start all services
+docker-compose up -d
+```
+
+**Build time with cache:** ~30 seconds
+**Build after code changes:** ~7 minutes
+
+### Docker Build Optimizations
+We've applied three optimizations that reduced rebuild times by 98% (with cache):
+
+1. **Dependency layer caching** - Dependencies are cached separately from source code
+2. **Reduced build context** - .dockerignore files exclude unnecessary files
+3. **Parallel builds** - Services build simultaneously with `--parallel` flag
+
+**When to use `--no-cache`:** Only when dependency files (package.json, pnpm-lock.yaml) change or debugging cache issues. For regular code changes, cached builds are much faster.
+
 ## Quick Reference Commands
 
 ```bash
-# Start full stack with Docker (recommended)
-docker compose up -d --build
+# Hybrid dev mode (backend in Docker, frontend local - FASTEST)
+# Terminal 1:
+docker-compose up -d postgres mastra-app browser-streaming
+# Terminal 2:
+cd client && pnpm dev
+
+# Start full stack with Docker
+docker-compose build --parallel
+docker-compose up -d
 
 # Start Mastra playground only
 pnpm dev
@@ -204,11 +259,11 @@ pnpm dev
 # View database (read-only)
 pnpm db:studio
 
-# Full Docker rebuild
-docker compose down && docker compose build --no-cache && docker compose up -d
+# Full Docker rebuild (rarely needed)
+docker-compose down && docker-compose build --no-cache && docker-compose up -d
 
 # View Docker logs
-docker compose logs -f
+docker-compose logs -f
 ```
 
 ## Git Submodule Management

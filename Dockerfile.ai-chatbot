@@ -16,14 +16,16 @@ RUN npm install -g pnpm
 FROM base AS builder
 
 # Set working directory
-WORKDIR /app
-
-# Copy client directory
-COPY client/ ./client/
-
-# Go to client directory and install client dependencies
 WORKDIR /app/client
-RUN rm -rf node_modules && pnpm install --frozen-lockfile --ignore-scripts
+
+# Copy only package files first for better caching
+COPY client/package.json client/pnpm-lock.yaml ./
+
+# Install dependencies (this layer will be cached unless package files change)
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Now copy the rest of the client source code
+COPY client/ .
 
 # Accept build args for MCP URLs
 ARG PLAYWRIGHT_MCP_URL=http://localhost:8931/mcp

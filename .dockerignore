@@ -1,22 +1,24 @@
-# Node modules (will be installed in container)
-node_modules/
+# Git
+.git/
+.gitignore
 
-# Build artifacts (will be built in container)
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+.next/
 dist/
 build/
+.mastra/
 
-# Development files
-.git/
-.github/
-*.md
+# Environment
+.env
 .env.local
-.env.development
+.env*.local
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -24,24 +26,15 @@ Thumbs.db
 
 # Logs
 *.log
-logs/
 
-# Temporary files
-tmp/
-temp/
+# OS
+.DS_Store
+Thumbs.db
 
-# Test files
-__tests__/
-*.test.*
-*.spec.*
-
-# Coverage reports
+# Testing
 coverage/
+.nyc_output/
 
-# Artifacts directory (will be mounted as volume)
-artifacts/
-
-# Docker files
-Dockerfile*
-docker-compose*
-.dockerignore
+# Documentation (not needed in containers)
+*.md
+docs/
