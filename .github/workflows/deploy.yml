@@ -310,6 +310,12 @@ jobs:
             ENABLE_DOMAIN="true"
           fi
 
+          # Enable AI SDK agent for preview environments (testing new Kernel.sh integration)
+          USE_AI_SDK="false"
+          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]]; then
+            USE_AI_SDK="true"
+          fi
+
           terraform plan \
             -var="environment=${{ needs.setup.outputs.environment }}" \
             -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
@@ -317,6 +323,7 @@ jobs:
             -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
             -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
             -var="enable_custom_domain=${ENABLE_DOMAIN}" \
+            -var="use_ai_sdk_agent=${USE_AI_SDK}" \
             -var="vpc_cidr_public=${{ steps.vpc_cidrs.outputs.vpc_cidr_public }}" \
             -var="vpc_cidr_private=${{ steps.vpc_cidrs.outputs.vpc_cidr_private }}" \
             -var="vpc_cidr_db=${{ steps.vpc_cidrs.outputs.vpc_cidr_db }}" \
