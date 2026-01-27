@@ -154,12 +154,20 @@ jobs:
           echo "::add-mask::$POSTHOG_KEY"
           echo "key=$POSTHOG_KEY" >> $GITHUB_OUTPUT
 
+      - name: Get Kernel API key
+        id: kernel_key
+        run: |
+          KERNEL_KEY=$(gcloud secrets versions access latest --secret=kernel-api-key)
+          echo "::add-mask::$KERNEL_KEY"
+          echo "key=$KERNEL_KEY" >> $GITHUB_OUTPUT
+
       - name: Build and push ai-chatbot image
         run: |
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
             --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ steps.posthog_key.outputs.key }} \
             --build-arg NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com \
+            --build-arg KERNEL_API_KEY=${{ steps.kernel_key.outputs.key }} \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .
