@@ -102,8 +102,8 @@ The database is ready to use with sample participant data already loaded. You'll
 #### Option A: Docker Compose (Recommended for Full Stack)
 ```bash
 # Build and start all services with optimizations
-docker-compose build --parallel
-docker-compose up -d
+docker compose build --parallel
+docker compose up -d
 ```
 
 This starts the complete stack including the AI chatbot client, Mastra backend, and browser streaming service. Access the app at `http://localhost:3000`.
@@ -162,7 +162,7 @@ If the app displays errors or becomes unresponsive:
 #### Full Rebuild (Clean Slate)
 If you're seeing stale behavior or containers aren't syncing properly:
 ```bash
-docker-compose down && docker-compose build --no-cache && docker-compose up -d
+docker compose down && docker compose build --no-cache && docker compose up -d
 ```
 > **Note**: This may take 20+ minutes to rebuild all images from scratch without cache.
 
@@ -170,7 +170,7 @@ docker-compose down && docker-compose build --no-cache && docker-compose up -d
 For faster frontend iteration, use **Hybrid Mode** (see Development Workflows section above):
 ```bash
 # Backend in Docker, frontend local with instant reload
-docker-compose up -d postgres mastra-app browser-streaming
+docker compose up -d postgres mastra-app browser-streaming
 cd client && pnpm dev
 ```
 This gives you instant hot reload for frontend changes without Docker rebuilds.
@@ -178,7 +178,7 @@ This gives you instant hot reload for frontend changes without Docker rebuilds.
 #### View Container Logs
 ```bash
 # All containers
-docker-compose logs -f
+docker compose logs -f
 
 # Specific container
 docker logs --tail 100 labs-asp-browser-streaming-1
@@ -204,7 +204,7 @@ For instant hot reload when working on the Next.js frontend:
 
 ```bash
 # Terminal 1: Start backend services in Docker
-docker-compose up -d postgres mastra-app browser-streaming
+docker compose up -d postgres mastra-app browser-streaming
 
 # Terminal 2: Run frontend locally with hot reload
 cd client && pnpm dev
@@ -222,10 +222,10 @@ When changing backend services or Dockerfiles:
 
 ```bash
 # Build with optimizations (uses cached layers)
-docker-compose build --parallel
+docker compose build --parallel
 
 # Start all services
-docker-compose up -d
+docker compose up -d
 ```
 
 **Build time with cache:** ~30 seconds
@@ -245,13 +245,13 @@ We've applied three optimizations that reduced rebuild times by 98% (with cache)
 ```bash
 # Hybrid dev mode (backend in Docker, frontend local - FASTEST)
 # Terminal 1:
-docker-compose up -d postgres mastra-app browser-streaming
+docker compose up -d postgres mastra-app browser-streaming
 # Terminal 2:
 cd client && pnpm dev
 
 # Start full stack with Docker
-docker-compose build --parallel
-docker-compose up -d
+docker compose build --parallel
+docker compose up -d
 
 # Start Mastra playground only
 pnpm dev
@@ -260,10 +260,10 @@ pnpm dev
 pnpm db:studio
 
 # Full Docker rebuild (rarely needed)
-docker-compose down && docker-compose build --no-cache && docker-compose up -d
+docker compose down && docker compose build --no-cache && docker compose up -d
 
 # View Docker logs
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ## Git Submodule Management

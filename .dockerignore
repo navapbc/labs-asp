@@ -1,24 +1,27 @@
-# Git
+# Git files (not needed in container)
 .git/
 .gitignore
 
-# Node
+# GitHub Actions workflows (not needed in container)
+.github/
+
+# Node modules (will be installed in container)
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Build outputs
+# Build outputs (will be built in container)
 .next/
 dist/
 build/
 .mastra/
 
-# Environment
+# Environment files (mounted or provided at runtime)
 .env
 .env.local
 .env*.local
 
-# IDE
+# IDE files
 .vscode/
 .idea/
 *.swp
@@ -27,14 +30,22 @@ build/
 # Logs
 *.log
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 
-# Testing
+# Test files (not needed in production container)
+__tests__/
+*.test.*
+*.spec.*
 coverage/
 .nyc_output/
 
-# Documentation (not needed in containers)
+# Documentation (not needed in container)
 *.md
 docs/
+
+# Docker meta-files (not needed in container build context)
+Dockerfile*
+docker-compose*
+.dockerignore
