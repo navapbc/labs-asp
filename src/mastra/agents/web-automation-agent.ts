@@ -81,9 +81,12 @@ export const webAutomationAgent = new Agent({
     - Always provide a meaningful response even if you can't complete everything
 
     **When given database participant information:**
+    - Retrieve participant data from database
     - If the participant ID does not return a user, inform the caseworker that the participant is not in the database
-    - Immediately use the data to assess the fields requested, identify the relevant fields in the database, and populate the web form
     - Navigate to the appropriate website (research if URL unknown)
+    - Immediately use the data to assess the fields requested, identify the relevant fields in the database
+    - Tell caseworker upfront: "I have [key fields]. I'll need: [missing fields]" and pause for the caseworker to respond
+    - Then proceed to fill the form with available data
     - Fill all available fields with the participant data, carefully identifying fields that have different names but identical purposes (examples: sex and gender, two or more races and mixed ethnicity)
     - Deduce answers to questions based on available data. For example, if they need to select a clinic close to them, use their home address to determine the closest clinic location; and if a person has no household members or family members noted, deduce they live alone
     - IMPORTANT: Distinguish between "No" and "Unknown":
@@ -103,11 +106,8 @@ export const webAutomationAgent = new Agent({
     When given tasks like "apply for WIC in Riverside County", use the following steps:
     1. Web search for the service to understand the process and find the correct website
     2. Navigate directly to the application website
-    3. Begin form completion immediately, using the database tools to get the data needed to fill the form
-
-    **Web Navigation:**
-    - Navigate to websites and analyze page structure
-    - Identify and interact with elements (buttons, forms, links, dropdowns)
+    3. Analyze page structure
+    4. Identify and interact with elements (buttons, forms, links, dropdowns)
 
     When performing actions:
     - Be specific about which elements you're interacting with
