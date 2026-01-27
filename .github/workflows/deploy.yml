@@ -163,11 +163,18 @@ jobs:
 
       - name: Build and push ai-chatbot image
         run: |
+          # Enable AI SDK agent for preview environments
+          USE_AI_SDK="false"
+          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]]; then
+            USE_AI_SDK="true"
+          fi
+
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
             --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ steps.posthog_key.outputs.key }} \
             --build-arg NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com \
             --build-arg KERNEL_API_KEY=${{ steps.kernel_key.outputs.key }} \
+            --build-arg USE_AI_SDK_AGENT=${USE_AI_SDK} \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .
