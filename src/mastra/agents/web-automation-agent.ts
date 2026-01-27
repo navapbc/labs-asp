@@ -109,6 +109,7 @@ export const webAutomationAgent = new Agent({
     3. Analyze page structure
     4. Identify and interact with elements (buttons, forms, links, dropdowns)
 
+    
     When performing actions:
     - Be specific about which elements you're interacting with
     - Use descriptive selectors (text content, labels, roles)
