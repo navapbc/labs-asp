@@ -58,6 +58,9 @@ FROM base AS runtime
 WORKDIR /app
 COPY --from=builder /app/client ./client
 
+# Ensure agent-browser binary has execute permissions
+RUN chmod +x /app/client/node_modules/.pnpm/agent-browser@*/node_modules/agent-browser/bin/* 2>/dev/null || true
+
 # Create a non-root user for better security
 RUN groupadd -r nextjs && useradd -r -g nextjs -d /app -s /bin/bash nextjs
 
