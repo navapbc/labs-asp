@@ -1,4 +1,26 @@
 services:
+  # PostgreSQL Database with pgvector extension for local development
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: labs-asp-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=labs_asp_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - mastra-network
+
   # Browser Streaming Service (includes Playwright MCP)
   browser-streaming:
     build:
@@ -55,6 +77,7 @@ services:
       - ./artifacts:/app/artifacts
     depends_on:
       - browser-streaming
+      - postgres
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:4112/health || exit 1"]
       interval: 30s
@@ -99,6 +122,7 @@ services:
     depends_on:
       - browser-streaming
       - mastra-app
+      - postgres
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health", "||", "curl", "-f", "http://localhost:3000"]
       interval: 30s
@@ -112,3 +136,7 @@ services:
 networks:
   mastra-network:
     driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local

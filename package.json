@@ -4,12 +4,6 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:a360": "tsx scripts/test-a360.ts",
-    "test:a360:language": "tsx scripts/test-a360.ts languagePreference",
-    "test:a360:progression": "tsx scripts/test-a360.ts autonomousProgression",
-    "test:a360:deduction": "tsx scripts/test-a360.ts deduction",
-    "test:a360:questions": "tsx scripts/test-a360.ts askQuestions",
-    "test:a360:all": "tsx scripts/test-a360.ts all",
     "dev": "mastra dev",
     "dev:pretty": "mastra dev --inspect | npx pino-pretty",
     "build": "mastra build",
@@ -31,19 +25,18 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.41",
-    "@ai-sdk/google": "^2.0.16",
-    "@ai-sdk/google-vertex": "^3.0.86",
-    "@ai-sdk/openai": "^2.0.13",
+    "@ai-sdk/anthropic": "^3.0.11",
+    "@ai-sdk/google": "^3.0.6",
+    "@ai-sdk/google-vertex": "^4.0.13",
+    "@ai-sdk/openai": "^3.0.8",
     "@inquirer/prompts": "^7.8.6",
-    "@mastra/ai-sdk": "^0.2.6",
-    "@mastra/core": "^0.24.1",
-    "@mastra/evals": "^0.14.3",
-    "@mastra/libsql": "^0.16.2",
+    "@mastra/ai-sdk": "^0.3.3",
+    "@mastra/core": "^0.24.9",
+    "@mastra/libsql": "^0.16.4",
     "@mastra/loggers": "^0.10.19",
-    "@mastra/mcp": "^0.14.2",
-    "@mastra/memory": "^0.15.11",
-    "@mastra/pg": "^0.17.8",
+    "@mastra/mcp": "^0.14.5",
+    "@mastra/memory": "^0.15.13",
+    "@mastra/pg": "^0.17.10",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
     "ai": "^5.0.95",
@@ -62,15 +55,22 @@
   "devDependencies": {
     "@types/node": "^24.5.0",
     "@types/pg": "^8.15.5",
-    "mastra": "^0.18.1",
+    "mastra": "^0.18.9",
     "typescript": "^5.9.2"
   },
   "pnpm": {
     "overrides": {
       "form-data": ">=4.0.4",
-      "hono": ">=4.10.2",
+      "hono": ">=4.11.4",
       "@modelcontextprotocol/sdk": ">=1.24.0",
-      "jws": ">=4.0.1"
+      "jws": ">=4.0.1",
+      "qs": ">=6.14.1"
+    },
+    "auditConfig": {
+      "ignoreCves": [
+        "CVE-2025-47273",
+        "CVE-2026-0621"
+      ]
     }
   }
 }

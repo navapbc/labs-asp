@@ -3,17 +3,7 @@ import { pgVector, postgresStore } from '../storage';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { ToolCallFilter, TokenLimiter } from '@mastra/memory/processors';
-import { createLanguagePreferenceScorer } from "../scorers/languagePreference";
-import { createAutonomousProgressionScorer } from "../scorers/autonomousProgression";
-import { createDeductionScorer } from "../scorers/deduction";
-import { createAskQuestionsScorer } from "../scorers/askQuestions";
-import { databaseTools } from '../tools/database-tools';
 import { webAutomationWorkflow } from '../workflows/web-automation-workflow';
-
-import { google } from '@ai-sdk/google';
-import { openai } from '@ai-sdk/openai';
-// import { anthropic } from '@ai-sdk/anthropic'; // Keeping for reference - direct Anthropic API
-import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import { apricotTools } from '../tools/apricot-tools';
 
 const storage = postgresStore;
@@ -22,7 +12,7 @@ const vectorStore = pgVector;
 const memory = new Memory({
   storage: storage,
   vector: vectorStore,
-  embedder: openai.embedding('text-embedding-3-small'),
+  embedder: 'openai/text-embedding-3-small',
   processors: [
     // Remove tool calls from memory to save tokens, but keep working memory updates
     // This excludes verbose Playwright, database, and Exa tool interactions from memory context
@@ -67,12 +57,6 @@ const memory = new Memory({
         // 'resource' scope would search across ALL user conversations and pull in old context
         scope: "thread"
      },
-     threads: {
-       generateTitle: {
-         model: google("gemini-2.5-flash"), // Use faster/cheaper model for titles
-         instructions: "Generate a concise title based on the web automation task or website being accessed.",
-       },
-     },
   },
 });
 
@@ -97,7 +81,7 @@ export const webAutomationAgent = new Agent({
     - Always provide a meaningful response even if you can't complete everything
 
     **When given database participant information:**
-    - If the name does not return a user, inform the caseworker that the participant is not in the database
+    - If the participant ID does not return a user, inform the caseworker that the participant is not in the database
     - Immediately use the data to assess the fields requested, identify the relevant fields in the database, and populate the web form
     - Navigate to the appropriate website (research if URL unknown)
     - Fill all available fields with the participant data, carefully identifying fields that have different names but identical purposes (examples: sex and gender, two or more races and mixed ethnicity)
@@ -177,48 +161,18 @@ export const webAutomationAgent = new Agent({
 
     Take action immediately. Don't ask for permission to proceed with your core function.
   `,
-  // model: openai('gpt-5-2025-08-07'),
-  // model: openai('gpt-4.1-mini'),
-  // model: anthropic('claude-sonnet-4-20250514'),
-  // model: google('gemini-2.5-pro'),
-  // model: anthropic('claude-sonnet-4-5-20250929'),
-  model: vertexAnthropic('claude-sonnet-4-5@20250929'),
+
+  // Use Mastra's model router format for proper v5 support (https://mastra.ai/models/providers/)
+  model: 'google/gemini-3-pro-preview',
   tools: {
-    // Only include database tools statically
+    // Only include external API tools statically
     // Playwright tools will be added dynamically per session via toolsets
-    ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
     ...Object.fromEntries(apricotTools.map(tool => [tool.id, tool])),
   },
-  workflows: {
-    webAutomationWorkflow: webAutomationWorkflow,
-  },
+  // workflows: {
+  //   webAutomationWorkflow: webAutomationWorkflow,
+  // },
   memory: memory,
-  scorers: {
-    languagePreference: {
-      scorer: createLanguagePreferenceScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    autonomousProgression: {
-      scorer: createAutonomousProgressionScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    deduction: {
-      scorer: createDeductionScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-    askQuestions: {
-      scorer: createAskQuestionsScorer({
-        model: google("gemini-2.5-pro"),
-      }),
-      sampling: { rate: 1, type: "ratio" },
-    },
-  },
   defaultStreamOptions: {
     maxSteps: 50,
     maxRetries: 3,
@@ -238,6 +192,5 @@ export const webAutomationAgent = new Agent({
     maxSteps: 50,
     maxRetries: 3,
     temperature: 0.1,
-    // Telemetry removed - using AI Tracing instead (configured in mastra/index.ts)
   }
 });

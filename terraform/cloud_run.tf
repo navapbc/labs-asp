@@ -137,9 +137,13 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       }
 
       # Next.js Auth configuration
-      env {
-        name  = "NEXTAUTH_URL"
-        value = var.environment == "prod" ? "https://${var.domain_name}" : "https://${local.env_config.domain_prefix}.${var.domain_name}"
+      # Preview envs: NEXTAUTH_URL not set, code falls back to x-forwarded-host header
+      dynamic "env" {
+        for_each = startswith(var.environment, "preview-") ? [] : [1]
+        content {
+          name  = "NEXTAUTH_URL"
+          value = var.environment == "prod" ? "https://${var.domain_name}" : "https://${local.env_config.domain_prefix}.${var.domain_name}"
+        }
       }
 
       env {
@@ -233,7 +237,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Google Cloud Storage
       env {
         name  = "GCS_BUCKET_NAME"
-        value = var.environment == "prod" ? "labs-asp-artifacts-prod" : "labs-asp-artifacts-dev"
+        value = local.storage_bucket_name
       }
 
       # Mastra authentication
@@ -242,6 +246,27 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value_source {
           secret_key_ref {
             secret  = "mastra-jwt-token"
+            version = "latest"
+          }
+        }
+      }
+
+      # Upstash Redis for shared links
+      env {
+        name = "UPSTASH_REDIS_REST_URL"
+        value_source {
+          secret_key_ref {
+            secret  = var.environment == "prod" ? "upstash-redis-rest-url-prod" : "upstash-redis-rest-url-dev"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "UPSTASH_REDIS_REST_TOKEN"
+        value_source {
+          secret_key_ref {
+            secret  = var.environment == "prod" ? "upstash-redis-rest-token-prod" : "upstash-redis-rest-token-dev"
             version = "latest"
           }
         }

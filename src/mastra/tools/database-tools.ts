@@ -1,3 +1,25 @@
+/**
+ * @deprecated These database tools are deprecated in favor of the Apricot360 API tools.
+ *
+ * This file is kept for reference and potential future use with new clients that may need
+ * local database storage for participant data.
+ *
+ * To re-enable these tools:
+ * 1. Import databaseTools in your agent file:
+ *    import { databaseTools } from '../tools/database-tools';
+ *
+ * 2. Add to your agent's tools:
+ *    tools: {
+ *      ...Object.fromEntries(databaseTools.map(tool => [tool.id, tool])),
+ *    }
+ *
+ * 3. Run the seed scripts to populate test data:
+ *    pnpm seed:apricot360  # For Apricot360 CSV format
+ *    pnpm seed:wic         # For WIC test data
+ *
+ * See scripts/seed/README.md for more details on seeding the database.
+ */
+
 import { createTool } from '@mastra/core/tools';
 import { query } from '../../lib/db';
 import {
@@ -8,13 +30,11 @@ import {
   updateParticipantDemographicsSchema,
   searchByNameSchema,
   searchByLocationSchema,
-  getParticipantByIdSchema,
   getParticipantWithHouseholdSchema,
   participantResponseSchema,
   dependentResponseSchema,
   participantSearchResponseSchema,
   participantWithHouseholdResponseSchema,
-  getParticipantByIdResponseSchema,
 } from '../types/participant-types';
 
 // Helper function to convert snake_case database fields to camelCase
@@ -146,64 +166,6 @@ const transformDependent = (row: any) => ({
  * Household Dependent Fields:
  * - associatedFamily: Family role from Apricot360 (e.g., Mother, Son, Daughter)
  */
-
-// Get participant by ID
-export const getParticipantById = createTool({
-  id: 'get-participant-by-id',
-  description: 'Get a WIC benefits participant by their unique participant ID. Null values in WIC fields indicate unknown information that needs to be collected.',
-  inputSchema: getParticipantByIdSchema,
-  outputSchema: getParticipantByIdResponseSchema,
-  execute: async ({ context }) => {
-    try {
-      const participantQuery = `
-        SELECT p.*, 
-               COALESCE(
-                 json_agg(
-                   json_build_object(
-                     'id', h.id,
-                     'participantId', h.participant_id,
-                     'firstName', h.first_name,
-                     'lastName', h.last_name,
-                     'age', h.age,
-                     'dateOfBirth', h.date_of_birth,
-                     'relationship', h.relationship,
-                     'gender', h.gender,
-                     'genderIdentity', h.gender_identity,
-                     'ethnicity', h.ethnicity,
-                     'isInfant', h.is_infant,
-                     'isChild0to5', h.is_child0to5,
-                     'associatedFamily', h.associated_family,
-                     'createdAt', h.created_at,
-                     'updatedAt', h.updated_at
-                   ) ORDER BY h.date_of_birth ASC
-                 ) FILTER (WHERE h.id IS NOT NULL), 
-                 '[]'::json
-               ) as household
-        FROM participants p
-        LEFT JOIN household_dependents h ON p.id = h.participant_id
-        WHERE p.participant_id = $1
-        GROUP BY p.id
-      `;
-      
-      const result = await query(participantQuery, [context.participantId]);
-      const participant = result.rows.length > 0 ? {
-        ...transformParticipant(result.rows[0]),
-        household: result.rows[0].household
-      } : null;
-
-      return {
-        participant,
-        found: participant !== null,
-      };
-    } catch (error) {
-      console.error('Error fetching participant:', error);
-      return {
-        participant: null,
-        found: false,
-      };
-    }
-  },
-});
 
 // Search participants by name
 export const searchParticipantsByName = createTool({
@@ -490,7 +452,6 @@ export const updateParticipantDemographics = createTool({
 
 // Export all database tools
 export const databaseTools = [
-  getParticipantById,
   searchParticipantsByName,
   getParticipantWithHousehold,
   searchParticipantsByLocation
