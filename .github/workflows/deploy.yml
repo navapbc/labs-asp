@@ -163,9 +163,9 @@ jobs:
 
       - name: Build and push ai-chatbot image
         run: |
-          # Enable AI SDK agent for preview environments
+          # Enable AI SDK agent for dev and preview environments
           USE_AI_SDK="false"
-          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]]; then
+          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]] || [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
             USE_AI_SDK="true"
           fi
 
@@ -325,9 +325,9 @@ jobs:
             ENABLE_DOMAIN="true"
           fi
 
-          # Enable AI SDK agent for preview environments (testing new Kernel.sh integration)
+          # Enable AI SDK agent for dev and preview environments
           USE_AI_SDK="false"
-          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]]; then
+          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]] || [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
             USE_AI_SDK="true"
           fi
 
