@@ -1,9 +1,9 @@
-import { 
-  validatePassword, 
-  generateAuthToken, 
-  verifyAuthToken, 
-  extractTokenFromHeader, 
-  createLoginPage 
+import {
+  validatePassword,
+  generateAuthToken,
+  verifyAuthToken,
+  extractTokenFromHeader,
+  createLoginPage
 } from '../auth-utils';
 
 // Server middleware configuration extracted from index.ts

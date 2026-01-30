@@ -154,12 +154,23 @@ jobs:
           echo "::add-mask::$POSTHOG_KEY"
           echo "key=$POSTHOG_KEY" >> $GITHUB_OUTPUT
 
+      - name: Set preview auth mode
+        id: preview_auth
+        run: |
+          ENV="${{ needs.setup.outputs.environment }}"
+          if [[ "$ENV" == preview-* ]]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push ai-chatbot image
         run: |
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
             --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ steps.posthog_key.outputs.key }} \
             --build-arg NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com \
+            --build-arg NEXT_PUBLIC_PREVIEW_AUTH_MODE=${{ steps.preview_auth.outputs.enabled }} \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .

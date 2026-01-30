@@ -140,9 +140,9 @@ export function createLoginPage(errorMessage?: string): string {
     <div class="login-container">
         <div class="logo">Nava Labs ASP Bot</div>
         <div class="subtitle">Playground Access</div>
-        
+
         ${errorMessage ? `<div class="error">${errorMessage}</div>` : ''}
-        
+
         <form method="POST" action="/auth/login">
             <div class="form-group">
                 <label for="password">Password:</label>
@@ -150,7 +150,7 @@ export function createLoginPage(errorMessage?: string): string {
             </div>
             <button type="submit" class="submit-btn">Access Playground</button>
         </form>
-        
+
         <div class="info">
             Enter the password to access the Mastra playground interface.
         </div>
@@ -159,3 +159,4 @@ export function createLoginPage(errorMessage?: string): string {
 </html>
   `;
 }
+
