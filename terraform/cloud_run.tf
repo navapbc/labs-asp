@@ -15,7 +15,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     # VPC Access - Connect to VPC network
     vpc_access {
       connector = local.vpc_connector.id
-      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
     }
 
     containers {
@@ -437,7 +437,7 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
     # VPC Access - Connect to VPC network
     vpc_access {
       connector = local.vpc_connector.id
-      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
     }
 
     containers {
