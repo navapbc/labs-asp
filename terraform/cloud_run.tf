@@ -335,24 +335,6 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value = var.environment
       }
 
-      # Preview Auth Mode - enables mock email/password login for preview environments
-      # Only set to true for preview-pr-* environments where OAuth won't work
-      dynamic "env" {
-        for_each = startswith(var.environment, "preview-") ? [1] : []
-        content {
-          name  = "PREVIEW_AUTH_MODE"
-          value = "true"
-        }
-      }
-
-      dynamic "env" {
-        for_each = startswith(var.environment, "preview-") ? [1] : []
-        content {
-          name  = "NEXT_PUBLIC_PREVIEW_AUTH_MODE"
-          value = "true"
-        }
-      }
-
       env {
         name  = "GCP_PROJECT_ID"
         value = local.project_id
