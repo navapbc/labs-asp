@@ -324,6 +324,29 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value = google_compute_instance.app_vm.network_interface[0].network_ip
       }
 
+      # Feature flag for AI SDK agent (vs Mastra backend)
+      # When true, uses Kernel.sh for browser automation instead of Playwright MCP
+      env {
+        name  = "USE_AI_SDK_AGENT"
+        value = var.use_ai_sdk_agent
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_USE_AI_SDK_AGENT"
+        value = var.use_ai_sdk_agent
+      }
+
+      # Kernel.sh API key for remote browser management (used when USE_AI_SDK_AGENT=true)
+      env {
+        name = "KERNEL_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = "kernel-api-key"
+            version = "latest"
+          }
+        }
+      }
+
       # Runtime configuration
       env {
         name  = "NODE_ENV"
