@@ -1,5 +1,5 @@
 # Independent Playwright MCP Server Container
-FROM node:20-slim
+FROM node:25-slim
 
 # Install system dependencies needed for Playwright
 RUN apt-get update && apt-get install -y \
