@@ -1,13 +1,15 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { authenticate, getForms, getRecordById, type FormsResponse, type FormData, type RecordData, type RecordByIdResponse } from '../../lib/apricot-api';
+import { authenticate, getForms, getRecordById, getFormFields, type FormsResponse, type FormData, type RecordData, type RecordByIdResponse, type FormFieldsResponse } from '../../lib/apricot-api';
 import {
   getFormsSchema,
   getFormByIdSchema,
   getRecordByIdSchema,
+  getFormFieldsSchema,
   getFormsResponseSchema,
   getFormByIdResponseSchema,
   getRecordByIdResponseSchema,
+  getFormFieldsResponseSchema,
 } from '../types/apricot-types';
 
 // ===== Helper Functions =====
@@ -165,7 +167,7 @@ export const getApricotRecordById = createTool({
   execute: async ({ context }) => {
     try {
       const response: RecordByIdResponse = await getRecordById(context.recordId);
-      
+
       if (response.data.length === 0) {
         return {
           record: null,
@@ -190,11 +192,46 @@ export const getApricotRecordById = createTool({
   },
 });
 
+/**
+ * Get form fields from Apricot360 by form ID
+ */
+export const getApricotFormFields = createTool({
+  id: 'get-apricot-form-fields',
+  description: 'Get all field definitions for a specific form in Apricot360. Returns field labels, types, options, and other metadata. Use form ID 98 or 99 for participant forms. This is useful for understanding what fields are available on a form.',
+  inputSchema: getFormFieldsSchema,
+  outputSchema: getFormFieldsResponseSchema,
+  execute: async ({ context }) => {
+    try {
+      const response: FormFieldsResponse = await getFormFields(context.formId);
+
+      const fields = response.data;
+      const fieldNames = fields.map(field => field.label);
+
+      return {
+        fields,
+        fieldNames,
+        count: response.meta.count,
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error fetching form fields from Apricot:', error);
+      return {
+        fields: [],
+        fieldNames: [],
+        count: 0,
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch form fields from Apricot360',
+      };
+    }
+  },
+});
+
 // Export all Apricot tools
 export const apricotTools = [
   testApricotAuth,
   getFormsFromApricot,
   getApricotFormById,
   getApricotRecordById,
+  getApricotFormFields,
 ];
 
