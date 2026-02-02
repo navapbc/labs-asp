@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout code at specified version
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.inputs.version }}
           submodules: recursive
