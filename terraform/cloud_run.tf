@@ -336,6 +336,17 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value = var.use_ai_sdk_agent
       }
 
+      # Feature flag for guest login (bypasses OAuth in preview environments)
+      env {
+        name  = "USE_GUEST_LOGIN"
+        value = var.use_guest_login
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_USE_GUEST_LOGIN"
+        value = var.use_guest_login
+      }
+
       # Kernel.sh API key for remote browser management (used when USE_AI_SDK_AGENT=true)
       env {
         name = "KERNEL_API_KEY"

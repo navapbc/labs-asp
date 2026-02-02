@@ -169,12 +169,19 @@ jobs:
             USE_AI_SDK="true"
           fi
 
+          # Enable guest login only for preview-pr-* environments
+          USE_GUEST="false"
+          if [[ "${{ needs.setup.outputs.environment }}" == preview-pr-* ]]; then
+            USE_GUEST="true"
+          fi
+
           docker build \
             --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
             --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ steps.posthog_key.outputs.key }} \
             --build-arg NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com \
             --build-arg KERNEL_API_KEY=${{ steps.kernel_key.outputs.key }} \
             --build-arg USE_AI_SDK_AGENT=${USE_AI_SDK} \
+            --build-arg USE_GUEST_LOGIN=${USE_GUEST} \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .
@@ -331,6 +338,12 @@ jobs:
             USE_AI_SDK="true"
           fi
 
+          # Enable guest login only for preview-pr-* environments
+          USE_GUEST="false"
+          if [[ "${{ needs.setup.outputs.environment }}" == preview-pr-* ]]; then
+            USE_GUEST="true"
+          fi
+
           terraform plan \
             -var="environment=${{ needs.setup.outputs.environment }}" \
             -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
@@ -339,6 +352,7 @@ jobs:
             -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
             -var="enable_custom_domain=${ENABLE_DOMAIN}" \
             -var="use_ai_sdk_agent=${USE_AI_SDK}" \
+            -var="use_guest_login=${USE_GUEST}" \
             -var="vpc_cidr_public=${{ steps.vpc_cidrs.outputs.vpc_cidr_public }}" \
             -var="vpc_cidr_private=${{ steps.vpc_cidrs.outputs.vpc_cidr_private }}" \
             -var="vpc_cidr_db=${{ steps.vpc_cidrs.outputs.vpc_cidr_db }}" \

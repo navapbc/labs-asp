@@ -206,3 +206,10 @@ variable "use_ai_sdk_agent" {
   type        = string
   default     = "false"
 }
+
+# Feature flag for guest login (bypasses OAuth in preview environments)
+variable "use_guest_login" {
+  description = "Feature flag to enable guest login form for preview environments"
+  type        = string
+  default     = "false"
+}

@@ -99,6 +99,8 @@ services:
         NEXT_PUBLIC_MASTRA_SERVER_URL: http://localhost:4111
         # Feature flag for AI SDK agent (set to 'true' to use Kernel.sh instead of Mastra)
         USE_AI_SDK_AGENT: ${USE_AI_SDK_AGENT:-false}
+        # Feature flag for guest login (set to 'true' to enable guest login form)
+        USE_GUEST_LOGIN: ${USE_GUEST_LOGIN:-false}
     ports:
       - "3000:3000"   # Next.js application
     environment:
@@ -115,6 +117,9 @@ services:
       - USE_AI_SDK_AGENT=${USE_AI_SDK_AGENT:-false}
       - NEXT_PUBLIC_USE_AI_SDK_AGENT=${USE_AI_SDK_AGENT:-false}
       - KERNEL_API_KEY=${KERNEL_API_KEY:-}
+      # Feature flag for guest login in preview environments
+      - USE_GUEST_LOGIN=${USE_GUEST_LOGIN:-false}
+      - NEXT_PUBLIC_USE_GUEST_LOGIN=${USE_GUEST_LOGIN:-false}
     env_file:
       - client/.env.local
     volumes:
