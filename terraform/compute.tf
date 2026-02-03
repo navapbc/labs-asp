@@ -19,6 +19,18 @@ locals {
       : google_secret_manager_secret_version.database_url_dev[0].secret_data
     )
   )
+
+  # Apricot credentials - prod uses /api/ endpoint, all others use /sandbox/
+  apricot_client_id = (
+    var.environment == "prod"
+    ? data.google_secret_manager_secret_version.apricot_client_id_prod.secret_data
+    : data.google_secret_manager_secret_version.apricot_client_id_sandbox.secret_data
+  )
+  apricot_client_secret = (
+    var.environment == "prod"
+    ? data.google_secret_manager_secret_version.apricot_client_secret_prod.secret_data
+    : data.google_secret_manager_secret_version.apricot_client_secret_sandbox.secret_data
+  )
 }
 
 data "google_secret_manager_secret_version" "openai_api_key" {
@@ -65,12 +77,21 @@ data "google_secret_manager_secret_version" "apricot_api_base_url" {
   secret = "apricot-api-base-url"
 }
 
-data "google_secret_manager_secret_version" "apricot_client_id" {
-  secret = "apricot-client-id"
+# Apricot credentials - prod and sandbox require separate credentials
+data "google_secret_manager_secret_version" "apricot_client_id_prod" {
+  secret = "apricot-client-id-prod"
 }
 
-data "google_secret_manager_secret_version" "apricot_client_secret" {
-  secret = "apricot-client-secret"
+data "google_secret_manager_secret_version" "apricot_client_secret_prod" {
+  secret = "apricot-client-secret-prod"
+}
+
+data "google_secret_manager_secret_version" "apricot_client_id_sandbox" {
+  secret = "apricot-client-id-sandbox"
+}
+
+data "google_secret_manager_secret_version" "apricot_client_secret_sandbox" {
+  secret = "apricot-client-secret-sandbox"
 }
 
 # Note: VM uses private subnet without external IP
@@ -131,8 +152,8 @@ resource "google_compute_instance" "app_vm" {
       mastra_jwt_token        = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
       vertex_ai_credentials   = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
       apricot_api_base_url    = data.google_secret_manager_secret_version.apricot_api_base_url.secret_data
-      apricot_client_id       = data.google_secret_manager_secret_version.apricot_client_id.secret_data
-      apricot_client_secret   = data.google_secret_manager_secret_version.apricot_client_secret.secret_data
+      apricot_client_id       = local.apricot_client_id
+      apricot_client_secret   = local.apricot_client_secret
     })
   }
 
