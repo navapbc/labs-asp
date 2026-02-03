@@ -31,12 +31,14 @@ export type {
 } from './models/apricot-models';
 
 // ===== Configuration =====
-// Use 'api' for production only (https://labs-asp.navateam.com), 'sandbox' for all other environments including dev
-const env = process.env.NEXTAUTH_URL?.includes('://labs-asp.navateam.com') ? 'api' : 'sandbox';
+// Use 'api' for production only, 'sandbox' for all other environments including dev
+// Check explicit ENVIRONMENT variable set by terraform
+const environment = process.env.ENVIRONMENT || 'dev';
+const env = environment === 'prod' ? 'api' : 'sandbox';
 
 // Log environment on module load for debugging
-console.log(`[Apricot API] Environment: "${env}" | NEXTAUTH_URL: "${process.env.NEXTAUTH_URL || 'undefined'}"`);
-console.log(`[Apricot API] Expected: prod (labs-asp.navateam.com) → "api", dev (dev.labs-asp.navateam.com) → "sandbox"`);
+console.log(`[Apricot API] Apricot Environment: "${env}" | ENVIRONMENT var: "${environment}"`);
+console.log(`[Apricot API] Expected: ENVIRONMENT=prod → "api", ENVIRONMENT=dev|preview-* → "sandbox"`);
 
 // API configuration from environment variables
 const baseUrl = process.env.APRICOT_API_BASE_URL;

@@ -234,6 +234,12 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value = local.project_id
       }
 
+      # Environment identifier (prod, dev, preview-pr-N)
+      env {
+        name  = "ENVIRONMENT"
+        value = var.environment
+      }
+
       # Google Cloud Storage
       env {
         name  = "GCS_BUCKET_NAME"
