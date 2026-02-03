@@ -1,3 +1,11 @@
+## [1.3.1](https://github.com/navapbc/labs-asp/compare/v1.3.0...v1.3.1) (2026-02-03)
+
+
+### Bug Fixes
+
+* fix env definition to configure correct Apricot API environment for prod and sandbox ([4ebb214](https://github.com/navapbc/labs-asp/commit/4ebb214f9d3d1095272e6eee523f700314b5a13d))
+* update apricot-api logs to reference ENVIRONMENT ([b506893](https://github.com/navapbc/labs-asp/commit/b506893001c22bea9ce75758b99e106581d3a755))
+
 # [1.3.0](https://github.com/navapbc/labs-asp/compare/v1.2.1...v1.3.0) (2026-01-30)
 
 
