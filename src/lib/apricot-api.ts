@@ -27,7 +27,7 @@ export type {
 
 // ===== Configuration =====
 // Use 'api' for production only (https://labs-asp.navateam.com), 'sandbox' for all other environments including dev
-const env = process.env.NEXTAUTH_URL?.includes('://labs-asp.navateam.com') ? 'api' : 'sandbox';
+const env = process.env.ENVIRONMENT === 'prod' ? 'api' : 'sandbox';  
 
 // Log environment on module load for debugging
 console.log(`[Apricot API] Environment: "${env}" | NEXTAUTH_URL: "${process.env.NEXTAUTH_URL || 'undefined'}"`);
