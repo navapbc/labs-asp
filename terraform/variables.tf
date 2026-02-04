@@ -71,25 +71,25 @@ variable "chatbot_image_url" {
 variable "chatbot_cpu" {
   description = "CPU allocation for AI Chatbot Cloud Run service"
   type        = string
-  default     = "1"  # 1 vCPU for Next.js app
+  default     = "2"  # 2 vCPUs for better concurrent request handling
 }
 
 variable "chatbot_memory" {
   description = "Memory allocation for AI Chatbot Cloud Run service"
   type        = string
-  default     = "4Gi"
+  default     = "8Gi"
 }
 
 variable "chatbot_min_instances" {
   description = "Minimum instances for AI Chatbot service"
   type        = number
-  default     = 1  # Keep at least one instance warm to avoid cold start issues
+  default     = 2  # Keep instances warm to avoid cold starts during load testing
 }
 
 variable "chatbot_max_instances" {
   description = "Maximum instances for AI Chatbot service"
   type        = number
-  default     = 5
+  default     = 20
 }
 
 variable "chatbot_timeout" {
