@@ -2,10 +2,10 @@
 
 /**
  * Standalone browser streaming server for Docker container
- * 
+ *
  * This service provides real-time browser frame streaming via WebSockets using Chrome DevTools Protocol (CDP).
  * It connects to Playwright-managed Chrome instances and streams screencast frames to connected clients.
- * 
+ *
  * The service supports:
  * - Real-time browser frame streaming
  * - User input handling (mouse, keyboard, scroll)
@@ -28,10 +28,10 @@ const { EventEmitter } = require('events');
  * @property {'offer'|'answer'|'ice-candidate'|'start-streaming'|'stop-streaming'|'control-mode'|'user-input'} type - Message type
  * @property {*} [data] - Optional message data (structure varies by message type)
  * @property {string} [sessionId] - Optional session identifier
- * 
+ *
  * Message type details:
  * - 'start-streaming': Begin browser frame capture for a session
- * - 'stop-streaming': Stop browser frame capture for a session  
+ * - 'stop-streaming': Stop browser frame capture for a session
  * - 'control-mode': Switch between 'agent' and 'user' control modes
  * - 'user-input': Send user input events (click, mousemove, keydown, keyup, scroll)
  * - 'offer'/'answer'/'ice-candidate': WebRTC signaling (future feature)
@@ -43,16 +43,19 @@ class BrowserStreamingService extends EventEmitter {
     this.port = port;
     this.cdpPort = cdpPort; // Chrome DevTools Protocol port (fallback)
     this.wss = new WebSocketServer({ port });
-    this.activeSessions = new Map(); // Map<sessionId, {ws, client, cdpEndpoint, controlMode, targetId}>
-    this.sessionToTarget = new Map(); // Map<sessionId, targetId> - tracks which session owns which CDP target
-    // Mutex to prevent race conditions in target assignment
+    // Single consolidated Map for all session state
+    // Map<sessionId, {ws, client, cdpEndpoint, controlMode, targetId}>
+    this.activeSessions = new Map();
+    // Track sessions that are currently mid-start to prevent duplicate starts
+    this._startingSessionIds = new Set();
+    // Mutex to prevent race conditions in target assignment AND session start
     this._targetAssignmentLock = Promise.resolve();
   }
 
   async start() {
     this.wss.on('connection', (ws) => {
       console.log('Browser streaming client connected');
-      
+
       ws.on('message', async (message) => {
         try {
           const data = JSON.parse(message.toString());
@@ -65,11 +68,10 @@ class BrowserStreamingService extends EventEmitter {
 
       ws.on('close', () => {
         console.log('Browser streaming client disconnected');
-        // Clean up sessions for this client
+        // Clean up sessions for this client — stopBrowserCapture handles all cleanup
         for (const [sessionId, session] of this.activeSessions) {
           if (session.ws === ws) {
             this.stopBrowserCapture(sessionId);
-            this.activeSessions.delete(sessionId);
           }
         }
       });
@@ -124,31 +126,70 @@ class BrowserStreamingService extends EventEmitter {
         }
         await this.handleUserInput(ws, message.sessionId, message.data);
         break;
-      
+
       case 'offer':
       case 'answer':
       case 'ice-candidate':
         // Handle WebRTC signaling (for future WebRTC implementation)
         await this.handleWebRTCSignaling(ws, message);
         break;
-      
+
       default:
         console.warn('Unknown message type:', message.type);
     }
   }
 
+  /**
+   * Start browser capture with mutex to prevent duplicate/racing starts.
+   * The entire start sequence is serialized to prevent race conditions.
+   */
   async startBrowserCapture(ws, sessionId) {
+    // Wrap the entire start sequence in the mutex
+    const result = await new Promise((resolve) => {
+      this._targetAssignmentLock = this._targetAssignmentLock.then(async () => {
+        const res = await this._startBrowserCaptureInternal(ws, sessionId);
+        resolve(res);
+        return res;
+      }).catch((error) => {
+        console.error('Error in startBrowserCapture lock:', error);
+        resolve(null);
+        return null;
+      });
+    });
+    return result;
+  }
+
+  async _startBrowserCaptureInternal(ws, sessionId) {
+    // Deduplication: reject if already active or mid-start
+    if (this.activeSessions.has(sessionId)) {
+      console.warn(`Session ${sessionId} already active, rejecting duplicate start`);
+      ws.send(JSON.stringify({ type: 'error', error: `Session ${sessionId} is already streaming` }));
+      return;
+    }
+    if (this._startingSessionIds.has(sessionId)) {
+      console.warn(`Session ${sessionId} is already starting, rejecting duplicate start`);
+      ws.send(JSON.stringify({ type: 'error', error: `Session ${sessionId} is already starting` }));
+      return;
+    }
+
+    this._startingSessionIds.add(sessionId);
+
     try {
-      // Connect to the Playwright MCP server's CDP endpoint with retry logic
+      // Step 1: Discover CDP endpoint with retry logic
       let cdpEndpoint = null;
       let retries = 0;
-      const maxRetries = 15; // Increased retries for better reliability
+      const maxRetries = 15;
 
       while (!cdpEndpoint && retries < maxRetries) {
-        cdpEndpoint = await this.getCDPEndpoint(sessionId); // Pass sessionId to get correct target
+        // Check if WebSocket closed during retry loop
+        if (ws.readyState !== 1) { // !== WebSocket.OPEN
+          console.log(`WebSocket closed during CDP discovery for session ${sessionId}, aborting`);
+          return;
+        }
+        cdpEndpoint = await this._getCDPEndpointInternal(sessionId);
         if (!cdpEndpoint) {
           console.log(`Attempt ${retries + 1}/${maxRetries}: Waiting for Playwright browser to be available for session ${sessionId}...`);
-          await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly faster retry
+          await new Promise(resolve => setTimeout(resolve, 1500));
           retries++;
         }
       }
@@ -156,14 +197,13 @@ class BrowserStreamingService extends EventEmitter {
       if (!cdpEndpoint) {
         const errorMsg = `Could not get CDP endpoint from Playwright MCP server after multiple attempts for session ${sessionId}`;
         console.error(errorMsg);
-        ws.send(JSON.stringify({
-          type: 'error',
-          error: errorMsg
-        }));
+        if (ws.readyState === 1) {
+          ws.send(JSON.stringify({ type: 'error', error: errorMsg }));
+        }
         return;
       }
 
-      // Connect to CDP and start screencast
+      // Step 2: Connect CDP and enable domains
       const CDP = require('chrome-remote-interface');
       const client = await CDP({ target: cdpEndpoint });
 
@@ -172,31 +212,42 @@ class BrowserStreamingService extends EventEmitter {
       await Page.enable();
       await Runtime.enable();
 
-      // Start screencast
+      // Extract targetId from the CDP endpoint URL
+      const targetIdMatch = cdpEndpoint.match(/\/devtools\/page\/([^/]+)/);
+      const targetId = targetIdMatch ? targetIdMatch[1] : null;
+
+      // Step 3: Store in activeSessions BEFORE starting screencast
+      // This ensures the frame handler can always find the session entry
+      this.activeSessions.set(sessionId, {
+        ws,
+        client,
+        cdpEndpoint,
+        controlMode: 'agent',
+        targetId,
+      });
+
+      // Step 4: Add CDP disconnect handler for auto-cleanup
+      client.on('disconnect', () => {
+        console.log(`CDP client disconnected for session ${sessionId}, cleaning up`);
+        this.activeSessions.delete(sessionId);
+      });
+
+      // Step 5: Start screencast
       await Page.startScreencast({
         format: 'jpeg',
         quality: 80,
         maxWidth: 1920,
         maxHeight: 1080,
-        everyNthFrame: 1 // Capture every frame for smooth streaming
+        everyNthFrame: 1
       });
 
-      // Handle screencast frames with session validation
+      // Step 6: Register frame handler — activeSessions.get() will always succeed now
       Page.screencastFrame((params) => {
         try {
-          // SESSION VALIDATION: Verify this session still owns this target
-          // This prevents frames from being sent to the wrong session if target was reassigned
           const currentSession = this.activeSessions.get(sessionId);
-          const expectedTargetId = this.sessionToTarget.get(sessionId);
 
           if (!currentSession) {
             console.warn(`[SESSION VALIDATION] Session ${sessionId} no longer active, skipping frame`);
-            Page.screencastFrameAck({ sessionId: params.sessionId });
-            return;
-          }
-
-          if (currentSession.targetId !== expectedTargetId) {
-            console.warn(`[SESSION VALIDATION] Target mismatch for session ${sessionId}: active=${currentSession.targetId}, expected=${expectedTargetId}`);
             Page.screencastFrameAck({ sessionId: params.sessionId });
             return;
           }
@@ -222,71 +273,59 @@ class BrowserStreamingService extends EventEmitter {
           Page.screencastFrameAck({ sessionId: params.sessionId });
         } catch (error) {
           console.error('Error handling screencast frame:', error);
-          // Don't stop the entire capture for frame errors, just log them
         }
       });
 
-      // Extract target ID from the CDP endpoint
-      const targetId = this.sessionToTarget.get(sessionId);
-
-      // Store session info including the target ID
-      this.activeSessions.set(sessionId, {
-        ws,
-        client,
-        cdpEndpoint,
-        controlMode: 'agent', // Default to agent control
-        targetId, // Store the target ID for this session
-      });
-
       // Notify client that streaming started
-      ws.send(JSON.stringify({
-        type: 'streaming-started',
-        sessionId,
-        cdpEndpoint,
-        targetId
-      }));
+      if (ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'streaming-started',
+          sessionId,
+          cdpEndpoint,
+          targetId
+        }));
+      }
 
       console.log(`Browser capture started for session: ${sessionId} (target: ${targetId})`);
-      
+
     } catch (error) {
       console.error('Error starting browser capture:', error);
+      // Clean up partial state on error
+      this.activeSessions.delete(sessionId);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      ws.send(JSON.stringify({
-        type: 'error',
-        error: `Failed to start browser capture: ${errorMessage}`
-      }));
+      if (ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          error: `Failed to start browser capture: ${errorMessage}`
+        }));
+      }
+    } finally {
+      this._startingSessionIds.delete(sessionId);
     }
   }
 
   async stopBrowserCapture(sessionId) {
+    // Atomic removal: delete from activeSessions immediately to prevent races
     const session = this.activeSessions.get(sessionId);
     if (!session) {
-      console.warn(`No active session found for: ${sessionId}`);
+      // Idempotent: may be called while start is mid-flight or already stopped
       return;
     }
+    this.activeSessions.delete(sessionId);
 
     try {
-      // ONLY stop screencast, don't close the page or browser
-      // This allows the Chrome process to stay alive for agent control
+      // Stop screencast — don't close the page or browser
       if (session.client && session.client.Page) {
         await session.client.Page.stopScreencast();
       }
 
       // Close our CDP connection to the target
-      // This disconnects our stream but leaves Chrome running
       if (session.client) {
         await session.client.close();
       }
 
-      // Remove from active sessions
-      this.activeSessions.delete(sessionId);
-
-      // Clean up session-to-target mapping
-      // NOTE: We keep the target alive for agent control, but release the claim
-      if (this.sessionToTarget.has(sessionId)) {
-        const targetId = this.sessionToTarget.get(sessionId);
-        console.log(`Releasing target ${targetId} from session ${sessionId}`);
-        this.sessionToTarget.delete(sessionId);
+      if (session.targetId) {
+        console.log(`Releasing target ${session.targetId} from session ${sessionId}`);
       }
 
       // Notify client that streaming stopped
@@ -347,7 +386,7 @@ class BrowserStreamingService extends EventEmitter {
             x: inputData.x,
             y: inputData.y,
           });
-          
+
           await Input.dispatchMouseEvent({
             type: 'mousePressed',
             x: inputData.x,
@@ -400,7 +439,7 @@ class BrowserStreamingService extends EventEmitter {
             x: inputData.x,
             y: inputData.y,
           });
-          
+
           await Input.dispatchMouseEvent({
             type: 'mousePressed',
             x: inputData.x,
@@ -448,9 +487,9 @@ class BrowserStreamingService extends EventEmitter {
       // Use ps to find Playwright Chromium process with remote-debugging-port
       const { execSync } = require('child_process');
       const output = execSync('ps aux | grep "ms-playwright" | grep "remote-debugging-port"', { encoding: 'utf8' });
-      
+
       console.log('Playwright process search output:', output);
-      
+
       // Extract the port from the --remote-debugging-port argument
       const match = output.match(/--remote-debugging-port[=\s]+(\d+)/);
       if (match) {
@@ -458,7 +497,7 @@ class BrowserStreamingService extends EventEmitter {
         console.log(`Found Playwright Chrome CDP port: ${port}`);
         return port;
       }
-      
+
       return null;
     } catch (error) {
       console.log('Could not detect Playwright Chrome port:', error.message);
@@ -467,34 +506,16 @@ class BrowserStreamingService extends EventEmitter {
   }
 
   /**
-   * Get CDP endpoint for a session with mutex to prevent race conditions.
-   * This wrapper ensures only one session can claim a target at a time.
-   */
-  async getCDPEndpoint(sessionId) {
-    // Use mutex to serialize target assignment and prevent race conditions
-    const result = await new Promise((resolve) => {
-      this._targetAssignmentLock = this._targetAssignmentLock.then(async () => {
-        const endpoint = await this._getCDPEndpointInternal(sessionId);
-        resolve(endpoint);
-        return endpoint;
-      }).catch((error) => {
-        console.error('Error in target assignment lock:', error);
-        resolve(null);
-        return null;
-      });
-    });
-    return result;
-  }
-
-  /**
    * Internal implementation of CDP endpoint discovery.
    * Called within mutex lock to prevent race conditions.
+   * Uses only activeSessions (no separate sessionToTarget map).
    */
   async _getCDPEndpointInternal(sessionId) {
     try {
-      // Check if this session already has a mapped target
-      if (this.sessionToTarget.has(sessionId)) {
-        const targetId = this.sessionToTarget.get(sessionId);
+      // Check if this session already has a target via activeSessions
+      const existingSession = this.activeSessions.get(sessionId);
+      if (existingSession && existingSession.targetId) {
+        const targetId = existingSession.targetId;
         console.log(`Session ${sessionId} already mapped to target ${targetId}`);
 
         // Re-fetch targets to get current WebSocket URL
@@ -517,7 +538,6 @@ class BrowserStreamingService extends EventEmitter {
 
           if (claimingSession) {
             console.warn(`Target ${targetId} is now claimed by session ${claimingSession[0]}, clearing mapping for ${sessionId}`);
-            this.sessionToTarget.delete(sessionId);
             // Fall through to find a new target
           } else {
             console.log(`Reconnecting to existing target ${targetId} for session ${sessionId}`);
@@ -526,7 +546,6 @@ class BrowserStreamingService extends EventEmitter {
           }
         } else {
           console.warn(`Previously mapped target ${targetId} no longer exists, will select new target`);
-          this.sessionToTarget.delete(sessionId);
         }
       }
 
@@ -558,19 +577,16 @@ class BrowserStreamingService extends EventEmitter {
         return null;
       }
 
-      // Get target IDs already claimed by other active sessions
-      // Include both activeSessions AND sessionToTarget to catch in-progress assignments
-      const claimedTargetIds = new Set([
-        ...Array.from(this.activeSessions.values())
+      // Build claimed-targets set from activeSessions only (single source of truth)
+      const claimedTargetIds = new Set(
+        Array.from(this.activeSessions.values())
           .map(session => session.targetId)
-          .filter(Boolean),
-        ...Array.from(this.sessionToTarget.values())
-      ]);
+          .filter(Boolean)
+      );
 
       console.log(`Claimed target IDs by other sessions:`, Array.from(claimedTargetIds));
 
       // Find the newest unclaimed target
-      // CDP returns targets in newest-to-oldest order, so iterate from index 0 (newest) forward
       let availableTarget = null;
       for (let i = 0; i < pageTargets.length; i++) {
         if (!claimedTargetIds.has(pageTargets[i].id)) {
@@ -580,8 +596,6 @@ class BrowserStreamingService extends EventEmitter {
       }
 
       if (!availableTarget) {
-        // CRITICAL FIX: Do NOT steal targets from other sessions
-        // Return null and let the caller handle the error/retry
         console.error(`[SESSION ISOLATION] No available targets for session ${sessionId}. All ${pageTargets.length} targets are claimed by other sessions.`);
         console.error(`[SESSION ISOLATION] Claimed targets: ${Array.from(claimedTargetIds).join(', ')}`);
         console.error(`[SESSION ISOLATION] This session must wait for a new browser context to be created.`);
@@ -590,9 +604,7 @@ class BrowserStreamingService extends EventEmitter {
 
       console.log(`Assigning unclaimed target ${availableTarget.id} to session ${sessionId}`);
 
-      // Store the session-to-target mapping
-      this.sessionToTarget.set(sessionId, availableTarget.id);
-      this.cdpPort = portToTry; // Update our port reference
+      this.cdpPort = portToTry;
 
       return availableTarget.webSocketDebuggerUrl;
 
@@ -624,7 +636,7 @@ class BrowserStreamingService extends EventEmitter {
 function createBrowserStreamingService(port, cdpPort) {
   const streamingPort = port || parseInt(process.env.BROWSER_STREAMING_PORT || '8933');
   const chromePort = cdpPort || parseInt(process.env.CHROME_CDP_PORT || '9222');
-  
+
   return new BrowserStreamingService(streamingPort, chromePort);
 }
 

@@ -25,6 +25,10 @@ console.log(`Starting WebSocket Proxy Server`);
 console.log(`Port: ${PORT}`);
 console.log(`Backend: ${BACKEND_URL}`);
 
+// Session tracking: prevents duplicate connections for the same sessionId
+// Map<sessionId, {clientWs, backendWs}>
+const activeSessions = new Map();
+
 // Create HTTP server
 const server = http.createServer((req, res) => {
   // Health check endpoint
@@ -34,6 +38,7 @@ const server = http.createServer((req, res) => {
       status: 'healthy',
       service: 'browser-ws-proxy',
       backend: BACKEND_URL,
+      activeSessions: activeSessions.size,
     }));
     return;
   }
@@ -56,6 +61,28 @@ wss.on('connection', (clientWs, req) => {
     return;
   }
 
+  // Evict existing connection for this sessionId to prevent duplicates
+  const existing = activeSessions.get(sessionId);
+  if (existing) {
+    console.log(`[${sessionId}] Evicting existing connection (replaced by new connection)`);
+    // Send stop-streaming to the old backend before closing
+    if (existing.backendWs && existing.backendWs.readyState === WebSocket.OPEN) {
+      try {
+        existing.backendWs.send(JSON.stringify({ type: 'stop-streaming', sessionId }));
+      } catch (e) {
+        // Ignore send errors during eviction
+      }
+    }
+    // Close old connections
+    if (existing.clientWs.readyState === WebSocket.OPEN || existing.clientWs.readyState === WebSocket.CONNECTING) {
+      existing.clientWs.close(4000, 'Replaced by new connection');
+    }
+    if (existing.backendWs && (existing.backendWs.readyState === WebSocket.OPEN || existing.backendWs.readyState === WebSocket.CONNECTING)) {
+      existing.backendWs.close();
+    }
+    activeSessions.delete(sessionId);
+  }
+
   console.log(`[${sessionId}] Client connected`);
 
   let backendWs = null;
@@ -63,6 +90,9 @@ wss.on('connection', (clientWs, req) => {
   try {
     // Connect to backend browser-streaming service
     backendWs = new WebSocket(BACKEND_URL);
+
+    // Register this session
+    activeSessions.set(sessionId, { clientWs, backendWs });
 
     // Forward messages from client to backend
     clientWs.on('message', (data) => {
@@ -87,9 +117,14 @@ wss.on('connection', (clientWs, req) => {
       console.log(`[${sessionId}] Connected to backend`);
     });
 
-    // Handle client disconnect
+    // Handle client disconnect — identity-check before removing
     clientWs.on('close', (code, reason) => {
       console.log(`[${sessionId}] Client disconnected: ${code} ${reason}`);
+      // Only remove if this is still the current connection for this sessionId
+      const current = activeSessions.get(sessionId);
+      if (current && current.clientWs === clientWs) {
+        activeSessions.delete(sessionId);
+      }
       if (backendWs && backendWs.readyState === WebSocket.OPEN) {
         backendWs.close();
       }
@@ -121,6 +156,11 @@ wss.on('connection', (clientWs, req) => {
 
   } catch (error) {
     console.error(`[${sessionId}] Error setting up proxy:`, error);
+    // Clean up session on setup error
+    const current = activeSessions.get(sessionId);
+    if (current && current.clientWs === clientWs) {
+      activeSessions.delete(sessionId);
+    }
     if (clientWs.readyState === WebSocket.OPEN) {
       clientWs.close(1011, 'Proxy setup error');
     }
