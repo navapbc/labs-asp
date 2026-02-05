@@ -29,7 +29,7 @@
     "@ai-sdk/google": "^3.0.6",
     "@ai-sdk/google-vertex": "^4.0.13",
     "@ai-sdk/openai": "^3.0.8",
-    "@inquirer/prompts": "^7.8.6",
+    "@inquirer/prompts": "^8.2.0",
     "@mastra/ai-sdk": "^0.3.3",
     "@mastra/core": "^0.24.9",
     "@mastra/libsql": "^0.16.4",
