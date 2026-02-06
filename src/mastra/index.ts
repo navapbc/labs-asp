@@ -2,7 +2,7 @@ import { postgresStore } from './storage';
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { webAutomationAgent } from './agents/web-automation-agent';
-import { createSessionPlaywrightMCP } from './mcp';
+import { getOrCreateSessionPlaywrightMCP } from './mcp';
 
 // Track active streams by sessionId for stop functionality
 const activeStreams = new Map<string, AbortController>();
@@ -73,7 +73,7 @@ export const mastra = new Mastra({
 
 
             try {
-              const sessionPlaywrightMCP = createSessionPlaywrightMCP(sessionId);
+              const sessionPlaywrightMCP = getOrCreateSessionPlaywrightMCP(sessionId);
 
               // Get Playwright tools for this session
               const playwrightToolsets = await sessionPlaywrightMCP.getToolsets();
