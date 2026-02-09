@@ -211,13 +211,8 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       # Google Cloud configuration
       env {
-        name = "GOOGLE_APPLICATION_CREDENTIALS"
-        value_source {
-          secret_key_ref {
-            secret  = "vertex-ai-credentials"
-            version = "latest"
-          }
-        }
+        name  = "GOOGLE_APPLICATION_CREDENTIALS"
+        value = "/secrets/vertex/vertex-ai-credentials.json"
       }
 
       env {
@@ -391,6 +386,12 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         mount_path = "/cloudsql"
       }
 
+      # Volume mount for Vertex AI credentials file
+      volume_mounts {
+        name       = "vertex-credentials"
+        mount_path = "/secrets/vertex"
+      }
+
     }
 
     # Scaling configuration
@@ -407,6 +408,18 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       name = "cloudsql"
       cloud_sql_instance {
         instances = [var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"]
+      }
+    }
+
+    # Vertex AI credentials file (mounted from Secret Manager)
+    volumes {
+      name = "vertex-credentials"
+      secret {
+        secret = "vertex-ai-credentials"
+        items {
+          version = "latest"
+          path    = "vertex-ai-credentials.json"
+        }
       }
     }
   }
