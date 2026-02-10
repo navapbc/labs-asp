@@ -613,3 +613,14 @@ resource "google_project_iam_member" "cloud_run_monitoring" {
     replace_triggered_by = [google_service_account.cloud_run]
   }
 }
+
+resource "google_project_iam_member" "cloud_run_vertex_ai" {
+  project = local.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
+}
