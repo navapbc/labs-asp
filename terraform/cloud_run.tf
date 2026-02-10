@@ -400,6 +400,10 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       max_instance_count = var.chatbot_max_instances
     }
 
+    # Pin each user to the same instance so in-memory BrowserManager
+    # CDP connections persist across tool calls
+    session_affinity = true
+
     # Standard timeout for web requests
     timeout = "${var.chatbot_timeout}s"
 
