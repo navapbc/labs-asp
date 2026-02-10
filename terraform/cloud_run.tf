@@ -400,6 +400,10 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       max_instance_count = var.chatbot_max_instances
     }
 
+    # Pin each user to the same instance so in-memory BrowserManager
+    # CDP connections persist across tool calls
+    session_affinity = true
+
     # Standard timeout for web requests
     timeout = "${var.chatbot_timeout}s"
 
@@ -602,6 +606,17 @@ resource "google_project_iam_member" "cloud_run_logging" {
 resource "google_project_iam_member" "cloud_run_monitoring" {
   project = local.project_id
   role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
+}
+
+resource "google_project_iam_member" "cloud_run_vertex_ai" {
+  project = local.project_id
+  role    = "roles/aiplatform.user"
   member  = "serviceAccount:${google_service_account.cloud_run.email}"
 
   # Recreate when service account changes
