@@ -5,6 +5,7 @@ import type {
   GetFormsOptions,
   FormsResponse,
   RecordByIdResponse,
+  FormFieldsResponse,
 } from './models/apricot-models';
 
 // Re-export types for convenience
@@ -23,6 +24,10 @@ export type {
   RecordLinks,
   RecordData,
   RecordByIdResponse,
+  FieldProperty,
+  FieldOption,
+  FormFieldData,
+  FormFieldsResponse,
 } from './models/apricot-models';
 
 // ===== Configuration =====
@@ -287,4 +292,53 @@ export const getRecordById = async (recordId: number): Promise<RecordByIdRespons
   }
 
   throw new Error('Failed to get record after retries');
+};
+
+// Get Form Fields function
+export const getFormFields = async (formId: number): Promise<FormFieldsResponse> => {
+  if (!baseUrl) {
+    throw new Error('Missing required environment variable: APRICOT_API_BASE_URL');
+  }
+
+  let retryCount = 0;
+
+  while (retryCount <= MAX_RETRIES) {
+    try {
+      const accessToken = await authenticate();
+      const url = `${baseUrl}/${env}/forms/${formId}/fields`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 401 && retryCount < MAX_RETRIES) {
+        invalidateToken();
+        retryCount++;
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch form fields with status ${response.status}: ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (retryCount < MAX_RETRIES && error instanceof Error && error.message.includes('401')) {
+        invalidateToken();
+        retryCount++;
+        continue;
+      }
+
+      if (error instanceof Error) {
+        throw new Error(`Failed to get form fields from Apricot API: ${error.message}`);
+      }
+      throw new Error('Failed to get form fields from Apricot API: Unknown error');
+    }
+  }
+
+  throw new Error('Failed to get form fields after retries');
 };

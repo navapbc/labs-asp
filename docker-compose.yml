@@ -97,9 +97,14 @@ services:
         PLAYWRIGHT_MCP_URL: http://host.docker.internal:8931/mcp
         BROWSER_STREAMING_URL: ws://host.docker.internal:8933
         NEXT_PUBLIC_MASTRA_SERVER_URL: http://localhost:4111
+        # Feature flag for AI SDK agent (set to 'true' to use Kernel.sh instead of Mastra)
+        USE_AI_SDK_AGENT: ${USE_AI_SDK_AGENT:-false}
+        # Feature flag for guest login (set to 'true' to enable guest login form)
+        USE_GUEST_LOGIN: ${USE_GUEST_LOGIN:-false}
     ports:
       - "3000:3000"   # Next.js application
     environment:
+      # Existing Mastra backend config (keep for backward compatibility)
       - PLAYWRIGHT_MCP_URL=http://browser-streaming:8931/mcp
       - BROWSER_STREAMING_URL=ws://browser-streaming:8933
       - NODE_ENV=production
@@ -108,6 +113,13 @@ services:
       - MASTRA_SERVER_URL=http://mastra-app:4112
       - BROWSER_STREAMING_HOST=browser-streaming
       - BROWSER_STREAMING_PORT=8933
+      # NEW: Feature flag and Kernel API for AI SDK agent
+      - USE_AI_SDK_AGENT=${USE_AI_SDK_AGENT:-false}
+      - NEXT_PUBLIC_USE_AI_SDK_AGENT=${USE_AI_SDK_AGENT:-false}
+      - KERNEL_API_KEY=${KERNEL_API_KEY:-}
+      # Feature flag for guest login in preview environments
+      - USE_GUEST_LOGIN=${USE_GUEST_LOGIN:-false}
+      - NEXT_PUBLIC_USE_GUEST_LOGIN=${USE_GUEST_LOGIN:-false}
     env_file:
       - client/.env.local
     volumes:

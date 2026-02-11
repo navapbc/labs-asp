@@ -32,12 +32,26 @@ ARG NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
 ARG NEXT_PUBLIC_POSTHOG_KEY
 ARG NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 
+# Feature flag for AI SDK agent (vs Mastra backend)
+ARG USE_AI_SDK_AGENT=false
+
+# Feature flag for guest login (bypasses OAuth in preview environments)
+ARG USE_GUEST_LOGIN=false
+
+# Kernel.sh API key (required for AI SDK agent builds)
+ARG KERNEL_API_KEY
+
 # Set environment variables for build time
 ENV PLAYWRIGHT_MCP_URL=${PLAYWRIGHT_MCP_URL}
 ENV BROWSER_STREAMING_URL=${BROWSER_STREAMING_URL}
 ENV NEXT_PUBLIC_MASTRA_SERVER_URL=${NEXT_PUBLIC_MASTRA_SERVER_URL}
 ENV NEXT_PUBLIC_POSTHOG_KEY=${NEXT_PUBLIC_POSTHOG_KEY}
 ENV NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
+ENV USE_AI_SDK_AGENT=${USE_AI_SDK_AGENT}
+ENV NEXT_PUBLIC_USE_AI_SDK_AGENT=${USE_AI_SDK_AGENT}
+ENV USE_GUEST_LOGIN=${USE_GUEST_LOGIN}
+ENV NEXT_PUBLIC_USE_GUEST_LOGIN=${USE_GUEST_LOGIN}
+ENV KERNEL_API_KEY=${KERNEL_API_KEY}
 
 # Build Next.js client only (migrations run at container startup)
 RUN pnpm next build
@@ -48,6 +62,9 @@ FROM base AS runtime
 # Copy built application
 WORKDIR /app
 COPY --from=builder /app/client ./client
+
+# Ensure agent-browser binary has execute permissions
+RUN chmod +x /app/client/node_modules/.pnpm/agent-browser@*/node_modules/agent-browser/bin/* 2>/dev/null || true
 
 # Create a non-root user for better security
 RUN groupadd -r nextjs && useradd -r -g nextjs -d /app -s /bin/bash nextjs

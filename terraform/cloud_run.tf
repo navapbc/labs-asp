@@ -15,7 +15,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     # VPC Access - Connect to VPC network
     vpc_access {
       connector = local.vpc_connector.id
-      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
     }
 
     containers {
@@ -211,13 +211,8 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       # Google Cloud configuration
       env {
-        name = "GOOGLE_APPLICATION_CREDENTIALS"
-        value_source {
-          secret_key_ref {
-            secret  = "vertex-ai-credentials"
-            version = "latest"
-          }
-        }
+        name  = "GOOGLE_APPLICATION_CREDENTIALS"
+        value = "/secrets/vertex/vertex-ai-credentials.json"
       }
 
       env {
@@ -325,6 +320,40 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value = google_compute_instance.app_vm.network_interface[0].network_ip
       }
 
+      # Feature flag for AI SDK agent (vs Mastra backend)
+      # When true, uses Kernel.sh for browser automation instead of Playwright MCP
+      env {
+        name  = "USE_AI_SDK_AGENT"
+        value = var.use_ai_sdk_agent
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_USE_AI_SDK_AGENT"
+        value = var.use_ai_sdk_agent
+      }
+
+      # Feature flag for guest login (bypasses OAuth in preview environments)
+      env {
+        name  = "USE_GUEST_LOGIN"
+        value = var.use_guest_login
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_USE_GUEST_LOGIN"
+        value = var.use_guest_login
+      }
+
+      # Kernel.sh API key for remote browser management (used when USE_AI_SDK_AGENT=true)
+      env {
+        name = "KERNEL_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = "kernel-api-key"
+            version = "latest"
+          }
+        }
+      }
+
       # Runtime configuration
       env {
         name  = "NODE_ENV"
@@ -357,6 +386,12 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         mount_path = "/cloudsql"
       }
 
+      # Volume mount for Vertex AI credentials file
+      volume_mounts {
+        name       = "vertex-credentials"
+        mount_path = "/secrets/vertex"
+      }
+
     }
 
     # Scaling configuration
@@ -364,6 +399,10 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       min_instance_count = var.chatbot_min_instances
       max_instance_count = var.chatbot_max_instances
     }
+
+    # Pin each user to the same instance so in-memory BrowserManager
+    # CDP connections persist across tool calls
+    session_affinity = true
 
     # Standard timeout for web requests
     timeout = "${var.chatbot_timeout}s"
@@ -373,6 +412,18 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       name = "cloudsql"
       cloud_sql_instance {
         instances = [var.environment == "prod" ? "nava-labs:us-central1:nava-db-prod" : "nava-labs:us-central1:nava-db-dev"]
+      }
+    }
+
+    # Vertex AI credentials file (mounted from Secret Manager)
+    volumes {
+      name = "vertex-credentials"
+      secret {
+        secret = "vertex-ai-credentials"
+        items {
+          version = "latest"
+          path    = "vertex-ai-credentials.json"
+        }
       }
     }
   }
@@ -415,7 +466,7 @@ resource "google_cloud_run_v2_service" "browser_ws_proxy" {
     # VPC Access - Connect to VPC network
     vpc_access {
       connector = local.vpc_connector.id
-      egress    = "PRIVATE_RANGES_ONLY"  # Only use VPC for private ranges
+      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
     }
 
     containers {
@@ -555,6 +606,17 @@ resource "google_project_iam_member" "cloud_run_logging" {
 resource "google_project_iam_member" "cloud_run_monitoring" {
   project = local.project_id
   role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.cloud_run.email}"
+
+  # Recreate when service account changes
+  lifecycle {
+    replace_triggered_by = [google_service_account.cloud_run]
+  }
+}
+
+resource "google_project_iam_member" "cloud_run_vertex_ai" {
+  project = local.project_id
+  role    = "roles/aiplatform.user"
   member  = "serviceAccount:${google_service_account.cloud_run.email}"
 
   # Recreate when service account changes

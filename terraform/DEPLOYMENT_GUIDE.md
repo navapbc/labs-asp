@@ -440,3 +440,4 @@ echo -n "phc_YOUR_NEW_KEY" | gcloud secrets versions add posthog-api-key --data-
 **Fix:** Removed `if` conditions from all build steps in `.github/workflows/deploy.yml:125-161`
 
 **Trade-off:** Longer build times (~5-10 min) but guaranteed image availability
+

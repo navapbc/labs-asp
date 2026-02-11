@@ -140,3 +140,50 @@ export const getRecordByIdResponseSchema = z.object({
   found: z.boolean(),
   error: z.string().optional(),
 });
+
+// ===== Form Fields Schemas =====
+
+export const getFormFieldsSchema = z.object({
+  formId: z.number().describe('The unique ID of the form in Apricot360 (e.g., 98 or 99 for participant forms)'),
+});
+
+export const fieldPropertySchema = z.object({
+  id: z.number(),
+  field_id: z.string(),
+  type: z.string(),
+  value: z.string(),
+});
+
+export const fieldOptionSchema = z.object({
+  id: z.number(),
+  field_id: z.string(),
+  value: z.string(),
+  sort_order: z.number(),
+});
+
+export const formFieldSchema = z.object({
+  id: z.number(),
+  section_id: z.number(),
+  field_type_id: z.number(),
+  sort_order: z.number(),
+  label: z.string(),
+  is_required: z.number(),
+  active: z.number(),
+  is_searchable: z.number(),
+  is_duplicate: z.number(),
+  is_hidden: z.number(),
+  is_readonly: z.number(),
+  tooltip: z.string(),
+  guid: z.string(),
+  reference_tag: z.string(),
+  field_properties: z.array(fieldPropertySchema),
+  field_options: z.array(fieldOptionSchema),
+});
+
+export const getFormFieldsResponseSchema = z.object({
+  fields: z.array(formFieldSchema),
+  fieldNames: z.array(z.string()).describe('List of field label names for easy reference'),
+  count: z.number(),
+  success: z.boolean(),
+  error: z.string().optional(),
+});

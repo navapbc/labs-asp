@@ -71,25 +71,25 @@ variable "chatbot_image_url" {
 variable "chatbot_cpu" {
   description = "CPU allocation for AI Chatbot Cloud Run service"
   type        = string
-  default     = "1"  # 1 vCPU for Next.js app
+  default     = "2"  # 2 vCPUs for better concurrent request handling
 }
 
 variable "chatbot_memory" {
   description = "Memory allocation for AI Chatbot Cloud Run service"
   type        = string
-  default     = "4Gi"
+  default     = "8Gi"
 }
 
 variable "chatbot_min_instances" {
   description = "Minimum instances for AI Chatbot service"
   type        = number
-  default     = 1  # Keep at least one instance warm to avoid cold start issues
+  default     = 2  # Keep instances warm to avoid cold starts during load testing
 }
 
 variable "chatbot_max_instances" {
   description = "Maximum instances for AI Chatbot service"
   type        = number
-  default     = 5
+  default     = 20
 }
 
 variable "chatbot_timeout" {
@@ -199,3 +199,17 @@ variable "allow_public_access" {
 
 # Note: Preview environments use shared VPC with permanent peering to dev VPC
 # No need for dynamic VPC tracking variables
+
+# Feature flag for AI SDK agent (vs Mastra backend)
+variable "use_ai_sdk_agent" {
+  description = "Feature flag to use AI SDK agent with Kernel.sh instead of Mastra backend"
+  type        = string
+  default     = "false"
+}
+
+# Feature flag for guest login (bypasses OAuth in preview environments)
+variable "use_guest_login" {
+  description = "Feature flag to enable guest login form for preview environments"
+  type        = string
+  default     = "false"
+}
