@@ -1,5 +1,5 @@
 # WebSocket Proxy Dockerfile
-FROM node:20-slim
+FROM node:25-slim
 
 WORKDIR /app
 
