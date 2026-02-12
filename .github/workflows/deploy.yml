@@ -178,6 +178,7 @@ jobs:
             --build-arg KERNEL_API_KEY=${{ steps.kernel_key.outputs.key }} \
             --build-arg USE_AI_SDK_AGENT=${USE_AI_SDK} \
             --build-arg USE_GUEST_LOGIN=${USE_GUEST} \
+            --build-arg ENVIRONMENT=${{ needs.setup.outputs.environment }} \
             -f Dockerfile.ai-chatbot \
             -t ${{ steps.images.outputs.chatbot_image }} \
             .
