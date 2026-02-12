@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/navapbc/labs-asp/compare/v1.4.0...v1.4.1) (2026-02-12)
+
+
+### Bug Fixes
+
+* fix for client side env variables ([6a0e44f](https://github.com/navapbc/labs-asp/commit/6a0e44f95b6066584777a45f96d9c437d630ec9b))
+
 # [1.4.0](https://github.com/navapbc/labs-asp/compare/v1.3.1...v1.4.0) (2026-02-11)
 
 
