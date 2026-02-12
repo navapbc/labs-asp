@@ -163,11 +163,7 @@ jobs:
 
       - name: Build and push ai-chatbot image
         run: |
-          # Enable AI SDK agent for dev and preview environments
-          USE_AI_SDK="false"
-          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]] || [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
-            USE_AI_SDK="true"
-          fi
+          USE_AI_SDK="true"
 
           # Enable guest login only for preview-pr-* environments
           USE_GUEST="false"
@@ -332,11 +328,7 @@ jobs:
             ENABLE_DOMAIN="true"
           fi
 
-          # Enable AI SDK agent for dev and preview environments
-          USE_AI_SDK="false"
-          if [[ "${{ needs.setup.outputs.environment }}" == preview* ]] || [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
-            USE_AI_SDK="true"
-          fi
+          USE_AI_SDK="true"
 
           # Enable guest login only for preview-pr-* environments
           USE_GUEST="false"
