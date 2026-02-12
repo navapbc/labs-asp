@@ -41,6 +41,9 @@ ARG USE_GUEST_LOGIN=false
 # Kernel.sh API key (required for AI SDK agent builds)
 ARG KERNEL_API_KEY
 
+# Environment name (dev, prod, preview-*, etc.)
+ARG ENVIRONMENT=dev
+
 # Set environment variables for build time
 ENV PLAYWRIGHT_MCP_URL=${PLAYWRIGHT_MCP_URL}
 ENV BROWSER_STREAMING_URL=${BROWSER_STREAMING_URL}
@@ -52,6 +55,8 @@ ENV NEXT_PUBLIC_USE_AI_SDK_AGENT=${USE_AI_SDK_AGENT}
 ENV USE_GUEST_LOGIN=${USE_GUEST_LOGIN}
 ENV NEXT_PUBLIC_USE_GUEST_LOGIN=${USE_GUEST_LOGIN}
 ENV KERNEL_API_KEY=${KERNEL_API_KEY}
+ENV ENVIRONMENT=${ENVIRONMENT}
+ENV NEXT_PUBLIC_ENVIRONMENT=${ENVIRONMENT}
 
 # Build Next.js client only (migrations run at container startup)
 RUN pnpm next build
