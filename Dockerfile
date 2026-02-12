@@ -1,5 +1,5 @@
 # Dockerfile for Mastra app
-FROM node:20-slim AS base
+FROM node:25-slim AS base
 
 # Install basic system dependencies
 RUN apt-get update && apt-get install -y \
