@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/navapbc/labs-asp/compare/v1.4.1...v1.4.2) (2026-02-13)
+
+
+### Bug Fixes
+
+* adjust agent-browser skills ([0ffd9dc](https://github.com/navapbc/labs-asp/commit/0ffd9dc107003968f3edb5d1d4e33b09839038d0))
+
 ## [1.4.1](https://github.com/navapbc/labs-asp/compare/v1.4.0...v1.4.1) (2026-02-12)
 
 
