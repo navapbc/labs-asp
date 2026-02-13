@@ -1,3 +1,58 @@
+## [1.4.2](https://github.com/navapbc/labs-asp/compare/v1.4.1...v1.4.2) (2026-02-13)
+
+
+### Bug Fixes
+
+* adjust agent-browser skills ([0ffd9dc](https://github.com/navapbc/labs-asp/commit/0ffd9dc107003968f3edb5d1d4e33b09839038d0))
+
+## [1.4.1](https://github.com/navapbc/labs-asp/compare/v1.4.0...v1.4.1) (2026-02-12)
+
+
+### Bug Fixes
+
+* fix for client side env variables ([6a0e44f](https://github.com/navapbc/labs-asp/commit/6a0e44f95b6066584777a45f96d9c437d630ec9b))
+
+# [1.4.0](https://github.com/navapbc/labs-asp/compare/v1.3.1...v1.4.0) (2026-02-11)
+
+
+### Bug Fixes
+
+* add execute permissions for agent-browser binary ([697fb33](https://github.com/navapbc/labs-asp/commit/697fb33c2fb4b5319d6a142908157b17247ac390))
+* adding in a message queue for kernel ([7fa5655](https://github.com/navapbc/labs-asp/commit/7fa5655e7f7f1f22d871c10217b9210c34658e2e))
+* adjust agent-browser skills reference documents ([5cd9f29](https://github.com/navapbc/labs-asp/commit/5cd9f29e5a988c8d0f6a17c24a775ac8e4348e9a))
+* apricot data for ai sdk ([c2e57bd](https://github.com/navapbc/labs-asp/commit/c2e57bdd63754345c8415a382681d6f1c36e5b21))
+* css fixes for design with skip logic to gap analysis ([1fe10d6](https://github.com/navapbc/labs-asp/commit/1fe10d66d3cdf7e247618915b6d966213ea730ae))
+* enable AI SDK agent feature flag for dev environment ([a959f45](https://github.com/navapbc/labs-asp/commit/a959f4524d540daded16699f149947606a5f8085))
+* enable session affinity on Cloud Run for persistent CDP connections ([07a55be](https://github.com/navapbc/labs-asp/commit/07a55be4affc6ff3e15eec2335d0e78ec8139f88))
+* fix button colors for the take over ([a10d9b4](https://github.com/navapbc/labs-asp/commit/a10d9b4f493d4c8a219b3ff0212bd290b28f543f))
+* fix env definition to configure correct Apricot API environment for prod and sandbox ([3d2f12f](https://github.com/navapbc/labs-asp/commit/3d2f12fa1fc4c2f60c7c59abbeaa7d29258f291b))
+* fix for disconnect for kernel ([06ea98c](https://github.com/navapbc/labs-asp/commit/06ea98cbb012344438acfa9d5cd54fc10bc7285b))
+* fix for flicker issue and model change ([549444a](https://github.com/navapbc/labs-asp/commit/549444a1f3a2e934b89fa08340efc9a69674a6e6))
+* pass KERNEL_API_KEY as build arg for Next.js build ([a39ed83](https://github.com/navapbc/labs-asp/commit/a39ed83ff00923347c674a00094123bbe2f0549c))
+* pass USE_AI_SDK_AGENT build arg for client-side feature flag ([7ddb9da](https://github.com/navapbc/labs-asp/commit/7ddb9da658809332b79e6f839e3f0fa79ee8e9d9))
+* route all Cloud Run egress through VPC for static IP allowlisting ([1efa46d](https://github.com/navapbc/labs-asp/commit/1efa46d6d9c1163107abfceced1fcf9d989d5fb0))
+* style changes to kernel ([229398d](https://github.com/navapbc/labs-asp/commit/229398d4c0e4950b9238b0a6f68ad7021496b147))
+* tests for kernel browsing ([6e12de8](https://github.com/navapbc/labs-asp/commit/6e12de82e10956413f2c1b972161b27fad6cf6d2))
+* update apricot-api logs to reference ENVIRONMENT ([bccd199](https://github.com/navapbc/labs-asp/commit/bccd199f279b978d0ec4d328d80a0f53db23956e))
+* update client submodule - remove unsupported --timeout flag ([ac03c9f](https://github.com/navapbc/labs-asp/commit/ac03c9f76093f70fac62dcae8a5afdc18e879175))
+* update client submodule (add @ai-sdk/anthropic dependency) ([33cf6b9](https://github.com/navapbc/labs-asp/commit/33cf6b9763846a7311493bc8bcf7f1d9855ab725))
+* update client submodule (optional chaining fix) ([9514d11](https://github.com/navapbc/labs-asp/commit/9514d1124e90dd124066bd06c8f06138b8a45ae6))
+* update client submodule (stderr error fix) ([d01fab7](https://github.com/navapbc/labs-asp/commit/d01fab760a74307903c53d27cf02147057ca5a89))
+* update client submodule and add AI SDK feature flag to deploy ([c7b9df2](https://github.com/navapbc/labs-asp/commit/c7b9df26fd5e4636af10b246ad4bc92dcb53f1ac))
+* update client submodule with missing files ([215a0ab](https://github.com/navapbc/labs-asp/commit/215a0ab3bac47d4256ab5d6d0741d768b3b37b32))
+* update client submodule with OAuth user ID fix ([0b9395b](https://github.com/navapbc/labs-asp/commit/0b9395bf4c16d90662fab52dfb4448014c3703c4))
+
+
+### Features
+
+* add separate Apricot API credentials for prod and sandbox ([fcd78f6](https://github.com/navapbc/labs-asp/commit/fcd78f69613f2807bc7174f2a54c9517da921b71))
+* add USE_AI_SDK feature flag to deploy workflow ([e053e82](https://github.com/navapbc/labs-asp/commit/e053e82d6a5d7144d588d145cdd7bede14429cf8))
+* feature flag to create a guest login for preview branches ([b932297](https://github.com/navapbc/labs-asp/commit/b93229799f19e3c875e99e170d9dac5153ae021a))
+* form field values from apricot api ([06e1a88](https://github.com/navapbc/labs-asp/commit/06e1a88c97c2e2eb57651c788bd8ca294bf8e2e5))
+* migrate web automation to AI SDK and Kernel.sh ([08a0ead](https://github.com/navapbc/labs-asp/commit/08a0ead66e41b398447474d04ccc85f6783a9b2e))
+* redis session locking and browser management on userid ([a9dad7e](https://github.com/navapbc/labs-asp/commit/a9dad7ee21f38f0666b259c85bbfca53b55924b6))
+* tool grouping, gap analysis, prompt fixes ([0bf0c3f](https://github.com/navapbc/labs-asp/commit/0bf0c3f275f628995400ae7313881774fe2d94b2))
+
 ## [1.3.1](https://github.com/navapbc/labs-asp/compare/v1.3.0...v1.3.1) (2026-02-03)
 
 
