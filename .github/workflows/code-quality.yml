@@ -43,7 +43,7 @@ jobs:
       typescript: ${{ steps.changes.outputs.typescript }}
       yaml: ${{ steps.changes.outputs.yaml }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v2
         id: changes
         with:
@@ -63,7 +63,7 @@ jobs:
     needs: file-changes
     if: needs.file-changes.outputs.typescript == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -110,7 +110,7 @@ jobs:
     needs: file-changes
     if: needs.file-changes.outputs.yaml == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Validate YAML files
         uses: ibiqlik/action-yamllint@v3
         with:
@@ -132,7 +132,7 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
         with:
           version: 9
