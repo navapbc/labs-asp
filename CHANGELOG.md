@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/navapbc/labs-asp/compare/v1.4.2...v1.4.3) (2026-02-17)
+
+
+### Bug Fixes
+
+* fix the stop functionality for kernel ([0ebf73f](https://github.com/navapbc/labs-asp/commit/0ebf73fd3dabdcfeaf8eb88ae0d11d3666fe74a2))
+
 ## [1.4.2](https://github.com/navapbc/labs-asp/compare/v1.4.1...v1.4.2) (2026-02-13)
 
 
