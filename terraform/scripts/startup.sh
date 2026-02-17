@@ -108,7 +108,7 @@ docker run -d \
     -e MASTRA_APP_PASSWORD="${mastra_app_password}" \
     -e MASTRA_JWT_TOKEN="${mastra_jwt_token}" \
     -e GOOGLE_APPLICATION_CREDENTIALS=/app/vertex-ai-credentials.json \
-    -e GOOGLE_VERTEX_LOCATION=us-east5 \
+    -e GOOGLE_VERTEX_LOCATION=global \
     -e GOOGLE_VERTEX_PROJECT="${project_id}" \
     -e GOOGLE_CLOUD_PROJECT="${project_id}" \
     -e CORS_ORIGINS="*" \
