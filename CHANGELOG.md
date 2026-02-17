@@ -1,3 +1,15 @@
+# [1.5.0](https://github.com/navapbc/labs-asp/compare/v1.4.3...v1.5.0) (2026-02-17)
+
+
+### Bug Fixes
+
+* remove captcha language ([6a4ab8d](https://github.com/navapbc/labs-asp/commit/6a4ab8ddd7d3c13be93f7f65e867a928eb44a2bb))
+
+
+### Features
+
+* add Posthog person_profiles with NextJS useSession data ([c45ed6f](https://github.com/navapbc/labs-asp/commit/c45ed6f8242439d2712e1bcc522b13afd0d9f5b7))
+
 ## [1.4.3](https://github.com/navapbc/labs-asp/compare/v1.4.2...v1.4.3) (2026-02-17)
 
 
