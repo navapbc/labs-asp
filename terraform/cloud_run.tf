@@ -217,7 +217,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
 
       env {
         name  = "GOOGLE_VERTEX_LOCATION"
-        value = "us-east5"
+        value = "global"
       }
 
       env {
