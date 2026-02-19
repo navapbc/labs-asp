@@ -145,16 +145,23 @@ jobs:
           for dir in $(find . -name "package.json" -not -path "*/node_modules/*" -exec dirname {} \; | sort); do
             project_name=$(basename "$dir")
             echo "Running security audit for: $project_name"
-            
+
             cd "$dir"
-            
-            # Run security audit
-            if pnpm audit --audit-level=high; then
+
+            # Capture output and exit code to distinguish registry errors from vulnerabilities
+            audit_output=$(pnpm audit --audit-level=high 2>&1)
+            audit_exit=$?
+
+            if [ $audit_exit -eq 0 ]; then
               echo "Security audit passed for $project_name"
+            elif echo "$audit_output" | grep -qE "ERR_PNPM_AUDIT_BAD_RESPONSE|registry.*[Ee]rror|Internal Server Error"; then
+              echo "WARNING: Security audit skipped for $project_name due to npm registry error (HTTP 500). This is a transient registry issue, not a vulnerability."
+              echo "$audit_output"
             else
+              echo "$audit_output"
               echo "Security vulnerabilities found in $project_name"
               exit 1
             fi
-            
+
             cd - > /dev/null
-          done 
+          done
