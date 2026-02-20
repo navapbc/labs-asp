@@ -1,3 +1,17 @@
+# [1.6.0](https://github.com/navapbc/labs-asp/compare/v1.5.0...v1.6.0) (2026-02-20)
+
+
+### Bug Fixes
+
+* css edits for the form summary ([47ec532](https://github.com/navapbc/labs-asp/commit/47ec532abcffe3d1872f073f014745dab6fc799b))
+* remove duplicate control mode toasts and improve send button UX ([67e997a](https://github.com/navapbc/labs-asp/commit/67e997a3f9b5691d9034d24f3666c956ebddabda))
+
+
+### Features
+
+* improve tool and skill instructions for Sonnet 4.6 ([242e959](https://github.com/navapbc/labs-asp/commit/242e9591bdc26eaa159a49d6616393a9b331ce22))
+* upgrade to claude-sonnet-4-6 and GOOGLE_VERTEX_LOCATION to global ([ce7209a](https://github.com/navapbc/labs-asp/commit/ce7209abdda49249dd4c87790b82287483ab421d))
+
 # [1.5.0](https://github.com/navapbc/labs-asp/compare/v1.4.3...v1.5.0) (2026-02-17)
 
 
