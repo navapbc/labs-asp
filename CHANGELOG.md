@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/navapbc/labs-asp/compare/v1.6.0...v1.6.1) (2026-02-23)
+
+
+### Bug Fixes
+
+* added prompt changes and skip for now language change ([fb45482](https://github.com/navapbc/labs-asp/commit/fb45482813502c7b92e66bfa58b7ea40f0ba5b83))
+
 # [1.6.0](https://github.com/navapbc/labs-asp/compare/v1.5.0...v1.6.0) (2026-02-20)
 
 
