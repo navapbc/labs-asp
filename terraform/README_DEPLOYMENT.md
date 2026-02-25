@@ -12,3 +12,4 @@ triggering the workflow manually will deploy the infrastructure and the browser 
 # Testing empty commit for doubling vm size
 # Testing for dev build for bot re-trigger
 # Trigger build for redis
+# Redeploy for Redis endpoint
