@@ -58,14 +58,17 @@ data "google_secret_manager_secret_version" "xai_api_key" {
 }
 
 data "google_secret_manager_secret_version" "mastra_jwt_secret" {
+  count  = 0
   secret = "mastra-jwt-secret"
 }
 
 data "google_secret_manager_secret_version" "mastra_app_password" {
+  count  = 0
   secret = "mastra-app-password"
 }
 
 data "google_secret_manager_secret_version" "mastra_jwt_token" {
+  count  = 0
   secret = "mastra-jwt-token"
 }
 
@@ -100,6 +103,7 @@ data "google_secret_manager_secret_version" "apricot_client_secret_sandbox" {
 
 # Compute VM - Runs browser-streaming and mastra-app containers
 resource "google_compute_instance" "app_vm" {
+  count        = 0
   name         = "app-vm-${var.environment}"
   machine_type = var.vm_machine_type
   zone         = local.zone
@@ -126,7 +130,7 @@ resource "google_compute_instance" "app_vm" {
 
   # Service account for VM
   service_account {
-    email  = google_service_account.vm.email
+    email  = google_service_account.vm[0].email
     scopes = ["cloud-platform"]
   }
 
@@ -147,9 +151,9 @@ resource "google_compute_instance" "app_vm" {
       google_ai_key           = data.google_secret_manager_secret_version.google_ai_key.secret_data
       grok_api_key            = data.google_secret_manager_secret_version.grok_api_key.secret_data
       xai_api_key             = data.google_secret_manager_secret_version.xai_api_key.secret_data
-      mastra_jwt_secret       = data.google_secret_manager_secret_version.mastra_jwt_secret.secret_data
-      mastra_app_password     = data.google_secret_manager_secret_version.mastra_app_password.secret_data
-      mastra_jwt_token        = data.google_secret_manager_secret_version.mastra_jwt_token.secret_data
+      mastra_jwt_secret       = length(data.google_secret_manager_secret_version.mastra_jwt_secret) > 0 ? data.google_secret_manager_secret_version.mastra_jwt_secret[0].secret_data : ""
+      mastra_app_password     = length(data.google_secret_manager_secret_version.mastra_app_password) > 0 ? data.google_secret_manager_secret_version.mastra_app_password[0].secret_data : ""
+      mastra_jwt_token        = length(data.google_secret_manager_secret_version.mastra_jwt_token) > 0 ? data.google_secret_manager_secret_version.mastra_jwt_token[0].secret_data : ""
       vertex_ai_credentials   = data.google_secret_manager_secret_version.vertex_ai_credentials.secret_data
       apricot_api_base_url    = data.google_secret_manager_secret_version.apricot_api_base_url.secret_data
       apricot_client_id       = local.apricot_client_id
@@ -172,7 +176,6 @@ resource "google_compute_instance" "app_vm" {
 
   depends_on = [
     google_project_service.required_apis,
-    google_service_account.vm,
     google_compute_network.main,
     google_compute_subnetwork.private,
     google_compute_router_nat.main  # Ensure NAT is ready for internet access
@@ -181,6 +184,7 @@ resource "google_compute_instance" "app_vm" {
 
 # Track image versions to trigger VM restart when they change
 resource "terraform_data" "image_versions" {
+  count = 0
   input = {
     browser_image = var.browser_image_url
     mastra_image  = var.mastra_image_url
@@ -190,6 +194,7 @@ resource "terraform_data" "image_versions" {
 
 # Service account for VM
 resource "google_service_account" "vm" {
+  count        = 0
   account_id   = "app-vm-${var.environment}"
   display_name = "App VM Service Account (${var.environment})"
   description  = "Service account for application VM in ${var.environment} environment"
@@ -197,37 +202,43 @@ resource "google_service_account" "vm" {
 
 # IAM bindings for VM service account
 resource "google_project_iam_member" "vm_storage" {
+  count   = 0
   project = local.project_id
   role    = "roles/storage.objectViewer"
-  member  = "serviceAccount:${google_service_account.vm.email}"
+  member  = "serviceAccount:${google_service_account.vm[0].email}"
 }
 
 resource "google_project_iam_member" "vm_logging" {
+  count   = 0
   project = local.project_id
   role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.vm.email}"
+  member  = "serviceAccount:${google_service_account.vm[0].email}"
 }
 
 resource "google_project_iam_member" "vm_monitoring" {
+  count   = 0
   project = local.project_id
   role    = "roles/monitoring.metricWriter"
-  member  = "serviceAccount:${google_service_account.vm.email}"
+  member  = "serviceAccount:${google_service_account.vm[0].email}"
 }
 
 resource "google_project_iam_member" "vm_artifact_registry" {
+  count   = 0
   project = local.project_id
   role    = "roles/artifactregistry.reader"
-  member  = "serviceAccount:${google_service_account.vm.email}"
+  member  = "serviceAccount:${google_service_account.vm[0].email}"
 }
 
 resource "google_project_iam_member" "vm_secret_accessor" {
+  count   = 0
   project = local.project_id
   role    = "roles/secretmanager.secretAccessor"
-  member  = "serviceAccount:${google_service_account.vm.email}"
+  member  = "serviceAccount:${google_service_account.vm[0].email}"
 }
 
 resource "google_project_iam_member" "vm_vertex_ai_user" {
+  count   = 0
   project = local.project_id
   role    = "roles/aiplatform.user"
-  member  = "serviceAccount:${google_service_account.vm.email}"
+  member  = "serviceAccount:${google_service_account.vm[0].email}"
 }

@@ -143,6 +143,11 @@ jobs:
         run: |
           # Find all directories with package.json (excluding node_modules)
           for dir in $(find . -name "package.json" -not -path "*/node_modules/*" -exec dirname {} \; | sort); do
+            if [ "$dir" = "." ]; then
+              echo "Skipping root directory (legacy backend dependencies, not deployed)"
+              continue
+            fi
+
             project_name=$(basename "$dir")
             echo "Running security audit for: $project_name"
             

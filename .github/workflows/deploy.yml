@@ -68,9 +68,6 @@ jobs:
       id-token: write
 
     outputs:
-      browser_image: ${{ steps.images.outputs.browser_image }}
-      browser_ws_proxy_image: ${{ steps.images.outputs.browser_ws_proxy_image }}
-      mastra_image: ${{ steps.images.outputs.mastra_image }}
       chatbot_image: ${{ steps.images.outputs.chatbot_image }}
 
     steps:
@@ -117,35 +114,7 @@ jobs:
         id: images
         run: |
           TAG=${GITHUB_SHA:0:7}
-          echo "browser_image=${ARTIFACT_REGISTRY}/browser-streaming:${TAG}" >> $GITHUB_OUTPUT
-          echo "browser_ws_proxy_image=${ARTIFACT_REGISTRY}/browser-ws-proxy:${TAG}" >> $GITHUB_OUTPUT
-          echo "mastra_image=${ARTIFACT_REGISTRY}/mastra-app:${TAG}" >> $GITHUB_OUTPUT
           echo "chatbot_image=${ARTIFACT_REGISTRY}/ai-chatbot:${TAG}" >> $GITHUB_OUTPUT
-
-      - name: Build and push browser-streaming image
-        run: |
-          docker build \
-            -f playwright-mcp/Dockerfile \
-            -t ${{ steps.images.outputs.browser_image }} \
-            ./playwright-mcp
-          docker push ${{ steps.images.outputs.browser_image }}
-
-      - name: Build and push browser-ws-proxy image
-        run: |
-          docker build \
-            -f browser-ws-proxy/Dockerfile \
-            -t ${{ steps.images.outputs.browser_ws_proxy_image }} \
-            ./browser-ws-proxy
-          docker push ${{ steps.images.outputs.browser_ws_proxy_image }}
-
-      - name: Build and push mastra-app image
-        run: |
-          docker build \
-            --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
-            -f Dockerfile \
-            -t ${{ steps.images.outputs.mastra_image }} \
-            .
-          docker push ${{ steps.images.outputs.mastra_image }}
 
       - name: Get PostHog API key
         id: posthog_key
@@ -339,10 +308,7 @@ jobs:
 
           terraform plan \
             -var="environment=${{ needs.setup.outputs.environment }}" \
-            -var="browser_image_url=${{ needs.build.outputs.browser_image }}" \
-            -var="mastra_image_url=${{ needs.build.outputs.mastra_image }}" \
             -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
-            -var="browser_ws_proxy_image_url=${{ needs.build.outputs.browser_ws_proxy_image }}" \
             -var="enable_custom_domain=${ENABLE_DOMAIN}" \
             -var="use_ai_sdk_agent=${USE_AI_SDK}" \
             -var="use_guest_login=${USE_GUEST}" \
@@ -365,7 +331,6 @@ jobs:
         run: |
           echo "chatbot_url=$(terraform output -raw chatbot_public_url)" >> $GITHUB_OUTPUT
           echo "custom_domain=$(terraform output -raw custom_domain)" >> $GITHUB_OUTPUT
-          echo "vm_ip=$(terraform output -raw vm_internal_ip)" >> $GITHUB_OUTPUT
 
       - name: Comment on PR with deployment info
         if: github.event_name == 'pull_request'
@@ -383,9 +348,6 @@ jobs:
 
             ### Access URLs
             - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
-            - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112 (internal IP, accessible via VPC)
-            - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp (internal IP, accessible via VPC)
-            - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933 (internal IP, accessible via VPC)
 
             ${hasCustomDomain ? `**Custom Domain**: https://${customDomain}\n\n**Note:** Custom domain SSL certificate may take 5-15 minutes to provision on first deployment.` : '**Note:** Custom domain not configured for preview environments. Use Cloud Run URL to access the application.'}`
               : `## Terraform Plan Complete
@@ -393,8 +355,7 @@ jobs:
             Infrastructure changes have been planned for **${{ needs.setup.outputs.environment }}** environment.
 
             ### Changes
-            - VM will run: browser-streaming + mastra-app containers
-            - Cloud Run services: ai-chatbot, browser-ws-proxy
+            - Cloud Run services: ai-chatbot
             - All services connect to **dev database** and **dev GCS bucket**
 
             **Note:** This is a plan only. Merge to deploy.`;
@@ -417,9 +378,6 @@ jobs:
 
           ### Access URLs
           - **AI Chatbot (Cloud Run)**: ${{ steps.tf_outputs.outputs.chatbot_url }}
-          - **Mastra API**: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112 (internal IP)
-          - **Browser MCP**: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp (internal IP)
-          - **Browser Streaming**: ws://${{ steps.tf_outputs.outputs.vm_ip }}:8933 (internal IP)
           EOF
 
           if [ -n "$CUSTOM_DOMAIN" ]; then
@@ -434,10 +392,8 @@ jobs:
 
           cat >> $GITHUB_STEP_SUMMARY <<EOF
 
-          ### VM Information
-          - **Internal IP**: ${{ steps.tf_outputs.outputs.vm_ip }} (private subnet, accessible via VPC)
+          ### Environment
           - **Environment**: ${{ needs.setup.outputs.environment }}
-          - **Internet Access**: Via Cloud NAT
           EOF
 
       - name: Deployment Summary (console)
@@ -447,9 +403,6 @@ jobs:
 
           echo "Deployment to ${{ needs.setup.outputs.environment }} complete"
           echo "Cloud Run URL: ${{ steps.tf_outputs.outputs.chatbot_url }}"
-          echo "VM IP: ${{ steps.tf_outputs.outputs.vm_ip }}"
-          echo "Mastra API: http://${{ steps.tf_outputs.outputs.vm_ip }}:4112"
-          echo "Browser MCP: http://${{ steps.tf_outputs.outputs.vm_ip }}:8931/mcp"
 
           if [ -n "$CUSTOM_DOMAIN" ]; then
             echo "Custom Domain: https://$CUSTOM_DOMAIN"
