@@ -1,14 +1,12 @@
 version: 2
 updates:
-  # Root npm dependencies
+  # AI Chatbot (client/) npm dependencies
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/client"
     target-branch: "develop"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 2
     groups:
       all-dependencies:
         patterns:
@@ -21,113 +19,13 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  # Playwright MCP npm dependencies
-  - package-ecosystem: "npm"
-    directory: "/playwright-mcp"
-    target-branch: "develop"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
-    groups:
-      all-dependencies:
-        patterns:
-          - "*"
-    labels:
-      - "dependencies"
-      - "playwright"
-    commit-message:
-      prefix: "chore(deps)"
-
-  # Browser WebSocket Proxy npm dependencies
-  - package-ecosystem: "npm"
-    directory: "/browser-ws-proxy"
-    target-branch: "develop"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
-    groups:
-      all-dependencies:
-        patterns:
-          - "*"
-    labels:
-      - "dependencies"
-      - "proxy"
-    commit-message:
-      prefix: "chore(deps)"
-
-  # Docker images (root)
-  - package-ecosystem: "docker"
-    directory: "/"
-    target-branch: "develop"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "chore(docker)"
-
-  # Playwright MCP Dockerfile
-  - package-ecosystem: "docker"
-    directory: "/playwright-mcp"
-    target-branch: "develop"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 2
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "chore(docker)"
-
-  # Browser WebSocket Proxy Dockerfile
-  - package-ecosystem: "docker"
-    directory: "/browser-ws-proxy"
-    target-branch: "develop"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 2
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "chore(docker)"
-
-  # Terraform modules
-  - package-ecosystem: "terraform"
-    directory: "/terraform"
-    target-branch: "develop"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
-    labels:
-      - "dependencies"
-      - "terraform"
-    commit-message:
-      prefix: "chore(terraform)"
-
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "develop"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 1
     labels:
       - "dependencies"
       - "ci"
