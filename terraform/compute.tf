@@ -171,7 +171,7 @@ resource "google_compute_instance" "app_vm" {
 
   # Recreate VM when container images change
   lifecycle {
-    replace_triggered_by = [terraform_data.image_versions]
+    replace_triggered_by = [terraform_data.image_versions[0]]
   }
 
   depends_on = [
