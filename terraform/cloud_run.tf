@@ -399,97 +399,26 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   ]
 }
 
-# Browser WebSocket Proxy Service
-resource "google_cloud_run_v2_service" "browser_ws_proxy" {
-  count    = 0
-  name     = "browser-ws-proxy-${var.environment}"
-  location = local.region
-
-  # Disable deletion protection for preview environments to allow easy cleanup
-  deletion_protection = startswith(var.environment, "preview-") ? false : true
-
-  template {
-    service_account = google_service_account.cloud_run.email
-
-    # VPC Access - Connect to VPC network
-    vpc_access {
-      connector = local.vpc_connector.id
-      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
-    }
-
-    containers {
-      image = var.browser_ws_proxy_image_url
-
-      # Lightweight proxy - minimal resources
-      resources {
-        limits = {
-          cpu    = "1"
-          memory = "512Mi"
-        }
-      }
-
-      # Backend browser-streaming configuration
-      env {
-        name  = "BROWSER_STREAMING_HOST"
-        value = length(google_compute_instance.app_vm) > 0 ? google_compute_instance.app_vm[0].network_interface[0].network_ip : ""
-      }
-
-      env {
-        name  = "BROWSER_STREAMING_PORT"
-        value = "8933"
-      }
-
-      env {
-        name  = "NODE_ENV"
-        value = var.environment == "prod" ? "production" : "development"
-      }
-
-      # Port configuration
-      ports {
-        container_port = 8080
-      }
-    }
-
-    # Scaling configuration - can scale to zero when not in use
-    scaling {
-      min_instance_count = 0
-      max_instance_count = 10
-    }
-
-    # Timeout for WebSocket connections
-    timeout = "3600s" # 1 hour for long-lived WebSocket connections
+# Drop legacy proxy service from state without destroying
+# (deletion_protection=true blocks terraform destroy; service is no longer used)
+removed {
+  from = google_cloud_run_v2_service.browser_ws_proxy
+  lifecycle {
+    destroy = false
   }
+}
 
-  # Traffic configuration
-  traffic {
-    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
-    percent = 100
+removed {
+  from = google_cloud_run_v2_service_iam_member.browser_ws_proxy_public_access
+  lifecycle {
+    destroy = false
   }
-
-  labels = merge(local.common_labels, {
-    environment = var.environment
-    component   = "browser-ws-proxy"
-  })
-
-  depends_on = [
-    google_project_service.required_apis,
-    google_service_account.cloud_run,
-    google_vpc_access_connector.cloud_run
-  ]
 }
 
 # IAM policies for public access
 resource "google_cloud_run_v2_service_iam_member" "chatbot_public_access" {
   name     = google_cloud_run_v2_service.ai_chatbot.name
   location = google_cloud_run_v2_service.ai_chatbot.location
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
-
-resource "google_cloud_run_v2_service_iam_member" "browser_ws_proxy_public_access" {
-  count    = 0
-  name     = google_cloud_run_v2_service.browser_ws_proxy[0].name
-  location = google_cloud_run_v2_service.browser_ws_proxy[0].location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
