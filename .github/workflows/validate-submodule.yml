@@ -1,0 +1,36 @@
+name: Validate Client Submodule
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'client'
+
+jobs:
+  validate-submodule-pointer:
+    name: Verify client submodule is on develop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Check submodule commit is on ai-chatbot develop
+        run: |
+          SUBMODULE_SHA=$(git ls-tree HEAD client | awk '{print $3}')
+          echo "Submodule pointer: $SUBMODULE_SHA"
+
+          git clone --bare --single-branch --branch develop \
+            https://github.com/navapbc/ai-chatbot.git /tmp/ai-chatbot
+
+          cd /tmp/ai-chatbot
+
+          if git merge-base --is-ancestor "$SUBMODULE_SHA" HEAD; then
+            echo "Client submodule commit $SUBMODULE_SHA is on the develop branch."
+          else
+            echo "::error::Client submodule commit $SUBMODULE_SHA is NOT on the develop branch."
+            echo "PRs must only update the client submodule to a commit that exists on navapbc/ai-chatbot:develop."
+            echo "Please merge your ai-chatbot feature branch into develop first."
+            exit 1
+          fi
