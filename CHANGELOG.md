@@ -1,3 +1,27 @@
+# [1.7.0](https://github.com/navapbc/labs-asp/compare/v1.6.1...v1.7.0) (2026-03-06)
+
+
+### Bug Fixes
+
+* add precompact and saveNewMessages functions ([0389f97](https://github.com/navapbc/labs-asp/commit/0389f97c8d58b1c1bbf8d72922e702c37c3aa514))
+* prompt edits for forms ([b9f78b2](https://github.com/navapbc/labs-asp/commit/b9f78b23c72bdd661420d0a3044a923822405c2b))
+* prompt page input to a responsive textarea ([4fae2df](https://github.com/navapbc/labs-asp/commit/4fae2df8eadb8653471ed574e4cab42efeb8c90f))
+* remove destroyed preview database URL secret data source (VM is count=0, was unused) ([d6052e9](https://github.com/navapbc/labs-asp/commit/d6052e971f25d9a7bf9d0616101e2d80e89354f9))
+* scrollbar switched from scroll to auto ([fd7ba7e](https://github.com/navapbc/labs-asp/commit/fd7ba7e5e2c4ecaed5dcb90c2a2718781562b6e5))
+* update client submodule — checkpoint card UI + compaction persistence ([21af763](https://github.com/navapbc/labs-asp/commit/21af763be352643b30dcdfaabf13057dba9a4ac6))
+* update client submodule — checkpoint UI + Sonnet provider switch ([af341fb](https://github.com/navapbc/labs-asp/commit/af341fb16a12af72b5eb7aa035cb1a4661f676bf))
+* update client submodule — compressor logging + checkpoint UI fix ([bd8bdb2](https://github.com/navapbc/labs-asp/commit/bd8bdb281eae76e5b62a80f1ba2fb648da39c017))
+* update client submodule — compressor rewrite for reliable summarization ([2d138b5](https://github.com/navapbc/labs-asp/commit/2d138b51604a7a30f931f7e87bfab17ed443bd01))
+* update client submodule for token-based compaction ([81c989b](https://github.com/navapbc/labs-asp/commit/81c989b2ff7ce4d287704b6b7757cbf1e346894c))
+* use indexed reference for replace_triggered_by in count=0 resource ([0adce4c](https://github.com/navapbc/labs-asp/commit/0adce4cc205bbfa30ebfd61e88ab632da6c269d4))
+* use removed block to drop browser-ws-proxy from state without destroying ([e1201a3](https://github.com/navapbc/labs-asp/commit/e1201a38f0fb14d869d8496423925f0f07a3a4c0))
+
+
+### Features
+
+* new landing page prompt ([3dbbe61](https://github.com/navapbc/labs-asp/commit/3dbbe61befc9d1c00922b03ada34fb63d8a34c87))
+* use of the Vercel prepare step and token usage ([6afb3c9](https://github.com/navapbc/labs-asp/commit/6afb3c923207cbe26eb41a7e133700b3c31f9f9c))
+
 ## [1.6.1](https://github.com/navapbc/labs-asp/compare/v1.6.0...v1.6.1) (2026-02-23)
 
 
