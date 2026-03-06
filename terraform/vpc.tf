@@ -300,7 +300,7 @@ resource "google_compute_firewall" "allow_health_checks" {
 # Browser MCP access (internal only - accessed via Cloud Run → VPC → VM)
 # Preview environments use shared VPC firewall rules
 resource "google_compute_firewall" "browser_mcp" {
-  count   = startswith(var.environment, "preview-") ? 0 : 1
+  count   = 0
   name    = "labs-asp-browser-mcp-${var.environment}"
   network = google_compute_network.main[0].name
 
@@ -324,7 +324,7 @@ resource "google_compute_firewall" "browser_mcp" {
 
 # Browser Streaming WebSocket access (internal only - accessed via Cloud Run browser-ws-proxy → VPC → VM)
 resource "google_compute_firewall" "browser_streaming" {
-  count   = startswith(var.environment, "preview-") ? 0 : 1
+  count   = 0
   name    = "labs-asp-browser-streaming-${var.environment}"
   network = google_compute_network.main[0].name
 
@@ -346,9 +346,9 @@ resource "google_compute_firewall" "browser_streaming" {
   description = "Allow browser streaming WebSocket access on port ${var.firewall_rules.browser_streaming.port} from internal VPC only (internal service)"
 }
 
-# Mastra API access (configurable port, only for dev/prod)
+# Legacy API access (configurable port, only for dev/prod)
 resource "google_compute_firewall" "mastra_app" {
-  count   = startswith(var.environment, "preview-") ? 0 : 1
+  count   = 0
   name    = "labs-asp-mastra-app-${var.environment}"
   network = google_compute_network.main[0].name
 

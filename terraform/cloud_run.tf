@@ -236,17 +236,6 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value = local.storage_bucket_name
       }
 
-      # Mastra authentication
-      env {
-        name = "MASTRA_JWT_TOKEN"
-        value_source {
-          secret_key_ref {
-            secret  = "mastra-jwt-token"
-            version = "latest"
-          }
-        }
-      }
-
       # Upstash Redis for shared links
       env {
         name = "UPSTASH_REDIS_REST_URL"
@@ -279,48 +268,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
-      # Mastra server connection (server-side env var, not NEXT_PUBLIC_*)
-      # Uses internal IP - VM is in private subnet, accessible via VPC Connector
-      env {
-        name  = "MASTRA_SERVER_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112"
-      }
-
-      # Keep NEXT_PUBLIC_ version for backwards compatibility
-      env {
-        name  = "NEXT_PUBLIC_MASTRA_SERVER_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:4112"
-      }
-
-      # Browser service connection (for direct client access if needed)
-      env {
-        name  = "PLAYWRIGHT_MCP_URL"
-        value = "http://${google_compute_instance.app_vm.network_interface[0].network_ip}:8931/mcp"
-      }
-
-      # Browser WebSocket Proxy URL (server-side runtime config)
-      env {
-        name  = "BROWSER_WS_PROXY_URL"
-        value = google_cloud_run_v2_service.browser_ws_proxy.uri
-      }
-
-      # Legacy browser streaming env vars (keeping for backwards compatibility)
-      env {
-        name  = "BROWSER_STREAMING_URL"
-        value = "ws://${google_compute_instance.app_vm.network_interface[0].network_ip}:8933"
-      }
-
-      env {
-        name  = "BROWSER_STREAMING_PORT"
-        value = "8933"
-      }
-
-      env {
-        name  = "BROWSER_STREAMING_HOST"
-        value = google_compute_instance.app_vm.network_interface[0].network_ip
-      }
-
-      # Feature flag for AI SDK agent (vs Mastra backend)
+      # Feature flag for AI SDK agent
       # When true, uses Kernel.sh for browser automation instead of Playwright MCP
       env {
         name  = "USE_AI_SDK_AGENT"
@@ -442,7 +390,6 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   depends_on = [
     google_project_service.required_apis,
     google_service_account.cloud_run,
-    google_compute_instance.app_vm,
     google_vpc_access_connector.cloud_run,
     # Wait for database URL secrets to be created before starting Cloud Run
     # This ensures the DATABASE_URL env var can be resolved on startup
@@ -452,96 +399,26 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
   ]
 }
 
-# Browser WebSocket Proxy Service
-resource "google_cloud_run_v2_service" "browser_ws_proxy" {
-  name     = "browser-ws-proxy-${var.environment}"
-  location = local.region
-
-  # Disable deletion protection for preview environments to allow easy cleanup
-  deletion_protection = startswith(var.environment, "preview-") ? false : true
-
-  template {
-    service_account = google_service_account.cloud_run.email
-
-    # VPC Access - Connect to VPC network
-    vpc_access {
-      connector = local.vpc_connector.id
-      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
-    }
-
-    containers {
-      image = var.browser_ws_proxy_image_url
-
-      # Lightweight proxy - minimal resources
-      resources {
-        limits = {
-          cpu    = "1"
-          memory = "512Mi"
-        }
-      }
-
-      # Backend browser-streaming configuration
-      env {
-        name  = "BROWSER_STREAMING_HOST"
-        value = google_compute_instance.app_vm.network_interface[0].network_ip
-      }
-
-      env {
-        name  = "BROWSER_STREAMING_PORT"
-        value = "8933"
-      }
-
-      env {
-        name  = "NODE_ENV"
-        value = var.environment == "prod" ? "production" : "development"
-      }
-
-      # Port configuration
-      ports {
-        container_port = 8080
-      }
-    }
-
-    # Scaling configuration - can scale to zero when not in use
-    scaling {
-      min_instance_count = 0
-      max_instance_count = 10
-    }
-
-    # Timeout for WebSocket connections
-    timeout = "3600s" # 1 hour for long-lived WebSocket connections
+# Drop legacy proxy service from state without destroying
+# (deletion_protection=true blocks terraform destroy; service is no longer used)
+removed {
+  from = google_cloud_run_v2_service.browser_ws_proxy
+  lifecycle {
+    destroy = false
   }
+}
 
-  # Traffic configuration
-  traffic {
-    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
-    percent = 100
+removed {
+  from = google_cloud_run_v2_service_iam_member.browser_ws_proxy_public_access
+  lifecycle {
+    destroy = false
   }
-
-  labels = merge(local.common_labels, {
-    environment = var.environment
-    component   = "browser-ws-proxy"
-  })
-
-  depends_on = [
-    google_project_service.required_apis,
-    google_service_account.cloud_run,
-    google_compute_instance.app_vm,
-    google_vpc_access_connector.cloud_run
-  ]
 }
 
 # IAM policies for public access
 resource "google_cloud_run_v2_service_iam_member" "chatbot_public_access" {
   name     = google_cloud_run_v2_service.ai_chatbot.name
   location = google_cloud_run_v2_service.ai_chatbot.location
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
-
-resource "google_cloud_run_v2_service_iam_member" "browser_ws_proxy_public_access" {
-  name     = google_cloud_run_v2_service.browser_ws_proxy.name
-  location = google_cloud_run_v2_service.browser_ws_proxy.location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
