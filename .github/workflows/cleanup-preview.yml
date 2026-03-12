@@ -3,10 +3,16 @@ name: Cleanup Preview Environment
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to clean up'
+        required: true
 
 env:
   PROJECT_ID: nava-labs
   REGION: us-central1
+  PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
 
 jobs:
   cleanup:
@@ -38,13 +44,13 @@ jobs:
         working-directory: ./terraform
         run: |
           terraform init \
-            -backend-config="prefix=terraform/state/preview-pr-${{ github.event.pull_request.number }}"
+            -backend-config="prefix=terraform/state/preview-pr-${{ env.PR_NUMBER }}"
 
       - name: Terraform Destroy Preview Environment
         working-directory: ./terraform
         run: |
           terraform destroy -auto-approve \
-            -var="environment=preview-pr-${{ github.event.pull_request.number }}" \
+            -var="environment=preview-pr-${{ env.PR_NUMBER }}" \
             -var="browser_image_url=placeholder" \
             -var="mastra_image_url=placeholder" \
             -var="chatbot_image_url=placeholder" \
@@ -53,13 +59,13 @@ jobs:
 
       - name: Delete Terraform State
         run: |
-          gsutil -m rm -r "gs://labs-asp-terraform-state/terraform/state/preview-pr-${{ github.event.pull_request.number }}/" || echo "State already deleted"
+          gsutil -m rm -r "gs://labs-asp-terraform-state/terraform/state/preview-pr-${{ env.PR_NUMBER }}/" || echo "State already deleted"
 
       - name: Cleanup Summary
         run: |
           echo "## Preview Environment Cleanup Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Destroyed preview-pr-${{ github.event.pull_request.number }} environment" >> $GITHUB_STEP_SUMMARY
+          echo "Destroyed preview-pr-${{ env.PR_NUMBER }} environment" >> $GITHUB_STEP_SUMMARY
           echo "- Deleted Cloud Run services" >> $GITHUB_STEP_SUMMARY
           echo "- Deleted VM instance" >> $GITHUB_STEP_SUMMARY
           echo "- Deleted firewall rules" >> $GITHUB_STEP_SUMMARY
