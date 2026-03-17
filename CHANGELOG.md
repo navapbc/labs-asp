@@ -1,3 +1,20 @@
+# [1.8.0](https://github.com/navapbc/labs-asp/compare/v1.7.0...v1.8.0) (2026-03-17)
+
+
+### Bug Fixes
+
+* browser back button to close chat ([6b55e0e](https://github.com/navapbc/labs-asp/commit/6b55e0ef821f58a04e0a9358df2584a39d1a8a80))
+* **ci:** add workflow_dispatch fallback for preview cleanup on conflicting PRs ([51d9280](https://github.com/navapbc/labs-asp/commit/51d9280bfb7198dd5a3d5400dc10222c4cd1b156))
+* small UI fixes to the form summary card ([45f653f](https://github.com/navapbc/labs-asp/commit/45f653f5fa12b191476e48e4cdf6ab2cfc9c7911))
+* visual bug for conversation checkpoint ([f15a6e0](https://github.com/navapbc/labs-asp/commit/f15a6e0429905661d0d36a7e0928a5c6ab9e5e12))
+
+
+### Features
+
+* addition of the shimmer on the tool calls grouping ([6a9d416](https://github.com/navapbc/labs-asp/commit/6a9d416a5806d8475691d1cfd1a7a0d695753fde))
+* record kernel browser session replays and log view URLs on cleanup ([857bbcc](https://github.com/navapbc/labs-asp/commit/857bbcc2c722ef397da29c0709c5dfa56adb5a7b))
+* update client submodule with browser navigation guardrails ([de033de](https://github.com/navapbc/labs-asp/commit/de033de8a7a314c3e7312689be86d95b553ff223))
+
 # [1.7.0](https://github.com/navapbc/labs-asp/compare/v1.6.1...v1.7.0) (2026-03-06)
 
 
