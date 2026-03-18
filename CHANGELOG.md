@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/navapbc/labs-asp/compare/v1.8.0...v1.8.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* updates to the communication skill ([cfe33f8](https://github.com/navapbc/labs-asp/commit/cfe33f8a6e5eed5e7e1890ab667ba56e17632ae0))
+
 # [1.8.0](https://github.com/navapbc/labs-asp/compare/v1.7.0...v1.8.0) (2026-03-17)
 
 
