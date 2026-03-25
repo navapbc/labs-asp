@@ -85,30 +85,21 @@ Built by [Nava PBC](https://www.navapbc.com) with philanthropic funding. Designe
 
 ## Local development
 
+See **[`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md)** for a full step-by-step guide covering prerequisites, environment variables, database setup, and verification.
+
+Quick start:
+
 ```bash
-# Clone with submodules (the client frontend is a git submodule)
 git clone --recurse-submodules https://github.com/navapbc/labs-asp.git
-cd labs-asp
-git checkout develop
-
-# Install dependencies
-pnpm install
-
-# Configure environment
-cp .env.example .env
-cp client/.env.example client/.env.local
-# Edit both files with your API keys and database URL
-
-# Start the full stack
+cd labs-asp && git checkout develop
+pnpm install && cd client && pnpm install && cd ..
+cp .env.example .env && cp client/.env.example client/.env.local
+# Fill in API keys and auth secrets in both files
 docker compose up -d --build
-# App: http://localhost:3000
-
-# Or start the Mastra playground only
-pnpm dev
-# Playground: http://localhost:4111
+# App: http://localhost:3000  |  Mastra playground: http://localhost:4111
 ```
 
-See [`docs/DEVELOPMENT_GUIDE.md`](docs/DEVELOPMENT_GUIDE.md) for hot reload, database setup, and submodule workflows.
+For daily development with fast hot reload, see [`docs/DEVELOPMENT_GUIDE.md`](docs/DEVELOPMENT_GUIDE.md).
 
 ---
 
