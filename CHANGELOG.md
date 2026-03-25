@@ -1,3 +1,18 @@
+# [1.9.0](https://github.com/navapbc/labs-asp/compare/v1.8.1...v1.9.0) (2026-03-25)
+
+
+### Bug Fixes
+
+* added in cancel button on full screen mode ([5c504be](https://github.com/navapbc/labs-asp/commit/5c504be1cbffda12672d9fafeef4ff86bf6e0186))
+* remove header for chat ([98f42ba](https://github.com/navapbc/labs-asp/commit/98f42bad68d4c349aa2242e5802dcef78357738a))
+* update client submodule with prompt edits ([786380f](https://github.com/navapbc/labs-asp/commit/786380f46334cc21f3b98504659100f2c2ac19de))
+
+
+### Features
+
+* model selector for dev ([b5ac78a](https://github.com/navapbc/labs-asp/commit/b5ac78a530bccce4d815096944266151e3031878))
+* tests for tablet ([c348124](https://github.com/navapbc/labs-asp/commit/c348124dd70a9e2865b7fb01027da713b0b7a963))
+
 ## [1.8.1](https://github.com/navapbc/labs-asp/compare/v1.8.0...v1.8.1) (2026-03-18)
 
 
