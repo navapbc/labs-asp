@@ -140,6 +140,8 @@ NEXT_PUBLIC_MASTRA_SERVER_URL=http://localhost:4111
 MASTRA_JWT_TOKEN=<same-value-as-backend>
 ENVIRONMENT=dev
 NEXT_PUBLIC_ENVIRONMENT=dev
+USE_AI_SDK_AGENT=true            # Must be true — matches all deployed environments
+NEXT_PUBLIC_USE_AI_SDK_AGENT=true
 ```
 
 **Required — at least one LLM key** (can reuse your backend keys):

@@ -50,8 +50,8 @@ Built by [Nava PBC](https://www.navapbc.com) with philanthropic funding. Designe
 **Backend** (`src/`)
 | Package | Purpose |
 |---------|---------|
-| [Mastra](https://mastra.ai) (`@mastra/core` + plugins) | AI agent orchestration framework |
-| Vercel AI SDK v5 (`ai@5`) | Model calls, streaming |
+| Vercel AI SDK v5 (`ai@5`) | Model calls, streaming (active) |
+| [Mastra](https://mastra.ai) (`@mastra/core` + plugins) | AI agent framework — legacy, not active in deployed environments |
 | `@ai-sdk/{anthropic,google,google-vertex,openai}` | LLM provider adapters |
 | `@mastra/mcp` + Playwright | Browser automation via MCP |
 | `@mastra/memory` + pgvector | Semantic memory / recall |
