@@ -31,17 +31,45 @@ Built by [Nava PBC](https://www.navapbc.com) with philanthropic funding. Designe
 
 ## Tech stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 15, React 19, Tailwind CSS, Vercel AI SDK |
-| AI framework | [Mastra](https://mastra.ai) |
-| Browser automation | Playwright + MCP server |
-| Database | PostgreSQL 16 + pgvector |
-| ORM | Drizzle ORM |
-| Auth | NextAuth.js 5 |
-| Infrastructure | Google Cloud Run, Cloud SQL, Terraform |
-| CI/CD | GitHub Actions |
-| Package manager | pnpm |
+**Frontend** (`client/`)
+| Package | Purpose |
+|---------|---------|
+| Next.js 16, React 19 | App framework |
+| Vercel AI SDK v6 (`ai@6`) | Streaming chat, tool calling |
+| `@ai-sdk/{anthropic,google,openai,xai}` | LLM provider adapters |
+| Drizzle ORM + PostgreSQL | Database access |
+| NextAuth.js 5 | Authentication |
+| Radix UI + Tailwind CSS | UI components |
+| Framer Motion | Animations |
+| ProseMirror + CodeMirror 6 | Rich text / code editors |
+| PostHog | Analytics |
+| OpenTelemetry + `@vercel/otel` | Observability |
+| Vitest + Playwright | Testing |
+| Biome | Linting and formatting |
+
+**Backend** (`src/`)
+| Package | Purpose |
+|---------|---------|
+| [Mastra](https://mastra.ai) (`@mastra/core` + plugins) | AI agent orchestration framework |
+| Vercel AI SDK v5 (`ai@5`) | Model calls, streaming |
+| `@ai-sdk/{anthropic,google,google-vertex,openai}` | LLM provider adapters |
+| `@mastra/mcp` + Playwright | Browser automation via MCP |
+| `@mastra/memory` + pgvector | Semantic memory / recall |
+| PostgreSQL 16 + `pg` | Database |
+| `web-bot-auth` | HTTP Message Signatures (RFC 9421) for bot identity |
+| Zod | Schema validation |
+| Pino | Structured logging |
+
+**Infrastructure**
+| Tool | Purpose |
+|------|---------|
+| Docker + Docker Compose | Local and production containers |
+| Google Cloud Run | Serverless compute |
+| Google Cloud SQL | Managed PostgreSQL |
+| Google Artifact Registry | Docker image storage |
+| Terraform | Infrastructure as code |
+| GitHub Actions | CI/CD — builds, preview deployments, promotion |
+| Redis (Upstash or self-hosted) | Session coordination |
 
 ---
 
