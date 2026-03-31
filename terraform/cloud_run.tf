@@ -268,18 +268,6 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
-      # Feature flag for AI SDK agent
-      # When true, uses Kernel.sh for browser automation instead of Playwright MCP
-      env {
-        name  = "USE_AI_SDK_AGENT"
-        value = var.use_ai_sdk_agent
-      }
-
-      env {
-        name  = "NEXT_PUBLIC_USE_AI_SDK_AGENT"
-        value = var.use_ai_sdk_agent
-      }
-
       # Feature flag for guest login (bypasses OAuth in preview environments)
       env {
         name  = "USE_GUEST_LOGIN"
@@ -291,7 +279,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value = var.use_guest_login
       }
 
-      # Kernel.sh API key for remote browser management (used when USE_AI_SDK_AGENT=true)
+      # Kernel.sh API key for remote browser management
       env {
         name = "KERNEL_API_KEY"
         value_source {
