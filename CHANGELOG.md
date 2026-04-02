@@ -1,3 +1,22 @@
+# [1.10.0](https://github.com/navapbc/labs-asp/compare/v1.9.0...v1.10.0) (2026-04-02)
+
+
+### Bug Fixes
+
+* add consumeStream to the chat route for abort signal handling ([40247d5](https://github.com/navapbc/labs-asp/commit/40247d59f199281ec75cff71f36630520550304a))
+* css updates to review card ([e469f7b](https://github.com/navapbc/labs-asp/commit/e469f7be2ea989dabad99a54b0506fe009a595a2))
+* update client - remove Gemini/Grok models that broke Vertex AI auth ([c0925a0](https://github.com/navapbc/labs-asp/commit/c0925a04dc6e21c5f54962356a7e1b36036fdd43))
+* update client - revert to default vertexAnthropic singleton ([a8ecbde](https://github.com/navapbc/labs-asp/commit/a8ecbde3d9e22ac1f0924b1e18304717ec0edccc))
+* update client with Vertex AI auth fix ([9c1d283](https://github.com/navapbc/labs-asp/commit/9c1d28306f625d616c4b1d24b1eec966254f5581))
+
+
+### Features
+
+* add [@jfkfoundation](https://github.com/jfkfoundation).org to allowed email domains ([490b342](https://github.com/navapbc/labs-asp/commit/490b34275e8537b39c913d4296b3e3c79c4de688))
+* add ALLOWED_EMAIL_DOMAINS secret to Cloud Run config ([c333290](https://github.com/navapbc/labs-asp/commit/c333290d8cf4031e233b28823e907ab43f98bff8))
+* add landing page layout and initial content ([ca201bb](https://github.com/navapbc/labs-asp/commit/ca201bb051d601b536b4e00d1fb6966e40e30e8f))
+* update client with embed=1 for tablet touch support ([de5ce29](https://github.com/navapbc/labs-asp/commit/de5ce29a7e27875ebc34fcaca223f54eaa2a598a))
+
 # [1.9.0](https://github.com/navapbc/labs-asp/compare/v1.8.1...v1.9.0) (2026-03-25)
 
 
