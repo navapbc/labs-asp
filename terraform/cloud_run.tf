@@ -257,6 +257,17 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # Allowed email domains for OAuth sign-in (comma-separated)
+      env {
+        name = "ALLOWED_EMAIL_DOMAINS"
+        value_source {
+          secret_key_ref {
+            secret  = "allowed-email-domains"
+            version = "latest"
+          }
+        }
+      }
+
       # Cloudflare Verified Bots - Ed25519 private key for signing key directory
       env {
         name = "CLOUDFLARE_BOT_PRIVATE_KEY"
