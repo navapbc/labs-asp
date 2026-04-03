@@ -132,8 +132,6 @@ jobs:
 
       - name: Build and push ai-chatbot image
         run: |
-          USE_AI_SDK="true"
-
           # Enable guest login only for preview-pr-* environments
           USE_GUEST="false"
           if [[ "${{ needs.setup.outputs.environment }}" == preview-pr-* ]]; then
@@ -141,11 +139,9 @@ jobs:
           fi
 
           docker build \
-            --build-arg NODE_ENV=${{ needs.setup.outputs.environment }} \
             --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ steps.posthog_key.outputs.key }} \
             --build-arg NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com \
             --build-arg KERNEL_API_KEY=${{ steps.kernel_key.outputs.key }} \
-            --build-arg USE_AI_SDK_AGENT=${USE_AI_SDK} \
             --build-arg USE_GUEST_LOGIN=${USE_GUEST} \
             --build-arg ENVIRONMENT=${{ needs.setup.outputs.environment }} \
             -f Dockerfile.ai-chatbot \
@@ -298,8 +294,6 @@ jobs:
             ENABLE_DOMAIN="true"
           fi
 
-          USE_AI_SDK="true"
-
           # Enable guest login only for preview-pr-* environments
           USE_GUEST="false"
           if [[ "${{ needs.setup.outputs.environment }}" == preview-pr-* ]]; then
@@ -310,7 +304,6 @@ jobs:
             -var="environment=${{ needs.setup.outputs.environment }}" \
             -var="chatbot_image_url=${{ needs.build.outputs.chatbot_image }}" \
             -var="enable_custom_domain=${ENABLE_DOMAIN}" \
-            -var="use_ai_sdk_agent=${USE_AI_SDK}" \
             -var="use_guest_login=${USE_GUEST}" \
             -var="vpc_cidr_public=${{ steps.vpc_cidrs.outputs.vpc_cidr_public }}" \
             -var="vpc_cidr_private=${{ steps.vpc_cidrs.outputs.vpc_cidr_private }}" \
