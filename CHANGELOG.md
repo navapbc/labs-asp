@@ -1,3 +1,125 @@
+# [1.10.0](https://github.com/navapbc/labs-asp/compare/v1.9.0...v1.10.0) (2026-04-02)
+
+
+### Bug Fixes
+
+* add consumeStream to the chat route for abort signal handling ([40247d5](https://github.com/navapbc/labs-asp/commit/40247d59f199281ec75cff71f36630520550304a))
+* css updates to review card ([e469f7b](https://github.com/navapbc/labs-asp/commit/e469f7be2ea989dabad99a54b0506fe009a595a2))
+* update client - remove Gemini/Grok models that broke Vertex AI auth ([c0925a0](https://github.com/navapbc/labs-asp/commit/c0925a04dc6e21c5f54962356a7e1b36036fdd43))
+* update client - revert to default vertexAnthropic singleton ([a8ecbde](https://github.com/navapbc/labs-asp/commit/a8ecbde3d9e22ac1f0924b1e18304717ec0edccc))
+* update client with Vertex AI auth fix ([9c1d283](https://github.com/navapbc/labs-asp/commit/9c1d28306f625d616c4b1d24b1eec966254f5581))
+
+
+### Features
+
+* add [@jfkfoundation](https://github.com/jfkfoundation).org to allowed email domains ([490b342](https://github.com/navapbc/labs-asp/commit/490b34275e8537b39c913d4296b3e3c79c4de688))
+* add ALLOWED_EMAIL_DOMAINS secret to Cloud Run config ([c333290](https://github.com/navapbc/labs-asp/commit/c333290d8cf4031e233b28823e907ab43f98bff8))
+* add landing page layout and initial content ([ca201bb](https://github.com/navapbc/labs-asp/commit/ca201bb051d601b536b4e00d1fb6966e40e30e8f))
+* update client with embed=1 for tablet touch support ([de5ce29](https://github.com/navapbc/labs-asp/commit/de5ce29a7e27875ebc34fcaca223f54eaa2a598a))
+
+# [1.9.0](https://github.com/navapbc/labs-asp/compare/v1.8.1...v1.9.0) (2026-03-25)
+
+
+### Bug Fixes
+
+* added in cancel button on full screen mode ([5c504be](https://github.com/navapbc/labs-asp/commit/5c504be1cbffda12672d9fafeef4ff86bf6e0186))
+* remove header for chat ([98f42ba](https://github.com/navapbc/labs-asp/commit/98f42bad68d4c349aa2242e5802dcef78357738a))
+* update client submodule with prompt edits ([786380f](https://github.com/navapbc/labs-asp/commit/786380f46334cc21f3b98504659100f2c2ac19de))
+
+
+### Features
+
+* model selector for dev ([b5ac78a](https://github.com/navapbc/labs-asp/commit/b5ac78a530bccce4d815096944266151e3031878))
+* tests for tablet ([c348124](https://github.com/navapbc/labs-asp/commit/c348124dd70a9e2865b7fb01027da713b0b7a963))
+
+## [1.8.1](https://github.com/navapbc/labs-asp/compare/v1.8.0...v1.8.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* updates to the communication skill ([cfe33f8](https://github.com/navapbc/labs-asp/commit/cfe33f8a6e5eed5e7e1890ab667ba56e17632ae0))
+
+# [1.8.0](https://github.com/navapbc/labs-asp/compare/v1.7.0...v1.8.0) (2026-03-17)
+
+
+### Bug Fixes
+
+* browser back button to close chat ([6b55e0e](https://github.com/navapbc/labs-asp/commit/6b55e0ef821f58a04e0a9358df2584a39d1a8a80))
+* **ci:** add workflow_dispatch fallback for preview cleanup on conflicting PRs ([51d9280](https://github.com/navapbc/labs-asp/commit/51d9280bfb7198dd5a3d5400dc10222c4cd1b156))
+* small UI fixes to the form summary card ([45f653f](https://github.com/navapbc/labs-asp/commit/45f653f5fa12b191476e48e4cdf6ab2cfc9c7911))
+* visual bug for conversation checkpoint ([f15a6e0](https://github.com/navapbc/labs-asp/commit/f15a6e0429905661d0d36a7e0928a5c6ab9e5e12))
+
+
+### Features
+
+* addition of the shimmer on the tool calls grouping ([6a9d416](https://github.com/navapbc/labs-asp/commit/6a9d416a5806d8475691d1cfd1a7a0d695753fde))
+* record kernel browser session replays and log view URLs on cleanup ([857bbcc](https://github.com/navapbc/labs-asp/commit/857bbcc2c722ef397da29c0709c5dfa56adb5a7b))
+* update client submodule with browser navigation guardrails ([de033de](https://github.com/navapbc/labs-asp/commit/de033de8a7a314c3e7312689be86d95b553ff223))
+
+# [1.7.0](https://github.com/navapbc/labs-asp/compare/v1.6.1...v1.7.0) (2026-03-06)
+
+
+### Bug Fixes
+
+* add precompact and saveNewMessages functions ([0389f97](https://github.com/navapbc/labs-asp/commit/0389f97c8d58b1c1bbf8d72922e702c37c3aa514))
+* prompt edits for forms ([b9f78b2](https://github.com/navapbc/labs-asp/commit/b9f78b23c72bdd661420d0a3044a923822405c2b))
+* prompt page input to a responsive textarea ([4fae2df](https://github.com/navapbc/labs-asp/commit/4fae2df8eadb8653471ed574e4cab42efeb8c90f))
+* remove destroyed preview database URL secret data source (VM is count=0, was unused) ([d6052e9](https://github.com/navapbc/labs-asp/commit/d6052e971f25d9a7bf9d0616101e2d80e89354f9))
+* scrollbar switched from scroll to auto ([fd7ba7e](https://github.com/navapbc/labs-asp/commit/fd7ba7e5e2c4ecaed5dcb90c2a2718781562b6e5))
+* update client submodule — checkpoint card UI + compaction persistence ([21af763](https://github.com/navapbc/labs-asp/commit/21af763be352643b30dcdfaabf13057dba9a4ac6))
+* update client submodule — checkpoint UI + Sonnet provider switch ([af341fb](https://github.com/navapbc/labs-asp/commit/af341fb16a12af72b5eb7aa035cb1a4661f676bf))
+* update client submodule — compressor logging + checkpoint UI fix ([bd8bdb2](https://github.com/navapbc/labs-asp/commit/bd8bdb281eae76e5b62a80f1ba2fb648da39c017))
+* update client submodule — compressor rewrite for reliable summarization ([2d138b5](https://github.com/navapbc/labs-asp/commit/2d138b51604a7a30f931f7e87bfab17ed443bd01))
+* update client submodule for token-based compaction ([81c989b](https://github.com/navapbc/labs-asp/commit/81c989b2ff7ce4d287704b6b7757cbf1e346894c))
+* use indexed reference for replace_triggered_by in count=0 resource ([0adce4c](https://github.com/navapbc/labs-asp/commit/0adce4cc205bbfa30ebfd61e88ab632da6c269d4))
+* use removed block to drop browser-ws-proxy from state without destroying ([e1201a3](https://github.com/navapbc/labs-asp/commit/e1201a38f0fb14d869d8496423925f0f07a3a4c0))
+
+
+### Features
+
+* new landing page prompt ([3dbbe61](https://github.com/navapbc/labs-asp/commit/3dbbe61befc9d1c00922b03ada34fb63d8a34c87))
+* use of the Vercel prepare step and token usage ([6afb3c9](https://github.com/navapbc/labs-asp/commit/6afb3c923207cbe26eb41a7e133700b3c31f9f9c))
+
+## [1.6.1](https://github.com/navapbc/labs-asp/compare/v1.6.0...v1.6.1) (2026-02-23)
+
+
+### Bug Fixes
+
+* added prompt changes and skip for now language change ([fb45482](https://github.com/navapbc/labs-asp/commit/fb45482813502c7b92e66bfa58b7ea40f0ba5b83))
+
+# [1.6.0](https://github.com/navapbc/labs-asp/compare/v1.5.0...v1.6.0) (2026-02-20)
+
+
+### Bug Fixes
+
+* css edits for the form summary ([47ec532](https://github.com/navapbc/labs-asp/commit/47ec532abcffe3d1872f073f014745dab6fc799b))
+* remove duplicate control mode toasts and improve send button UX ([67e997a](https://github.com/navapbc/labs-asp/commit/67e997a3f9b5691d9034d24f3666c956ebddabda))
+
+
+### Features
+
+* improve tool and skill instructions for Sonnet 4.6 ([242e959](https://github.com/navapbc/labs-asp/commit/242e9591bdc26eaa159a49d6616393a9b331ce22))
+* upgrade to claude-sonnet-4-6 and GOOGLE_VERTEX_LOCATION to global ([ce7209a](https://github.com/navapbc/labs-asp/commit/ce7209abdda49249dd4c87790b82287483ab421d))
+
+# [1.5.0](https://github.com/navapbc/labs-asp/compare/v1.4.3...v1.5.0) (2026-02-17)
+
+
+### Bug Fixes
+
+* remove captcha language ([6a4ab8d](https://github.com/navapbc/labs-asp/commit/6a4ab8ddd7d3c13be93f7f65e867a928eb44a2bb))
+
+
+### Features
+
+* add Posthog person_profiles with NextJS useSession data ([c45ed6f](https://github.com/navapbc/labs-asp/commit/c45ed6f8242439d2712e1bcc522b13afd0d9f5b7))
+
+## [1.4.3](https://github.com/navapbc/labs-asp/compare/v1.4.2...v1.4.3) (2026-02-17)
+
+
+### Bug Fixes
+
+* fix the stop functionality for kernel ([0ebf73f](https://github.com/navapbc/labs-asp/commit/0ebf73fd3dabdcfeaf8eb88ae0d11d3666fe74a2))
+
 ## [1.4.2](https://github.com/navapbc/labs-asp/compare/v1.4.1...v1.4.2) (2026-02-13)
 
 
