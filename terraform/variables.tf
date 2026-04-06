@@ -200,13 +200,6 @@ variable "allow_public_access" {
 # Note: Preview environments use shared VPC with permanent peering to dev VPC
 # No need for dynamic VPC tracking variables
 
-# Feature flag for AI SDK agent (vs Mastra backend)
-variable "use_ai_sdk_agent" {
-  description = "Feature flag to use AI SDK agent with Kernel.sh instead of Mastra backend"
-  type        = string
-  default     = "false"
-}
-
 # Feature flag for guest login (bypasses OAuth in preview environments)
 variable "use_guest_login" {
   description = "Feature flag to enable guest login form for preview environments"
