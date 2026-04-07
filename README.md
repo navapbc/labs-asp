@@ -1,13 +1,35 @@
-# Mastra Test App Quick Setup Guide
+# Labs ASP Quick Setup Guide
 
-Welcome! This guide will help you get the Mastra test app running on your computer in just a few steps. The database is already set up in the cloud, so you'll just be connecting to it!
+Welcome! This guide will help you get the Labs ASP project running on your computer. The database is already set up in the cloud, so you'll just be connecting to it.
 
 ## What You'll Have After Setup
 
-- **AI Agents**: Smart assistants that can help with web automation
-- **Web Automation**: AI that can visit websites and extract information
+- **AI Chatbot Client**: A Next.js-based AI chatbot with web automation capabilities
+- **Web Automation**: AI that can visit websites, interact with pages, and extract information using a browser tool
 - **Database**: A cloud database with sample participant data for testing
-- **Playground**: A web interface to interact with all the AI features
+- **Browser Streaming**: Real-time browser session viewing through Kernel.sh
+
+## Project Structure
+
+This repository contains the infrastructure, deployment configuration, and supporting services for the Labs ASP project. The AI chatbot client lives in a separate repository and is included here as a Git submodule.
+
+### Client Submodule
+
+The `client/` directory is a Git submodule that pulls from the [navapbc/ai-chatbot](https://github.com/navapbc/ai-chatbot/tree/develop) repository (`develop` branch). This is where the application code lives. It contains:
+
+- **Next.js application** — the full AI chatbot frontend and API routes
+- **AI tools** — browser automation, participant lookup, and other agent tools
+- **Database schema & migrations** — Drizzle ORM schema for chats, users, documents, and participants
+- **Artifacts system** — browser session viewer, code runner, and other interactive artifacts
+- **UI components** — chat interface, sidebar, markdown rendering, and design system
+
+### Root Repository
+
+The root repository provides:
+
+- **`terraform/`** — Infrastructure-as-code for GCP deployment
+- **`scripts/`** — Utility scripts for deployment and maintenance
+- **`docs/`** — Architecture documentation, setup guides, and decision records
 
 ## Prerequisites
 
@@ -15,8 +37,7 @@ You'll need these installed on your computer:
 
 - **Node.js** (version 20 or higher): [Download here](https://nodejs.org/)
 - **pnpm**: Install by running: `npm install -g pnpm`
-- **Docker Desktop**: [Download here](https://www.docker.com/products/docker-desktop/) - Required for running the full stack locally
-- **gcloud CLI** (optional): [Install instructions](https://cloud.google.com/sdk/docs/install) - Only needed if working with GCP resources directly
+- **gcloud CLI** (optional): [Install instructions](https://cloud.google.com/sdk/docs/install) — Only needed if working with GCP resources directly
 
 > **Note**: We use the `develop` branch as our primary working branch. Make sure to checkout `develop` after cloning.
 
@@ -27,6 +48,7 @@ You'll need these installed on your computer:
 This project uses Git submodules to manage the client frontend. You'll need to clone with submodules or set them up after cloning.
 
 #### Option A: Clone with Submodules (Recommended)
+
 ```bash
 # Clone the repository with submodules
 git clone --recurse-submodules https://github.com/navapbc/labs-asp.git
@@ -37,19 +59,20 @@ git checkout develop
 ```
 
 #### Option B: If You Already Cloned Without Submodules
+
 ```bash
 # If you already cloned the repo, initialize submodules
 git submodule update --init --recursive
 ```
 
-> **Important**: This project uses the `client/` directory as a Git submodule that tracks the `labs-asp` branch of the AI chatbot repository.
+> **Important**: The `client/` directory is a Git submodule that tracks the `develop` branch of the [ai-chatbot repository](https://github.com/navapbc/ai-chatbot/tree/develop).
 
 ### 2. Opening Terminal in Visual Studio Code
 
 If you're using Visual Studio Code:
 
 1. **Open the project folder**: Go to `File > Open Folder` and select the `labs-asp` directory
-2. **Open the terminal**: 
+2. **Open the terminal**:
    - Use the keyboard shortcut: `Ctrl+(backtick)` on Mac
    - Or go to `Terminal > New Terminal` in the menu
    - Or use `View > Terminal`
@@ -57,36 +80,31 @@ If you're using Visual Studio Code:
 The terminal should automatically open in the correct `labs-asp` directory. You can verify this by running `pwd` (on Mac) to see your current directory path.
 
 ### 3. Install Dependencies
+
 ```bash
-# Install all required packages
+# Navigate to the client directory and install packages
+cd client
 pnpm install
 ```
 
 ### 4. Set Up Environment Variables
 
-You'll need to create three configuration files. Ask your team lead for access to the 1Password secure notes containing the actual values.
-
-#### Root `.env` file
-```bash
-cp .env.example .env
-```
-Then update the values with the contents from the 1Password secure note shared by your team lead.
+You'll need to create a configuration file for the client. Ask your team lead for access to the 1Password secure notes containing the actual values.
 
 #### Client `.env.local` file
+
 ```bash
 cp client/.env.example client/.env.local
 ```
+
 Then update the values with the contents from the 1Password secure note for the client environment.
 
-> **Important**: If your `client/.env.local` contains a `BROWSER_WS_PROXY_URL` line, make sure it is **commented out** for local development:
-> ```
-> # BROWSER_WS_PROXY_URL=http://localhost:8080
-> ```
-
 #### Vertex AI Credentials
+
 ```bash
 touch vertex-ai-credentials.json
 ```
+
 Copy the service account JSON from the 1Password secure note. See `docs/VERTEX_AI_ANTHROPIC_SETUP.md` for details on creating your own credentials if needed.
 
 > **Warning about 1Password**: When copying from 1Password secure notes, ensure you're copying the **raw text** and not a markdown-rendered version. 1Password can convert files to markdown, which breaks commented lines (e.g., `# comment` becomes a heading). If you encounter unexpected behavior, verify your file contents match the original format.
@@ -99,41 +117,38 @@ The database is ready to use with sample participant data already loaded. You'll
 
 ### 6. Start the App
 
-#### Option A: Docker Compose (Recommended for Full Stack)
 ```bash
-# Build and start all services
-docker compose up -d --build
-```
-
-This starts the complete stack including the AI chatbot client, Mastra backend, and browser streaming service. Access the app at `http://localhost:3000`.
-
-#### Option B: Local Development (Mastra Playground Only)
-```bash
-# Launch the Mastra playground
+# From the client directory
+cd client
 pnpm dev
 ```
 
-This starts only the Mastra playground at `http://localhost:4111`.
+This starts the Next.js client at `http://localhost:3000`.
 
 **Success!** The app should now be running. Click the URL in your terminal to open it!
 
 ## What Can You Do Now?
 
-### Try the AI Agents
-- **Weather Agent**: Ask about weather in any city
-- **Web Automation Agent**: Have it visit websites and take screenshots
-- **Memory Agent**: Store and retrieve information
+### Try the AI Chatbot
+
+- **Web Automation**: Have the AI visit websites, fill out forms, and take screenshots
+- **Participant Lookup**: Search for participant information in the database
+- **Browser Sessions**: Watch the AI interact with websites in real time
 
 ### Sample Prompts to Try
-- "What's the weather like in San Francisco?"
+
 - "Visit google.com and take a screenshot"
-- "Remember that our team meeting is every Tuesday at 2 PM"
+- "Look up participant information for John Doe"
+- "Go to benefits.gov and find information about WIC eligibility"
 
 ### View Your Database
+
 ```bash
-# Open database browser
+# Open database browser (from the client directory)
+cd client
 pnpm db:studio
 ```
+
 This opens a web interface at `http://localhost:5555` where you can browse the shared participant data (read-only).
 
 ## If Something Goes Wrong
@@ -149,71 +164,43 @@ If the app displays errors or becomes unresponsive:
 
 2. **Start fresh**:
    - Open a new terminal (see "Opening Terminal in Visual Studio Code" above)
-   - Make sure you're in the `labs-asp` directory: `cd labs-asp`
+   - Navigate to the client: `cd labs-asp/client`
    - Restart the app: `pnpm dev`
 
 3. **If problems persist**:
-   - Try clearing the cache: `pnpm clean` (if available) and run `pnpm install` again
-   - Check that all environment variables are correctly set in your `.env` file
-
-### Docker Troubleshooting
-
-#### Full Rebuild (Clean Slate)
-If you're seeing stale behavior or containers aren't syncing properly:
-```bash
-docker compose down && docker compose build --no-cache && docker compose up -d
-```
-> **Note**: This may take 5-10 minutes to rebuild all images from scratch.
-
-#### Quick Client Rebuild
-For client-side changes only (faster than full Docker rebuild):
-```bash
-cd client && pnpm build && pnpm dev
-```
-This starts the client on `http://localhost:3001` while still connecting to the Dockerized backend.
-
-#### View Container Logs
-```bash
-# All containers
-docker compose logs -f
-
-# Specific container
-docker logs --tail 100 labs-asp-browser-streaming-1
-```
+   - Try clearing the cache and reinstalling: `rm -rf node_modules && pnpm install`
+   - Check that all environment variables are correctly set in your `client/.env.local` file
 
 ### Database Connection Issues
-- Make sure you have the correct `DATABASE_URL` in your `.env` file
+
+- Make sure you have the correct `DATABASE_URL` in your `client/.env.local` file
 - Contact your team lead if you're getting database connection errors
 
 ### Missing API Keys
+
 - Contact your team lead for the required API keys
-- Make sure they're properly copied into your `.env` file
+- Make sure they're properly copied into your `client/.env.local` file
 
 ### Need Fresh Data?
-Contact your team lead if you need the database refreshed regular team members shouldn't modify the shared database.
+
+Contact your team lead if you need the database refreshed — regular team members shouldn't modify the shared database.
 
 ## Quick Reference Commands
 
 ```bash
-# Start full stack with Docker (recommended)
-docker compose up -d --build
-
-# Start Mastra playground only
-pnpm dev
+# Start the app
+cd client && pnpm dev
 
 # View database (read-only)
-pnpm db:studio
+cd client && pnpm db:studio
 
-# Full Docker rebuild
-docker compose down && docker compose build --no-cache && docker compose up -d
-
-# View Docker logs
-docker compose logs -f
+# Update submodule to latest
+git submodule update --remote client
 ```
 
 ## Git Submodule Management
 
-This project uses Git submodules to manage the client frontend. The `client/` directory is a submodule that tracks the `labs-asp` branch of the AI chatbot repository.
+This project uses Git submodules to manage the client frontend. The `client/` directory is a submodule that tracks the `develop` branch of the [ai-chatbot repository](https://github.com/navapbc/ai-chatbot/tree/develop).
 
 ### Initial Setup (One-Time Configuration)
 
@@ -249,55 +236,67 @@ git submodule update --init --recursive
 ### Working with Submodules
 
 #### After a PR is Merged
+
 When PRs are merged into the main repository, always pull with submodules:
+
 ```bash
 git spull  # Pulls both main repo and submodule changes automatically
 ```
 
 #### If You Need to Update the Submodule Reference
+
 Sometimes you'll need to update the main repository to point to a newer commit in the submodule:
+
 ```bash
 # Update submodule to latest remote commit
 git submodule update --remote client
 
 # Add and commit the submodule reference update
 git add client
-git commit -m "feat: update client submodule to latest commit"
+git commit -m "chore: update client submodule to latest commit"
 git push
 ```
 
 #### Checking Submodule Configuration
+
 You can view the submodule configuration in `.gitmodules`:
+
 ```bash
 cat .gitmodules
 ```
 
-This shows how the submodule is configured to track the `labs-asp` branch.
+This shows how the submodule is configured to track the `develop` branch.
 
 ### Troubleshooting Submodules
 
 #### Submodule Directory is Empty
+
 ```bash
 git submodule update --init --recursive
 ```
 
 #### Submodule is Out of Date
+
 ```bash
 git submodule update --remote client
 ```
 
 #### Reset Submodule to Match Main Repository
+
 ```bash
 git submodule update --recursive
 ```
 
 #### View What Branch the Submodule is Tracking
+
 ```bash
 git config -f .gitmodules --get submodule.client.branch
 ```
 
 ### Admin-Only Commands
+
 > **Note**: These commands are for admins only and will modify shared data:
+
 ```bash
 # Add sample data (admin only)
 pnpm seed:wic
@@ -311,6 +310,7 @@ pnpm db:migrate
 
 ## Learn More
 
-- **Detailed Database Guide**: See `DATABASE_SETUP.md`
-- **Web Automation Features**: See `PLAYWRIGHT_MCP_GUIDE.md`
+- **Client Repository**: [navapbc/ai-chatbot](https://github.com/navapbc/ai-chatbot/tree/develop)
+- **Detailed Database Guide**: See `docs/DATABASE_SETUP.md`
+- **Architecture Docs**: See the `docs/` directory for detailed guides
 - **Need Help?**: Ask your team lead or create an issue
