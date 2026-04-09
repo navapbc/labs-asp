@@ -1,3 +1,16 @@
+# [1.11.0](https://github.com/navapbc/labs-asp/compare/v1.10.0...v1.11.0) (2026-04-09)
+
+
+### Bug Fixes
+
+* restore root package.json for semantic-release ([385a01c](https://github.com/navapbc/labs-asp/commit/385a01c5f9c4047e2f9b9a2b77744014e33834a9))
+* test for form filling from Apricot ([5d6b2de](https://github.com/navapbc/labs-asp/commit/5d6b2dee77924daf5a62a92b75b82093fede8541))
+
+
+### Features
+
+* update client submodule with working memory for compaction hallucination fix ([1a7c8da](https://github.com/navapbc/labs-asp/commit/1a7c8da4b487aad18d5f40f7a493957c7ab59b6b))
+
 # [1.10.0](https://github.com/navapbc/labs-asp/compare/v1.9.0...v1.10.0) (2026-04-02)
 
 
