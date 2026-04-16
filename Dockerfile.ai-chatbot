@@ -25,6 +25,10 @@ COPY client/ ./client/
 WORKDIR /app/client
 RUN rm -rf node_modules && pnpm install --frozen-lockfile --ignore-scripts
 
+# Download the agent-browser native Rust binary (requires network).
+# We use --ignore-scripts above, so postinstall did not run.
+RUN pnpm exec agent-browser install
+
 # Build args
 ARG NEXT_PUBLIC_POSTHOG_KEY
 ARG NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
@@ -53,6 +57,7 @@ COPY --from=builder /app/client ./client
 
 # Ensure agent-browser binary has execute permissions
 RUN chmod +x /app/client/node_modules/.pnpm/agent-browser@*/node_modules/agent-browser/bin/* 2>/dev/null || true
+RUN find /app/client/node_modules/agent-browser -type f -name 'agent-browser*' -exec chmod +x {} \; 2>/dev/null || true
 
 # Create a non-root user for better security
 RUN groupadd -r nextjs && useradd -r -g nextjs -d /app -s /bin/bash nextjs
