@@ -1,3 +1,15 @@
+# [1.12.0](https://github.com/navapbc/labs-asp/compare/v1.11.0...v1.12.0) (2026-04-20)
+
+
+### Bug Fixes
+
+* bump client submodule — stop button halts tool loop ([308b927](https://github.com/navapbc/labs-asp/commit/308b9270aabc6253c449e869723b64c9395dc3bd))
+
+
+### Features
+
+* update client submodule — add Claude Opus 4.7 to model selector ([23f136b](https://github.com/navapbc/labs-asp/commit/23f136b538af84f313fbe32150b538ff4ced82ae))
+
 # [1.11.0](https://github.com/navapbc/labs-asp/compare/v1.10.0...v1.11.0) (2026-04-09)
 
 
