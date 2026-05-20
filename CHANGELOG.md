@@ -1,3 +1,23 @@
+# [1.13.0](https://github.com/navapbc/labs-asp/compare/v1.12.0...v1.13.0) (2026-05-20)
+
+
+### Bug Fixes
+
+* button change for summary card ([3594787](https://github.com/navapbc/labs-asp/commit/359478705783fa7e973a73d05fa42ab16840f569))
+* changes for prompt for form summary ([45ee05e](https://github.com/navapbc/labs-asp/commit/45ee05e2bb147d5b2c21f2fd9764f3c0e28f2875))
+* content change on take control ([0403b54](https://github.com/navapbc/labs-asp/commit/0403b54d65f09431714123a8994afd1b6cb9e2e4))
+* fix around the affirmation and having submit called before form summary ([203e4eb](https://github.com/navapbc/labs-asp/commit/203e4eb7d0dda5d87936d32472a61b210f4bc33a))
+* harsher language around the submit ([ffe495f](https://github.com/navapbc/labs-asp/commit/ffe495fccc5b41c19978ec309258dea9868ae773))
+* skills update(testing branch) ([bdc3b39](https://github.com/navapbc/labs-asp/commit/bdc3b39daef0f3d8472a4c218a6753a21dfa40cc))
+* test for submit disabled issue ([5fa748f](https://github.com/navapbc/labs-asp/commit/5fa748ff62c063562c35d0695664cc876aed7dcf))
+* testing prompt ([70edc96](https://github.com/navapbc/labs-asp/commit/70edc9643f167bb4ed723f2860f1d9beed9ef522))
+* testing skills revamp ([dc7611d](https://github.com/navapbc/labs-asp/commit/dc7611d51510bf797ca4244f4c7ba03a226f7862))
+
+
+### Features
+
+* revamp the Gap and Review cards ([23890f4](https://github.com/navapbc/labs-asp/commit/23890f48536a40541fc63d4e6ab0ec0595c43bb8))
+
 # [1.12.0](https://github.com/navapbc/labs-asp/compare/v1.11.0...v1.12.0) (2026-04-20)
 
 
