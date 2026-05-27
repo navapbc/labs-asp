@@ -15,7 +15,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     # VPC Access - Connect to VPC network
     vpc_access {
       connector = local.vpc_connector.id
-      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
+      egress    = "ALL_TRAFFIC" # Route all traffic through VPC/Cloud NAT for static IP
     }
 
     containers {
@@ -97,7 +97,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Apricot API Configuration
       # Prod uses /api/ endpoint with prod credentials, all others use /sandbox/ with sandbox credentials
       env {
-        name = "APRICOT_API_BASE_URL"
+        name  = "APRICOT_API_BASE_URL"
         value = "https://f5r-api.iws.sidekick.solutions/apricot"
       }
 
@@ -296,6 +296,18 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         value_source {
           secret_key_ref {
             secret  = "kernel-api-key"
+            version = "latest"
+          }
+        }
+      }
+
+      # Braintrust API key — enables OTel exporter in instrumentation.ts to
+      # stream production AI SDK spans into the labs-asp Braintrust project.
+      env {
+        name = "BRAINTRUST_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = "braintrust-api-key"
             version = "latest"
           }
         }
