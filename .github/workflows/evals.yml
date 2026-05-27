@@ -1,0 +1,74 @@
+name: Evals
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'client'
+      - '.github/workflows/evals.yml'
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-evals:
+    name: ${{ matrix.model }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - model: gpt-5-mini
+            provider: openai
+          - model: claude-opus-4-7
+            provider: anthropic
+          - model: gemini-2.5-pro
+            provider: google
+
+    env:
+      BRAINTRUST_PARENT: project_name:labs-asp
+      EVAL_MODEL: ${{ matrix.model }}
+      EVAL_PROVIDER: ${{ matrix.provider }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: github-actions-deploy@nava-labs.iam.gserviceaccount.com
+          workload_identity_provider: projects/279889631214/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+
+      - name: Fetch API keys from Secret Manager
+        uses: google-github-actions/get-secretmanager-secrets@v2
+        with:
+          export_to_environment: true
+          secrets: |-
+            BRAINTRUST_API_KEY:nava-labs/braintrust-api-key
+            OPENAI_API_KEY:nava-labs/openai-api-key
+            ANTHROPIC_API_KEY:nava-labs/anthropic-api-key
+            GOOGLE_GENERATIVE_AI_API_KEY:nava-labs/google-generative-ai-key
+
+      - name: Run Braintrust evals
+        uses: braintrustdata/eval-action@v1
+        with:
+          # BRAINTRUST_API_KEY is exported into the env by the previous
+          # get-secretmanager-secrets step (actionlint can't trace this).
+          api_key: ${{ env.BRAINTRUST_API_KEY }}
+          root: client
+          paths: evals
+          runtime: node
+          package_manager: pnpm
+          # Per-leg step_key so each matrix model gets its own PR comment
+          # instead of all three legs upserting the same one.
+          step_key: evals-${{ matrix.model }}
