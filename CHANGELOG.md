@@ -1,3 +1,17 @@
+# [1.14.0](https://github.com/navapbc/labs-asp/compare/v1.13.2...v1.14.0) (2026-06-09)
+
+
+### Bug Fixes
+
+* microcopy improvements and dynamic sidebar toggle ([a4ba7cd](https://github.com/navapbc/labs-asp/commit/a4ba7cd3f85e34b9efa1d78bb5522f4a0ed5093a))
+* sync modelOverride options with model selector UI ([14fac62](https://github.com/navapbc/labs-asp/commit/14fac625a3c020d35cfab1d0b61ba1ec3707fcd0))
+
+
+### Features
+
+* declutter the tool calls ([0c542d6](https://github.com/navapbc/labs-asp/commit/0c542d621b512ed4fd3cf9cf62e2c34b220210e5))
+* redesign benefit applications landing with tabbed UI ([2318ef5](https://github.com/navapbc/labs-asp/commit/2318ef5a4d25ccb90addf61e758bc69ca6ce1b37))
+
 ## [1.13.2](https://github.com/navapbc/labs-asp/compare/v1.13.1...v1.13.2) (2026-05-28)
 
 
