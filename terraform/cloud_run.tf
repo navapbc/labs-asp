@@ -15,7 +15,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
     # VPC Access - Connect to VPC network
     vpc_access {
       connector = local.vpc_connector.id
-      egress    = "ALL_TRAFFIC"  # Route all traffic through VPC/Cloud NAT for static IP
+      egress    = "ALL_TRAFFIC" # Route all traffic through VPC/Cloud NAT for static IP
     }
 
     containers {
@@ -97,7 +97,7 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       # Apricot API Configuration
       # Prod uses /api/ endpoint with prod credentials, all others use /sandbox/ with sandbox credentials
       env {
-        name = "APRICOT_API_BASE_URL"
+        name  = "APRICOT_API_BASE_URL"
         value = "https://f5r-api.iws.sidekick.solutions/apricot"
       }
 
@@ -135,6 +135,24 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
       env {
         name  = "NEXT_PUBLIC_POSTHOG_HOST"
         value = "https://us.i.posthog.com"
+      }
+
+      # PostHog project id + app host, used server-side to build session-replay
+      # deep-links stored on the SessionMapping table. The app host (us.posthog.com)
+      # is distinct from the ingest host above (us.i.posthog.com).
+      env {
+        name = "POSTHOG_PROJECT_ID"
+        value_source {
+          secret_key_ref {
+            secret  = "posthog-project-id"
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name  = "POSTHOG_APP_HOST"
+        value = "https://us.posthog.com"
       }
 
       # Next.js Auth configuration

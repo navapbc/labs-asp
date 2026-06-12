@@ -10,7 +10,7 @@ resource "google_storage_bucket" "dev" {
   count         = var.environment == "dev" ? 1 : 0
   name          = "nava-storage-dev"
   location      = local.region
-  force_destroy = false  # Prevent accidental deletion in dev
+  force_destroy = false # Prevent accidental deletion in dev
 
   # Versioning
   versioning {
@@ -18,9 +18,11 @@ resource "google_storage_bucket" "dev" {
   }
 
   # Lifecycle management
+  # 120 days so session-replay videos (replays/) are retained for the pilot
+  # rather than purged with shorter-lived artifacts.
   lifecycle_rule {
     condition {
-      age = 30  # days
+      age = 120 # days
     }
     action {
       type = "Delete"
@@ -49,7 +51,7 @@ resource "google_storage_bucket" "prod" {
   count         = var.environment == "prod" ? 1 : 0
   name          = "nava-storage-prod"
   location      = local.region
-  force_destroy = false  # Protect production bucket
+  force_destroy = false # Protect production bucket
 
   # Versioning
   versioning {
@@ -57,9 +59,10 @@ resource "google_storage_bucket" "prod" {
   }
 
   # Lifecycle management - longer retention for prod
+  # 120 days so session-replay videos (replays/) are retained for the pilot.
   lifecycle_rule {
     condition {
-      age = 90  # days - longer retention for production
+      age = 120 # days
     }
     action {
       type = "Delete"
@@ -81,10 +84,10 @@ resource "google_storage_bucket" "prod" {
 locals {
   storage_bucket_name = var.environment == "prod" ? (
     google_storage_bucket.prod[0].name
-  ) : var.environment == "dev" ? (
+    ) : var.environment == "dev" ? (
     google_storage_bucket.dev[0].name
-  ) : (
-    data.google_storage_bucket.dev[0].name  # Preview references existing dev bucket
+    ) : (
+    data.google_storage_bucket.dev[0].name # Preview references existing dev bucket
   )
 }
 
