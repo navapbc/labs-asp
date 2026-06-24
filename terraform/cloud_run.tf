@@ -94,6 +94,23 @@ resource "google_cloud_run_v2_service" "ai_chatbot" {
         }
       }
 
+      # Braintrust tracing/evals — non-production only.
+      # The key is injected for dev and preview but never for prod, so
+      # production sessions never export to Braintrust (instrumentation.ts
+      # early-returns when BRAINTRUST_API_KEY is unset).
+      dynamic "env" {
+        for_each = var.environment == "prod" ? [] : [1]
+        content {
+          name = "BRAINTRUST_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = "braintrust-api-key"
+              version = "latest"
+            }
+          }
+        }
+      }
+
       # Apricot API Configuration
       # Prod uses /api/ endpoint with prod credentials, all others use /sandbox/ with sandbox credentials
       env {
