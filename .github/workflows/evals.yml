@@ -34,8 +34,6 @@ jobs:
             provider: anthropic
           - model: claude-sonnet-4-6
             provider: anthropic
-          - model: gemini-3-pro
-            provider: google
 
     env:
       BRAINTRUST_PARENT: project_name:labs-asp
